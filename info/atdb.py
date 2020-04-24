@@ -85,15 +85,15 @@ def get_obstable():
     earlysciencefields = targettable[earlyscienceinds]
     argofields = targettable[argoinds]
     #get the cols want, can always/update change later if need be
-    obstable = surveyfields(['taskID','name','field_ra','field_dec',
+    obstable = surveyfields['taskID','name','field_ra','field_dec',
                              'telescopes','duration','quality',
-                             'beamPattern'])
-    argoobs = argofields(['taskID','name','field_ra','field_dec',
+                             'beamPattern']
+    argoobs = argofields['taskID','name','field_ra','field_dec',
                           'telescopes','duration','quality',
-                          'beamPattern'])
-    earlyobs = earlysciencefields(['taskID','name','field_ra','field_dec',
+                          'beamPattern']
+    earlyobs = earlysciencefields['taskID','name','field_ra','field_dec',
                                    'telescopes','duration','quality',
-                                   'beamPattern'])
+                                   'beamPattern']
     
     #return the tables
     return obstable, argoobs, earlyobs
