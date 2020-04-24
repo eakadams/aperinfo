@@ -23,6 +23,10 @@ from astropy.table import Table
 import numpy as np
 from astropy.io import ascii
 from datetime import datetime
+import os
+
+#should be updated for local location
+filedir = "/home/adams/aperinfo/files/"
 
 def get_obslist():
     """
@@ -84,6 +88,7 @@ def get_obstable():
     otherfields = targettable[otherinds]
     earlysciencefields = targettable[earlyscienceinds]
     argofields = targettable[argoinds]
+    testfields = targettable[testinds]
     #get the cols want, can always/update change later if need be
     obstable = surveyfields['taskID','name','field_ra','field_dec',
                              'telescopes','duration','quality',
@@ -91,19 +96,32 @@ def get_obstable():
     argoobs = argofields['taskID','name','field_ra','field_dec',
                           'telescopes','duration','quality',
                           'beamPattern']
+    testobs = testfields['taskID','name','field_ra','field_dec',
+                          'telescopes','duration','quality',
+                          'beamPattern']
     earlyobs = earlysciencefields['taskID','name','field_ra','field_dec',
                                    'telescopes','duration','quality',
                                    'beamPattern']
     
-    #return the tables
-    return obstable, argoobs, earlyobs
-    #also write them out for a record
+    #also write tables out for a record
     #use the current date
     #get the date
     date = datetime.today().strftime('%Y-%m-%d')
-    ascii.write(obstable,'obsatdb_{}.csv'.format(date),format='csv')
-    ascii.write(argoobs,'argoatdb_{}.csv'.format(date),format='csv')
-    ascii.write(earlyobs,'earlysciatdb_{}.csv'.format(date),format='csv')
-    
+    ascii.write(obstable,
+                os.path.join(filedir,'obsatdb_{}.csv'.format(date)),
+                format='csv')
+    ascii.write(argoobs,
+                os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
+                format='csv')
+    ascii.write(earlyobs,
+                os.path.join(filedir,'earlysciatdb_{}.csv'.format(date)),
+                format='csv')
+    ascii.write(testobs,
+                os.path.join(filedir,'testatdb_{}.csv'.format(date)),
+                format='csv')
+
+    #return the tables
+    return obstable, argoobs, earlyobs, testobs
+
     
 
