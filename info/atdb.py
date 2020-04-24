@@ -38,7 +38,7 @@ def get_obslist():
     obslist = atdbquery.atdbquery('imaging',False,False)
     return obslist
 
-def get_obstable():
+def get_obstable(write=False):
     """
     Get a table object that has basic observational information I want
     """
@@ -102,23 +102,24 @@ def get_obstable():
     earlyobs = earlysciencefields['taskID','name','field_ra','field_dec',
                                    'telescopes','duration','quality',
                                    'beamPattern']
-    
-    #also write tables out for a record
+    #if indicated, write tables out to a record
+    #don't do by default so don't build things up while testing
     #use the current date
     #get the date
     date = datetime.today().strftime('%Y-%m-%d')
-    ascii.write(obstable,
-                os.path.join(filedir,'obsatdb_{}.csv'.format(date)),
-                format='csv')
-    ascii.write(argoobs,
-                os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
-                format='csv')
-    ascii.write(earlyobs,
-                os.path.join(filedir,'earlysciatdb_{}.csv'.format(date)),
-                format='csv')
-    ascii.write(testobs,
-                os.path.join(filedir,'testatdb_{}.csv'.format(date)),
-                format='csv')
+    if write is True:
+        ascii.write(obstable,
+                    os.path.join(filedir,'obsatdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(argoobs,
+                    os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(earlyobs,
+                    os.path.join(filedir,'earlysciatdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(testobs,
+                    os.path.join(filedir,'testatdb_{}.csv'.format(date)),
+                    format='csv')
 
     #return the tables
     return obstable, argoobs, earlyobs, testobs
