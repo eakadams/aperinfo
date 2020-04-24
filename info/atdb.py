@@ -21,6 +21,8 @@ sys.path.append('/home/adams/atdbquery')
 import atdbquery
 from astropy.table import Table
 import numpy as np
+from astropy.io import ascii
+from datetime import datetime
 
 def get_obslist():
     """
@@ -51,9 +53,57 @@ def get_obstable():
     #want to sort on name to find those that are survey fields
     #know there is at least one exception
     #M0155+3622 191030203 was a test with calculated beamweights
-    #know column names from ATDB
-    obstable = Table(names=['taskID','name','field_ra','field_dec',
-                             'telescopes','duration','quality'])
+    #iterate through because I'm lazy
+    #i also want to first sort by taskid because I want things
+    #to come in the right order
+    targettable.sort('taskID')
+    surveyinds = []
+    otherinds = []
+    testinds = []
+    earlyscienceinds = []
+    argoinds = []
+    for i,(name,taskid) in enumerate(zip(targettable['name'],targettable['taskID'])):
+            #first grab specific fields that I know are tests
+            if (taskid == '191030203'):
+                        testinds.append(i)
+                            #find ARGO fields
+            elif name[0:4] == 'ARGO':
+                        argoinds.append(i)
+                            #find early science fields based on date
+            elif (int(taskid) < 190702000) and (int(taskid) > 190409000):
+                        earlyscienceinds.append(i)
+                            #find survey fields based on name length and date
+            elif (len(name) == 10) and (int(taskid) > 190702000):
+                        surveyinds.append(i)
+                            #dump everything else somewhere
+            else:
+                        otherinds.append(i)
+
+    #get various table subsets
+    surveyfields = targettable[surveyinds]
+    otherfields = targettable[otherinds]
+    earlysciencefields = targettable[earlyscienceinds]
+    argofields = targettable[argoinds]
+    #get the cols want, can always/update change later if need be
+    obstable = surveyfields(['taskID','name','field_ra','field_dec',
+                             'telescopes','duration','quality',
+                             'beamPattern'])
+    argoobs = argofields(['taskID','name','field_ra','field_dec',
+                          'telescopes','duration','quality',
+                          'beamPattern'])
+    earlyobs = earlysciencefields(['taskID','name','field_ra','field_dec',
+                                   'telescopes','duration','quality',
+                                   'beamPattern'])
+    
+    #return the tables
+    return obstable, argoobs, earlyobs
+    #also write them out for a record
+    #use the current date
+    #get the date
+    date = datetime.today().strftime('%Y-%m-%d')
+    ascii.write(obstable,'obsatdb_{}.csv'.format(date),format='csv')
+    ascii.write(argoobs,'argoatdb_{}.csv'.format(date),format='csv')
+    ascii.write(earlyobs,'earlysciatdb_{}.csv'.format(date),format='csv')
     
     
 
