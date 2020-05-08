@@ -1,0 +1,2 @@
+taskID,name,field_ra,field_dec,telescopes,duration,quality,beamPattern
+191030203,M0155+3622,28.829167,36.376667,23456789ABCD,41400,unknown,square_39p1
