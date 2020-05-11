@@ -103,10 +103,58 @@ def make_happili_obs_table():
         t['taskid'][i] = tid
         #get apercal version
         #only check happili-01 here
-        
+        apercal_vers = get_apercal_version(task)
+        t['apercal_version'][i]=apercal_vers
         #get apercal run times
         #do to read csv on each happili, then have all info
+        run_times_01 = get_run_times(task)
+
+def get_run_times(taskdir):
+    """
+    Helper script to retrieve run times
+    Actually - let's be smart and have this script
+    retrieve from all nodes
+    and return a 2-d array (or table?) that has
+    information for each run time type, plus happili node
+    Inputs:
+        taskdir (str): Full path for taskid (on happili-01)
+    Outputs:
+        runtimes (nparrary): 4x9 array with run time information
+    """
     
+    
+
+def get_apercal_version(taskdir):
+    """
+    Based on code by R. Schulz. 
+    Takes a taskid full directory path
+    And return apercal version string
+    Inputs:
+         taskdir (str): Full directory path to a taskid
+    Outputs:
+         apercal_vers (str): Apercal version. None if no version
+    """
+    logfile_name = os.path.join(taskdir, "apercal.log")
+    search_phrase = "Apercal version:"
+    # make sure the logfile exists
+    if not os.path.exists(logfile_name):
+        print("WARNING: Did not find logfile for {}".format(
+            os.path.basename(taskdir)))
+        apercal_vers = None
+    else:
+        # read logfile
+        with open(logfile_name, "r") as logfile:
+            # go through the lines
+            for logline in logfile:
+
+                # check for interesting line
+                if search_phrase in logline:
+                    apercal_vers = logline.split(": ")[-1].split("\n")[0]
+                    print("{0} {1}".format(os.path.basename(taskid),
+                                           apercal_vers))
+                                           #logline.split(": ")[-1].split("\n")[0]))
+
+    return apercal_vers
     
 def make_happili_beam_table():
     """
