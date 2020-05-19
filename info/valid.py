@@ -38,21 +38,27 @@ def compare_validation():
     #cont & hi for now, waiting on pol
     contfile = os.path.join(filedir,"cont_allbeams.csv")
     hifile = os.path.join(filedir,"hi_allbeams.csv")
+    polfile = os.path.join(filedir,"pol_allbeams.csv")
     cont = ascii.read(contfile)
     hi = ascii.read(hifile)
+    pol=ascii.read(polfile)
     
     #make a combined table that has common taskids
     #find common taskids
     cont_taskids = np.unique(cont['taskid'])
     hi_taskids = np.unique(hi['Obsid'])
-    common_taskids = np.intersect1d(cont_taskids, hi_taskids)
+    pol_taskids = np.unique(pol['taskid'])
+    pol_cont_taskids = np.intersect1d(cont_taskids,pol_taskids)
+    common_taskids = np.intersect1d(pol_cont_taskids, hi_taskids)
     #make sure things are sorted
     common_taskids.sort()
     print("There are {} observations with continuum validation".
           format(len(cont_taskids)))
     print("There are {} observations with HI validation".
           format(len(hi_taskids)))
-    print("There are {} observations with both HI and continuum validation".
+    print("There are {} observations with polarization validation".
+          format(len(pol_taskids)))
+    print("There are {} observations with all validation".
           format(len(common_taskids)))
     #setup table
     table_length = len(common_taskids) * 40
@@ -60,6 +66,8 @@ def compare_validation():
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
     t['cont_pass'] = np.empty(table_length,dtype=bool)
+    t['pol_V_pass'] = np.empty(table_length,dtype=bool)
+    t['pol_QU_pass'] = np.empty(table_length,dtype=bool)
     t['HI_all_good'] = np.empty(table_length,dtype=bool)
     t['HI_all_good_ok'] = np.empty(table_length,dtype=bool)
     t['HI_c2_good_ok'] = np.empty(table_length,dtype=bool)
@@ -87,6 +95,9 @@ def compare_validation():
             hi_ind = np.where(
                 (hi['Obsid'] == tid) &
                 (hi['Beam'] == b))[0]
+            pol_ind =  np.where(
+                (pol['taskid'] == tid) &
+                (pol['beam'] == b) )[0]
             #fill in table values
             #something weird is happening with continuum so do if statement
             #t['cont_pass'][ind] = cont['pass'][cont_ind]
@@ -101,6 +112,16 @@ def compare_validation():
             t['rat'][ind] = cont['rat'][cont_ind]
             t['N2'][ind] = cont['N2'][cont_ind]
             t['Ex-2'][ind] = cont['Ex-2'][cont_ind]
+            #and do polarization
+            if pol['pass_V'][pol_ind] == 'True':
+                t['pol_V_pass'][ind] = True
+            else:
+                t['pol_V_pass'][ind] = False
+                
+            if pol['pass_QU'][pol_ind] == 'True':
+                t['pol_QU_pass'][ind] = True
+            else:
+                t['pol_QU_pass'][ind] = False
             #for line, have to convert to boolean
             #also filling multiple columns so that I
             #can test different versions of passing
@@ -139,6 +160,18 @@ def compare_validation():
     print("{} beams pass HI validation".format(len(pass_hi)))
     print("{} beams pass both HI and cont validation".format(len(pass_both)))
 
+    #add in polarization
+    pass_V_pol = np.where(t['pol_V_pass'] == True)[0]
+    pass_QU_pol = np.where(t['pol_QU_pass'] == True)[0]
+
+    pass_all = np.where(
+        (t['cont_pass'] == True) &
+        (t['HI_pass'] == True) &
+        (t['pol_V_pass'] == True) &
+        (t['pol_QU_pass'] == True) )[0]
+
+    print("{} beams passed all  validation".format(len(pass_all)))
+    
     #want to get those that pass continuum and not line
     #so they can be further investigated
     #and maybe also the other way around
@@ -440,6 +473,128 @@ def combine_continuum():
                 overwrite = True,format='csv')
 
 
+
+#combine polarization informaiton
+def combine_pol():
+    """
+    Use knowledge of structure
+    """
+    #pol valid directory
+    poldir = os.path.join(filedir,"pol_valid")
+    #get taskid list; this is only taskids, not full paths
+    #this is a list of paths
+    taskdirlist = glob.glob(
+        os.path.join(poldir,
+                     "[1-2][0-9][0-1][0-9][0-3][0-9][0-9][0-9][0-9]"))
+    #taskidlist = os.listdir(contdir)
+    taskdirlist.sort()
+    #setup table that I need
+    #40 * n_tid for length
+    table_length = len(taskdirlist)*40
+    t = Table()
+    t['taskid'] = np.full(table_length,'000000000')
+    t['beam'] = np.empty(table_length,dtype=int)
+    t['pass_V'] = np.empty(table_length,dtype=bool)
+    t['pass_QU'] = np.empty(table_length,dtype=bool)
+    t['Q_bm_fg'] = np.full(table_length,np.nan)
+    t['U_bm_fg'] = np.full(table_length,np.nan) 
+    t['Q_st_fg'] = np.full(table_length,np.nan) 
+    t['U_st_fg'] = np.full(table_length,np.nan) 
+    t['s_in'] = np.full(table_length,np.nan) 
+    t['s_out'] = np.full(table_length,np.nan) 
+    t['rat'] = np.full(table_length,np.nan) 
+    t['peak'] = np.full(table_length,np.nan)
+    t['peak_s'] = np.full(table_length,np.nan)
+    t['peak_in'] = np.full(table_length,np.nan) 
+    t['N2'] = np.full(table_length,np.nan) 
+    t['P2'] = np.full(table_length,np.nan) 
+    t['Ex-2'] = np.full(table_length,np.nan) 
+    t['Ex+2'] = np.full(table_length,np.nan)
+    t['ftmax'] = np.full(table_length,np.nan)
+    t['bmaj'] = np.full(table_length,np.nan)
+    t['bmin'] = np.full(table_length,np.nan)
+    t['bpa'] = np.full(table_length,np.nan) 
+
+    #empty table as plaveholder for missing files
+    foo = Table()
+    foo['B'] = np.full(1,np.nan)
+    
+    #now iterate through taskids
+    #have two files for every one - bleh
+    for i,taskdir in enumerate(taskdirlist):
+        #read file in
+        #have to add a bunch of try/excepts because there are missing files
+        #why?!?!
+        valid_file_V = os.path.join(taskdir,"dynamicRange_V.dat")
+        try:
+            valid_V = ascii.read(valid_file_V,header_start=4)
+        except:
+            print("{} doesn't exist".format(valid_file_V))
+            valid_V = foo
+        valid_file_QU = os.path.join(taskdir,"dynamicRange_QU.dat")
+        try:
+            valid_QU = ascii.read(valid_file_QU,header_start=4)
+        except:
+            print("{} doesn't exist".format(valid_file_QU))
+            valid_QU = foo
+        #now i need to fill everything
+        #but have to worry about missing beams
+        #taskid covers full range i*40,(i+1)*40 -1
+        for b in range(40):
+            ind = i*40 + b
+            taskid = taskdir[-9:]
+            t['taskid'][ind] = taskid
+            t['beam'][ind] = b
+            #think in this case there is always information
+            #but still check for each valid
+            valid_ind_V = np.where(valid_V['B'] == b)[0]
+            valid_ind_QU = np.where(valid_QU['B'] == b)[0]
+            #if there's a matching beam, fill information
+            if len(valid_ind_V) == 1:
+                #check for pass as True/Fail
+                if valid_V['Q'][valid_ind_V] == '.':
+                    t['pass_V'][ind] = True
+                elif valid_V['Q'][valid_ind_V] == 'X':
+                    t['pass_V'][ind] = False
+                #fill in rest of columns
+                t['s_in'][ind] = valid_V['s_in'][valid_ind_V]
+                t['s_out'][ind] = valid_V['s_out'][valid_ind_V]
+                t['rat'][ind] = valid_V['rat'][valid_ind_V]
+                t['peak'][ind] = valid_V['peak'][valid_ind_V]
+                t['peak_s'][ind] = valid_V['peak_s'][valid_ind_V]
+                t['peak_in'][ind] = valid_V['peak_in'][valid_ind_V]
+                t['N2'][ind] = valid_V['N2'][valid_ind_V]
+                t['P2'][ind] = valid_V['P2'][valid_ind_V]
+                t['Ex-2'][ind] = valid_V['Ex-2'][valid_ind_V]
+                t['Ex+2'][ind] = valid_V['Ex+2'][valid_ind_V]
+                t['ftmax'][ind] = valid_V['ftmax'][valid_ind_V]
+                t['bmaj'][ind] = valid_V['bmaj'][valid_ind_V]
+                t['bmin'][ind] = valid_V['bmin'][valid_ind_V]
+                t['bpa'][ind] = valid_V['pa'][valid_ind_V]
+            else:
+                #make sure pass is false if beam doesn't exist
+                t['pass_V'][ind] = False
+            #repeat for QU
+            if len(valid_ind_QU) == 1:
+                #check for pass as True/Fail
+                if valid_QU['Q'][valid_ind_QU] == '.':
+                    t['pass_QU'][ind] = True
+                elif valid_QU['Q'][valid_ind_QU] == 'X':
+                    t['pass_QU'][ind] = False
+                #fill in rest of columns
+                t['Q_bm_fg'][ind] = valid_QU['Q_bm_fg'][valid_ind_QU]
+                t['U_bm_fg'][ind] = valid_QU['U_bm_fg'][valid_ind_QU]
+                t['Q_st_fg'][ind] = valid_QU['Q_st_fg'][valid_ind_QU]
+                t['U_st_fg'][ind] = valid_QU['U_st_fg'][valid_ind_QU]
+            else:
+                #make sure pass is false if beam doesn't exist
+                t['pass_QU'][ind] = False
+    #at end, write table out to csv
+    ascii.write(t,
+                os.path.join(filedir,'pol_allbeams.csv'),
+                overwrite = True,format='csv')
+
+    
 
 #helper script to put updated continuum files in right place
 def move_cont_valid():
