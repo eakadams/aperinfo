@@ -28,8 +28,8 @@ filedir = os.path.join(aperinfodir,"files")
 #print(filedir)
 
 
-#compare validation
-def compare_validation():
+#combine validation
+def combine_validation():
     """
     Use knowledge of structure
     All files are local in package
@@ -171,31 +171,44 @@ def compare_validation():
         (t['pol_QU_pass'] == True) )[0]
 
     print("{} beams passed all  validation".format(len(pass_all)))
-    
+
+    #save table to file
+    ascii.write(t,
+                os.path.join(filedir,'combined_valid.csv'),
+                overwrite = True,format='csv')
+
+def compare_hi_cont_valid():
+    #read file in
+    t = ascii.read(os.path.join(filedir,'combined_valid.csv'))
+    pass_cont = np.where(t['cont_pass'] == 'True')[0]
+    pass_hi = np.where(t['HI_pass'] == 'True')[0]
+    pass_both = np.where(
+        (t['cont_pass'] == 'True') &
+        (t['HI_pass'] == 'True'))[0]
     #want to get those that pass continuum and not line
     #so they can be further investigated
     #and maybe also the other way around
     #and then maybe it's interesting to plot those points also?
     pass_cont_not_hi = np.where(
-        (t['cont_pass'] == True) &
-        (t['HI_pass'] == False))[0]
+        (t['cont_pass'] == 'True') &
+        (t['HI_pass'] == 'False'))[0]
     pass_hi_not_cont =  np.where(
-        (t['cont_pass'] == False) &
-        (t['HI_pass'] == True))[0]
+        (t['cont_pass'] == 'False') &
+        (t['HI_pass'] == 'True'))[0]
 
     #do some testing for other types of HI passing
-    pass_hi_ok = np.where(t['HI_all_good_ok'] == True)[0]
+    pass_hi_ok = np.where(t['HI_all_good_ok'] == 'True')[0]
     pass_both_ok = np.where(
-        (t['cont_pass'] == True) &
-        (t['HI_all_good_ok'] == True))[0]
-    pass_hi_c2_ok = np.where(t['HI_c2_good_ok'] == True)[0]
+        (t['cont_pass'] == 'True') &
+        (t['HI_all_good_ok'] == 'True'))[0]
+    pass_hi_c2_ok = np.where(t['HI_c2_good_ok'] == 'True')[0]
     pass_both_c2_ok = np.where(
-        (t['cont_pass'] == True) &
-        (t['HI_c2_good_ok'] == True))[0]
-    pass_hi_c2 = np.where(t['HI_c2_good'] == True)[0]
+        (t['cont_pass'] == 'True') &
+        (t['HI_c2_good_ok'] == 'True'))[0]
+    pass_hi_c2 = np.where(t['HI_c2_good'] == 'True')[0]
     pass_both_c2 = np.where(
-        (t['cont_pass'] == True) &
-        (t['HI_c2_good'] == True))[0]
+        (t['cont_pass'] == 'True') &
+        (t['HI_c2_good'] == 'True'))[0]
 
     print("{} beams pass HI good/ok".format(len(pass_hi_ok)))
     print("{} beams pass both HI good/ok and cont".format(len(pass_both_ok)))
@@ -210,7 +223,6 @@ def compare_validation():
     print("{} beams pass HI c2 good/ok".format(len(pass_hi_c2_ok)))
     print("{} beams pass both HI c2 good/ok and cont".format(len(pass_both_c2_ok)))
 
-    print(np.nanmax(cont['s_in']),np.nanmax(t['s_in']))
 
     #make some plots of continuum metrics
     #first inner vs. outer noise
@@ -385,10 +397,7 @@ def compare_validation():
     pltname = 'other_cont_crit.png'
     plt.savefig(os.path.join(filedir,pltname))
 
-    #save table to file
-    ascii.write(t,
-                os.path.join(filedir,'combined_valid.csv'),
-                overwrite = True,format='csv')
+   
 
     ascii.write(t[pass_cont_not_hi],
                 os.path.join(filedir,'combined_valid_pass_cont_not_hi.csv'),
