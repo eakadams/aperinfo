@@ -90,6 +90,10 @@ def combine_validation():
     t['pol_Ex-2'] = np.empty(table_length)
     t['pol_ftmax'] = np.empty(table_length)
     t['pol_peak_in'] = np.empty(table_length)
+    t['Q_bm_fg'] = np.empty(table_length)
+    t['U_bm_fg'] = np.empty(table_length)
+    t['Q_st_fg'] = np.empty(table_length)
+    t['U_st_fg'] = np.empty(table_length)
     #now iterate through taskids
     for i,tid in enumerate(common_taskids):
         #and go through the beams
@@ -146,6 +150,10 @@ def combine_validation():
             t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
             t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
             t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
+            t['Q_bm_fg'][ind] = pol['Q_bm_fg'][pol_ind]
+            t['U_bm_fg'][ind] = pol['U_bm_fg'][pol_ind]
+            t['Q_st_fg'][ind] = pol['Q_st_fg'][pol_ind]
+            t['U_st_fg'][ind] = pol['U_st_fg'][pol_ind]
     
             #for line, have to convert to boolean
             #also filling multiple columns so that I
@@ -494,6 +502,9 @@ def compare_pol_cont_valid():
     print("{} beams pass continuum and Stokes V but not QU".format(len(pass_contV_not_QU)))
     #so there are 209 beams to potentially worry about here
     #this is about ~50% of the beams that pass continuum but not pol
+
+    #first check beam issue - this shouldn't be it
+    #check for where pass cont and Q_bm_fg > .3
 
     """ 
     #make some plots of continuum metrics
