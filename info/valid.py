@@ -66,6 +66,7 @@ def combine_validation():
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
     t['cont_pass'] = np.empty(table_length,dtype=bool)
+    t['pol_pass'] = np.empty(table_length,dtype=bool)
     t['pol_V_pass'] = np.empty(table_length,dtype=bool)
     t['pol_QU_pass'] = np.empty(table_length,dtype=bool)
     t['HI_all_good'] = np.empty(table_length,dtype=bool)
@@ -81,6 +82,14 @@ def combine_validation():
     t['rat'] = np.empty(table_length)
     t['N2'] = np.full(table_length,np.nan)
     t['Ex-2'] = np.empty(table_length)
+    #get relevant pol metrics
+    t['pol_s_in'] = np.empty(table_length)
+    t['pol_s_out'] = np.empty(table_length)
+    t['pol_rat'] = np.empty(table_length)
+    t['pol_N2'] = np.full(table_length,np.nan)
+    t['pol_Ex-2'] = np.empty(table_length)
+    t['pol_ftmax'] = np.empty(table_length)
+    t['pol_peak_in'] = np.empty(table_length)
     #now iterate through taskids
     for i,tid in enumerate(common_taskids):
         #and go through the beams
@@ -122,6 +131,22 @@ def combine_validation():
                 t['pol_QU_pass'][ind] = True
             else:
                 t['pol_QU_pass'][ind] = False
+
+            #do combined passing
+            if (pol['pass_V'][pol_ind] == 'True') and (pol['pass_QU'][pol_ind] == 'True' ):
+                t['pol_pass'][ind] = True
+            else:
+                t['pol_pass'][ind] = False
+
+            #do pol metrics
+            t['pol_s_in'][ind] = pol['s_in'][pol_ind]
+            t['pol_s_out'][ind] = pol['s_out'][pol_ind]
+            t['pol_rat'][ind] = pol['rat'][pol_ind]
+            t['pol_N2'][ind] = pol['N2'][pol_ind]
+            t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
+            t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
+            t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
+    
             #for line, have to convert to boolean
             #also filling multiple columns so that I
             #can test different versions of passing
@@ -224,6 +249,225 @@ def compare_hi_cont_valid():
     print("{} beams pass both HI c2 good/ok and cont".format(len(pass_both_c2_ok)))
 
 
+    #make some plots of continuum metrics
+    #first inner vs. outer noise
+    fig, ax = plt.subplots(figsize=(8,8))
+    ax.scatter(t['s_in'],t['s_out'],marker='.',s=5,color='grey',label='All beams')
+    ax.scatter(t['s_in'][pass_cont],t['s_out'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    ax.scatter(t['s_in'][pass_hi],t['s_out'][pass_hi],marker='s',
+               s=20,label='Good HI',
+               facecolors='none',edgecolors='#ff7f0e')
+    ax.set_xlabel('Inner noise')
+    ax.set_ylabel('Outer noise')
+    ax.set_xlim([25,100])
+    ax.set_ylim([25,100])
+    ax.plot([60,60],[0,1000],'k:')
+    ax.plot([0,1000],[60,60],'k:')
+    plt.legend()
+    pltname = 'inner_outer_noise.png'
+    plt.savefig(os.path.join(filedir,pltname))
+
+    #histogram of inner and outer noise
+    fig, (ax1, ax2) = plt.subplots(1,2,figsize=(12,6))
+    binvals = np.arange(25,100,0.1)
+    ax1.hist([t['s_in'],t['s_in'][pass_cont],t['s_in'][pass_hi]],
+             bins=binvals,
+             label=['All','Valid cont', 'Good HI'])
+    ax1.set_xlabel('Inner noise')
+    ax2.hist([t['s_out'],t['s_out'][pass_cont],t['s_out'][pass_hi]],
+             bins=binvals,
+             label=['All','Valid cont', 'Good HI'])
+    ax2.set_xlabel('Outer noise')
+    plt.legend()
+    pltname = 'noise_histogram.png'
+    plt.savefig(os.path.join(filedir,pltname))
+
+    #histogram of other criteria
+    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(18,6))
+    ratbins = np.arange(1,4,0.1)
+    ax1.hist([t['rat'],t['rat'][pass_cont],t['rat'][pass_hi]],
+             bins=ratbins,
+             label=['All','Valid cont', 'Good HI'])
+    ax1.set_xlabel('Ratio inner-to-outer noise')
+    n2bins = np.arange(1,15,.1)
+    ax2.hist([t['N2'],t['N2'][pass_cont],t['N2'][pass_hi]],
+             bins=n2bins,
+             label=['All','Valid cont', 'Good HI'])
+    ax2.set_xlabel('N2')
+    ex2bins = np.arange(0,4000,10)
+    ax3.hist([t['Ex-2'],t['Ex-2'][pass_cont],t['Ex-2'][pass_hi]],
+             bins=ex2bins,
+             label=['All','Valid cont', 'Good HI'])
+    ax3.set_xlabel('Ex-2')
+    ax1.legend()
+    pltname = 'hist_other_cont.png'
+    plt.savefig(os.path.join(filedir,pltname))
+
+    #compare other metrics
+    fig, ((ax1, ax2, ax3),(ax4,ax5,ax6)) = plt.subplots(2,3,figsize=(18,12))
+    #ratio vs N2
+    ax1.scatter(t['rat'],t['N2'],marker='.',s=5,color='grey',label='All beams')
+    ax1.scatter(t['rat'][pass_cont],t['N2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax1.scatter(t['rat'][pass_hi],t['N2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax1.scatter(t['rat'][pass_hi_not_cont],t['N2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax1.scatter(t['rat'][pass_cont_not_hi],t['N2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+    
+    ax1.set_xlabel('Ratio inner-to-outer noise')
+    ax1.set_ylabel('N2')
+    ax1.set_xlim([0.8,4])
+    ax1.set_ylim([0.8,10])
+    ax1.plot([1.225,1.225],[0,1000],'k--')
+    ax1.plot([1.15,1.15],[0,1000],'k:')
+    ax1.plot([0,1000],[4.5,4.5],'k:')
+    #zoom in on valid area
+    ax4.scatter(t['rat'],t['N2'],marker='.',s=5,color='grey',label='All beams')
+    ax4.scatter(t['rat'][pass_cont],t['N2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax4.scatter(t['rat'][pass_hi],t['N2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax4.scatter(t['rat'][pass_hi_not_cont],t['N2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax4.scatter(t['rat'][pass_cont_not_hi],t['N2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+
+    ax4.set_xlabel('Ratio inner-to-outer noise')
+    ax4.set_ylabel('N2')
+    ax4.set_xlim([1.0,2.0])
+    ax4.set_ylim([0.8,4.8])
+    ax4.plot([1.225,1.225],[0,1000],'k--')
+    ax4.plot([1.15,1.15],[0,1000],'k:')
+    ax4.plot([0,1000],[4.5,4.5],'k:')
+
+    #ratio vs Ex-2
+    print(np.nanmax(t['Ex-2']))
+    ax2.scatter(t['rat'],t['Ex-2'],marker='.',s=5,color='grey',label='All beams')
+    ax2.scatter(t['rat'][pass_cont],t['Ex-2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax2.scatter(t['rat'][pass_hi],t['Ex-2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax2.scatter(t['rat'][pass_hi_not_cont],t['Ex-2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax2.scatter(t['rat'][pass_cont_not_hi],t['Ex-2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+    ax2.set_xlabel('Ratio inner-to-outer noise')
+    ax2.set_ylabel('Ex-2')
+    ax2.set_xlim([0.8,4])
+    ax2.set_ylim([0,5050])
+    ax2.plot([1.225,1.225],[0,5050],'k--')
+    ax2.plot([1.15,1.15],[0,5050],'k:')
+    ax2.plot([0,1000],[400,400],'k:')
+    #zoom in on valid area
+    ax5.scatter(t['rat'],t['Ex-2'],marker='.',s=5,color='grey',label='All beams')
+    ax5.scatter(t['rat'][pass_cont],t['Ex-2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax5.scatter(t['rat'][pass_hi],t['Ex-2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax5.scatter(t['rat'][pass_hi_not_cont],t['Ex-2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax5.scatter(t['rat'][pass_cont_not_hi],t['Ex-2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+    ax5.set_xlabel('Ratio inner-to-outer noise')
+    ax5.set_ylabel('Ex-2')
+    ax5.set_xlim([1.0,2.0])
+    ax5.set_ylim([0,1000])
+    ax5.plot([1.225,1.225],[0,5050],'k--')
+    ax5.plot([1.15,1.15],[0,5050],'k:')
+    ax5.plot([0,1000],[400,400],'k:')
+
+    #N2 vs Ex-2
+    ax3.scatter(t['N2'],t['Ex-2'],marker='.',s=5,color='grey',label='All beams')
+    ax3.scatter(t['N2'][pass_cont],t['Ex-2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax3.scatter(t['N2'][pass_hi],t['Ex-2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax3.scatter(t['N2'][pass_hi_not_cont],t['Ex-2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax3.scatter(t['N2'][pass_cont_not_hi],t['Ex-2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+    ax3.set_xlabel('N2')
+    ax3.set_ylabel('Ex-2')
+    ax3.set_xlim([0.8,10])
+    ax3.set_ylim([0,5050])
+    ax3.plot([4.5,4.5],[0,10000],'k:')
+    ax3.plot([0,1000],[400,400],'k:')
+    #zoom in on valid area
+    ax6.scatter(t['N2'],t['Ex-2'],marker='.',s=5,color='grey',label='All beams')
+    ax6.scatter(t['N2'][pass_cont],t['Ex-2'][pass_cont],marker='o',
+               s=10,label='Valid continuum')
+    #ax6.scatter(t['N2'][pass_hi],t['Ex-2'][pass_hi],marker='s',
+    #           s=20,label='Good HI',
+    #           facecolors='none',edgecolors='#ff7f0e')
+    ax6.scatter(t['N2'][pass_hi_not_cont],t['Ex-2'][pass_hi_not_cont],marker='o',
+               s=10,label='Valid HI, fail cont')
+    ax6.scatter(t['N2'][pass_cont_not_hi],t['Ex-2'][pass_cont_not_hi],marker='o',
+               s=10,label='Valid continuum, fail HI')
+    ax6.set_xlabel('N2')
+    ax6.set_ylabel('Ex-2')
+    ax6.set_xlim([0.8,4.8])
+    ax6.set_ylim([0,1000])
+    ax6.plot([4.5,4.5],[0,5050],'k:')
+    ax6.plot([0,1000],[400,400],'k:')
+
+    ax1.legend()
+    pltname = 'other_cont_crit.png'
+    plt.savefig(os.path.join(filedir,pltname))
+
+    ascii.write(t[pass_cont_not_hi],
+                os.path.join(filedir,'combined_valid_pass_cont_not_hi.csv'),
+                overwrite = True,format='csv')
+
+    
+def compare_pol_cont_valid():
+    """
+    Compare continuum and polarization validation
+    """
+    #read file in
+    t = ascii.read(os.path.join(filedir,'combined_valid.csv'))
+    pass_cont = np.where(t['cont_pass'] == 'True')[0]
+    pass_pol_V = np.where(t['pol_V_pass'] == 'True')[0]
+    pass_pol_QU = np.where(t['pol_QU_pass'] == 'True')[0]
+    pass_both = np.where(
+        (t['cont_pass'] == 'True') &
+        (t['pol_V_pass'] == 'True') &
+        (t['pol_QU_pass'] == 'True') )[0]
+    #want to get those that pass continuum and not pol
+    #so they can be further investigated
+    #and maybe also the other way around
+    #and then maybe it's interesting to plot those points also?
+    #also have to think about which pol is passed
+    #actually, first just focus on QU vs V validation
+    pass_V_not_QU = np.where(
+        (t['pol_V_pass'] == 'True') &
+        (t['pol_QU_pass'] == 'False') )[0]
+    pass_QU_not_V = np.where(
+        (t['pol_QU_pass'] == 'True') &
+        (t['pol_V_pass'] == 'False') )[0]
+    
+    pass_cont_not_V = np.where(
+        (t['cont_pass'] == 'True') &
+        (t['pol_V_pass'] == 'False'))[0]
+    pass_cont_not_QU =  np.where(
+        (t['cont_pass'] == 'True') &
+        (t['pol_QU_pass'] == 'False'))[0]
+
+    
+
+    print("{} beams pass Stokes V".format(len(pass_pol_V)))
+    print("{} beams pass Stokes QU".format(len(pass_pol_QU)))
+    print("{} beams pass continuum".format(len(pass_cont)))
+    print("{} beams pass continuum and (all) Stokes".format(len(pass_both)))
+
+    
     #make some plots of continuum metrics
     #first inner vs. outer noise
     fig, ax = plt.subplots(figsize=(8,8))
