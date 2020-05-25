@@ -203,6 +203,9 @@ def combine_validation():
                 overwrite = True,format='csv')
 
 def compare_hi_cont_valid():
+    """
+    Compare HI and continuum validation
+    """
     #read file in
     t = ascii.read(os.path.join(filedir,'combined_valid.csv'))
     pass_cont = np.where(t['cont_pass'] == 'True')[0]
@@ -467,7 +470,32 @@ def compare_pol_cont_valid():
     print("{} beams pass continuum".format(len(pass_cont)))
     print("{} beams pass continuum and (all) Stokes".format(len(pass_both)))
 
+
+    #first how many pass V but not QU?
+    #that is not quite answered by printout above
+
+    pass_V_not_QU = np.where(
+        (t['pol_V_pass'] == 'True') &
+        (t['pol_QU_pass'] == 'False'))[0]
+    print("{} beams pass Stokes V but not QU".format(len(pass_V_not_QU)))
+
+    #then the question is whether these pass continuum or not
+    #that tells me whether I have to worry about this or not
+    #want to find pass cont, V but not QU
+    array_pass_cont_and_V = np.empty(len(t),dtype=bool)
+    for i in enumerate(array_pass_cont_and_V):
+        if (t['pol_V_pass'][i] == 'True') and (t['cont_pass'][i] == 'True'):
+            array_pass_cont_and_V[i] = True
+        else:
+            array_pass_cont_and_V[i] = False
+    pass_contV_not_QU = np.where( (array_pass_cont_and_V == True) &
+                                  (t['pol_QU_pass'] == 'False') )[0]
     
+    print("{} beams pass continuum and Stokes V but not QU".format(len(pass_contV_not_QU)))
+    #so there are 209 beams to potentially worry about here
+    #this is about ~50% of the beams that pass continuum but not pol
+
+    """ 
     #make some plots of continuum metrics
     #first inner vs. outer noise
     fig, ax = plt.subplots(figsize=(8,8))
@@ -646,6 +674,7 @@ def compare_pol_cont_valid():
     ascii.write(t[pass_cont_not_hi],
                 os.path.join(filedir,'combined_valid_pass_cont_not_hi.csv'),
                 overwrite = True,format='csv')
+    """
     
     
 #combine continuum informaiton
