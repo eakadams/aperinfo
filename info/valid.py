@@ -90,6 +90,8 @@ def combine_validation():
     t['pol_Ex-2'] = np.empty(table_length)
     t['pol_ftmax'] = np.empty(table_length)
     t['pol_peak_in'] = np.empty(table_length)
+    t['pol_P2'] = np.empty(table_length)
+    t['pol_bmin'] = np.empty(table_length)
     t['Q_bm_fg'] = np.empty(table_length)
     t['U_bm_fg'] = np.empty(table_length)
     t['Q_st_fg'] = np.empty(table_length)
@@ -150,6 +152,8 @@ def combine_validation():
             t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
             t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
             t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
+            t['pol_P2'][ind] = pol['P2'][pol_ind]
+            t['pol_bmin'][ind] = pol['bmin'][pol_ind]
             t['Q_bm_fg'][ind] = pol['Q_bm_fg'][pol_ind]
             t['U_bm_fg'][ind] = pol['U_bm_fg'][pol_ind]
             t['Q_st_fg'][ind] = pol['Q_st_fg'][pol_ind]
@@ -477,6 +481,7 @@ def compare_pol_cont_valid():
     print("{} beams pass Stokes QU".format(len(pass_pol_QU)))
     print("{} beams pass continuum".format(len(pass_cont)))
     print("{} beams pass continuum and (all) Stokes".format(len(pass_both)))
+    print("{} beams pass continuum and fail (all) pol".format(len(pass_cont)-len(pass_both)))
 
 
     #first how many pass V but not QU?
@@ -485,7 +490,7 @@ def compare_pol_cont_valid():
     pass_V_not_QU = np.where(
         (t['pol_V_pass'] == 'True') &
         (t['pol_QU_pass'] == 'False'))[0]
-    print("{} beams pass Stokes V but not QU".format(len(pass_V_not_QU)))
+    #print("{} beams pass Stokes V but not QU".format(len(pass_V_not_QU)))
 
     #then the question is whether these pass continuum or not
     #that tells me whether I have to worry about this or not
@@ -505,7 +510,68 @@ def compare_pol_cont_valid():
 
     #first check beam issue - this shouldn't be it
     #check for where pass cont and Q_bm_fg > .3
+    pass_cont_notQbeam = np.where( (t['cont_pass'] == 'True') &
+                                   (t['Q_bm_fg'] > 0.33) )[0]
+    pass_contV_notQbeam = np.where( (array_pass_cont_and_V == True) &
+                                   (t['Q_bm_fg'] > 0.33) )[0]
 
+    print("{} beams pass continuum but not Q beam".format(len(pass_cont_notQbeam)))
+    print("{} beams pass continuum/V but not Q beam".format(len(pass_contV_notQbeam)))
+
+    #print these out because they're possibly interesting
+    ascii.write(t[pass_cont_notQbeam],
+                os.path.join(filedir,'pass_cont_notQbeam.csv'),
+                overwrite = True,format='csv')
+
+    #so, about half that fail polarization are becasue of QU beam size
+    #now investigate those which pass continuum but fail V
+
+    print("{} beams pass continuum but not V".format(len(pass_cont_not_V)))
+    #find which V metrics they fail
+    fail_sigma_in = np.where(t['pol_s_in'][pass_cont_not_V] > 60.)[0]
+    fail_sigma_out = np.where(t['pol_s_out'][pass_cont_not_V] > 60.)[0]
+
+    print("{} beams fail because of sigma in".format(len(fail_sigma_in)))
+    print("{} beams fail because of sigma out".format(len(fail_sigma_out)))
+    #not a major cause
+
+    fail_ftmax = np.where(t['pol_ftmax'][pass_cont_not_V] > 25)[0]
+    fail_pin = np.where(t['pol_peak_in'][pass_cont_not_V] > 4000)[0]
+    print("{} beams fail because of FTmax".format(len(fail_ftmax)))
+    print("{} beams fail because of peak inner".format(len(fail_pin)))
+    #peak inner seems to be main cause - all those that fail V are because of it
+    #doesn't mean other things might not contribute
+
+    print(np.nanmin(t['pol_peak_in'][pass_cont_not_V]),np.nanmax(t['pol_peak_in'][pass_cont_not_V]),np.nanmedian(t['pol_peak_in'][pass_cont_not_V]))
+
+    #but what are units?
+    #look at this more closely, make histograms.....
+    #think that if I treat peak_in as uJy, then failures are no longer so bad.....
+
+    fail_rat = np.where( (t['pol_rat'][pass_cont_not_V] < 0.99) &
+                         (t['pol_rat'][pass_cont_not_V] > 1.1 ) )[0]
+    fail_combi = np.where( (t['pol_rat'][pass_cont_not_V] > 1.05) &
+                           (t['pol_N2'][pass_cont_not_V] > 1.1) &
+                           (t['pol_Ex-2'][pass_cont_not_V] > 1000) &
+                           (t['pol_P2'][pass_cont_not_V] > 1.1 ) )[0]
+    fail_beam = np.where( t['pol_bmin'][pass_cont_not_V] > 15. )[0]
+    fail_n2_p2 = np.where( (t['pol_N2'][pass_cont_not_V] < 0.9) &
+                           (t['pol_P2'][pass_cont_not_V] < 0.9) )[0]
+    
+    print("{} beams fail because of ratio requirements".format(len(fail_rat)))
+    print("{} beams fail because of combination requirement".format(len(fail_combi)))
+    print("{} beams fail because of beam requirements".format(len(fail_beam)))
+    print("{} beams fail because of N2/P2 requirements".format(len(fail_n2_p2)))
+
+    #combined requirement is one that causest most beams to fail
+    #if changed tomatch tom, what happens?
+    fail_combi_tom = np.where( (t['pol_rat'][pass_cont_not_V] > 1.15) &
+                               (t['pol_N2'][pass_cont_not_V] > 4.5) &
+                               (t['pol_Ex-2'][pass_cont_not_V] > 400) )[0]
+    
+    print("{} beams fail when same combination requirement as cont is used".format(len(fail_combi_tom)))
+
+    
     """ 
     #make some plots of continuum metrics
     #first inner vs. outer noise
