@@ -38,7 +38,7 @@ def get_obslist():
     obslist = atdbquery.atdbquery('imaging',False,False)
     return obslist
 
-def get_obstable(write=False):
+def get_obstable(write=True):
     """
     Get a table object that has basic observational information I want
     """
@@ -103,13 +103,17 @@ def get_obstable(write=False):
                                    'telescopes','duration','quality',
                                    'beamPattern']
     #if indicated, write tables out to a record
-    #don't do by default so don't build things up while testing
-    #use the current date
+    #use the current date, to keep a record
+    #also write to one w/ no date for regular observations (most up to date)
+    #can be used by default in other things
     #get the date
     date = datetime.today().strftime('%Y-%m-%d')
     if write is True:
         ascii.write(obstable,
                     os.path.join(filedir,'obsatdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(obstable,
+                    os.path.join(filedir,'obsatdb.csv'),
                     format='csv')
         ascii.write(argoobs,
                     os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
