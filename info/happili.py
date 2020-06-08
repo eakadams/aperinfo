@@ -141,11 +141,13 @@ def get_cal_info(taskdir):
     #Could use OSA reports, but don't always exist
     #better to get directly
     #first cal is on happili-01, last on happili-04
+    print(taskdir)
     taskid = taskdir[-9:]
     path1 = os.path.join(taskdir,"qa/{0}_obs.ecsv".format(taskid))
     path4 = path1[0:5] + "4" + path1[5:]
     info1 = ascii.read(path1)
     info4 = ascii.read(path4)
+    print(info1.colnames)
     fluxcal = info1['Flux_Calibrator'][0]
     fluxstring1 = info1['Flux_Calibrator_Obs_IDs'][0]
     fluxid_start = fluxstring1[0:9]
