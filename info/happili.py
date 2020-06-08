@@ -130,7 +130,8 @@ def make_happili_obs_table():
         t['polcal_lasttaskid'][i] = polid_end
 
     #write table out
-    ascii.write(t,os.path.join(filedir,'happili.csv'),format='csv')
+    ascii.write(t,os.path.join(filedir,'happili.csv'),format='csv',
+                overwrite=True)
 
 
 
@@ -157,15 +158,23 @@ def get_cal_info(taskdir):
         fluxcal = None
         polcal = None
     #not all files have id info, so try except
+    #define variables first, w/ placeholder
+    fluxid_start = None
+    fluxid_end = None
+    polid_start = None
+    polid_end = None
     try:
         fluxstring1 = info1['Flux_Calibrator_Obs_IDs'][0]
         fluxid_start = fluxstring1[0:9]
         fluxstring4 = info4['Flux_Calibrator_Obs_IDs'][0]
-        fluxid_end = fluxstring[-9:]
+        #print(info1.colnames())
+        fluxid_end = fluxstring4[-9:]
         polstring1 = info1['Pol_Calibrator_Obs_IDs'][0]
+        #print(polstring1)
         polid_start = polstring1[0:9]
         polstring4 = info4['Pol_Calibrator_Obs_IDs'][0]
-        polid_end = polstring[-9:]
+        polid_end = polstring4[-9:]
+        print(polid_end)
     except:
         fluxid_start = None
         fluxid_end = None
