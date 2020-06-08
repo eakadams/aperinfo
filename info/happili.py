@@ -131,6 +131,7 @@ def make_happili_obs_table():
     ascii.write(t,os.path.join(filedir,'happili.csv',format='csv')
 
 
+
 def get_cal_info(taskdir):
     """
     Helper script to retrieve calibrator information
