@@ -53,8 +53,8 @@ def make_happili_obs_table():
     #make a table that is the same length
     #create columns that want in the end
     t=Table()
-    t['taskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
-    t['fluxcal'] = np.full(len(tasklist),'3C???',dtype=str)
+    t['taskid'] = np.full(len(tasklist),'YYMMDDTTT')
+    t['fluxcal'] = np.full(len(tasklist),'3C???')
     t['fluxcal_firsttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
     t['fluxcal_lasttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
     t['polcal'] = np.full(len(tasklist),'3C???',dtype=str)
