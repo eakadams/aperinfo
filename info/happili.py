@@ -128,7 +128,7 @@ def make_happili_obs_table():
         t['polcal_lasttaskid'][i] = polid_end
 
     #write table out
-    ascii.write(t,os.path.join(filedir,'happili.csv',format='csv'))
+    ascii.write(t,os.path.join(filedir,'happili.csv'),format='csv'))
 
 
 
