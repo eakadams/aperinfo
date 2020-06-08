@@ -53,14 +53,15 @@ def make_happili_obs_table():
     #make a table that is the same length
     #create columns that want in the end
     t=Table()
-    t['taskid'] = np.empty(len(tasklist),dtype=str)
-    t['fluxcal'] = np.empty(len(tasklist),dtype=str)
-    t['fluxcal_firsttaskid'] = np.empty(len(tasklist),dtype=str)
-    t['fluxcal_lasttaskid'] = np.empty(len(tasklist),dtype=str)
-    t['polcal'] = np.empty(len(tasklist),dtype=str)
-    t['polcal_firsttaskid'] = np.empty(len(tasklist),dtype=str)
-    t['polcal_lasttaskid'] = np.empty(len(tasklist),dtype=str)
-    t['apercal_version'] = np.empty(len(tasklist),dtype=str)
+    t['taskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
+    t['fluxcal'] = np.full(len(tasklist),'3C???',dtype=str)
+    t['fluxcal_firsttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
+    t['fluxcal_lasttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
+    t['polcal'] = np.full(len(tasklist),'3C???',dtype=str)
+    t['polcal_firsttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
+    t['polcal_lasttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
+    t['apercal_version'] = np.full(len(tasklist),'v?.?-N-12345678',dtype=str)
+    """
     t['apercal_01_runtime']=np.empty(len(tasklist),dtype=str)
     t['apercal_02_runtime']=np.empty(len(tasklist),dtype=str)
     t['apercal_03_runtime']=np.empty(len(tasklist),dtype=str)
@@ -101,7 +102,8 @@ def make_happili_obs_table():
     t['apercal_04_runtime_selfcal+continuum+polarisation'] = np.empty(len(tasklist),dtype=str)
     t['apercal_04_runtime_line'] = np.empty(len(tasklist),dtype=str)
     t['apercal_04_runtime_tranfer'] = np.empty(len(tasklist),dtype=str)
-    
+    """    
+
     #once all columns are defined
     #iterate through and fill the table
     for i,task in enumerate(tasklist):
