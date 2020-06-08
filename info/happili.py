@@ -19,11 +19,12 @@ from astropy.io import ascii
 from datetime import datetime
 import os
 
-#should be updated for local location
-#need to figure out to make this global
-#and a level above
-#but I'm lazy
-filedir = "/home/adams/aperinfo/files/"
+#global definition (hacky) of filedir
+#filedir = "../files/"
+this_dir,this_filename = os.path.split(__file__)
+aperinfodir = this_dir[:-4]
+filedir = os.path.join(aperinfodir,"files")
+#print(filedir)
 
 
 def get_dir_list():
@@ -52,7 +53,13 @@ def make_happili_obs_table():
     #make a table that is the same length
     #create columns that want in the end
     t=Table()
-    t['taskid'] = np.empty(len(tasklist),dtype=str)
+    t['taskid'] = np.empty(len(tasklist),dtype=str))
+    t['fluxcal'] = np.empty(len(tasklist),dtype=str))
+    t['fluxcal_firsttaskid'] = np.empty(len(tasklist),dtype=str))
+    t['fluxcal_lasttaskid'] = np.empty(len(tasklist),dtype=str))
+    t['polcal'] = np.empty(len(tasklist),dtype=str))
+    t['polcal_firsttaskid'] = np.empty(len(tasklist),dtype=str))
+    t['polcal_lasttaskid'] = np.empty(len(tasklist),dtype=str))
     t['apercal_version'] = np.empty(len(tasklist),dtype=str)
     t['apercal_01_runtime']=np.empty(len(tasklist),dtype=str)
     t['apercal_02_runtime']=np.empty(len(tasklist),dtype=str)
@@ -107,7 +114,49 @@ def make_happili_obs_table():
         t['apercal_version'][i]=apercal_vers
         #get apercal run times
         #do to read csv on each happili, then have all info
-        run_times_01 = get_run_times(task)
+        #run_times_01 = get_run_times(task)
+        #skip run times for now - not critical
+        #informational and want to do
+        #but calibrator / apercal information is what is needed now
+        (fluxcal, fluxid_start, fluxid_end,
+         polcal, polid_start, polid_end) = get_cal_info(task)
+        t['fluxcal'][i] = fluxcal
+        t['fluxcal_firsttaskid'][i] = fluxid_start
+        t['fluxcal_lasttaskid'][i] = fluxid_end
+        t['polcal'][i] = polcal
+        t['polcal_firsttaskid'][i] = polid_start
+        t['polcal_lasttaskid'][i] = polid_end
+
+    #write table out
+    ascii.write(t,os.path.join(filedir,'happili.csv',format='csv')
+
+
+def get_cal_info(taskdir):
+    """
+    Helper script to retrieve calibrator information
+    Inputs:
+        taskdir (str): Full path for taskid on happili-01
+    """
+    #Could use OSA reports, but don't always exist
+    #better to get directly
+    #first cal is on happili-01, last on happili-04
+    taskid = taskdir[-9:]
+    path1 = os.path.join(taskdir,"qa/{0}_obs.ecsv".format(taskid))
+    path4 = path1[0:5] + "4" + path1[5:]
+    info1 = ascii.read(path1)
+    info4 = ascii.read(path4)
+    fluxcal = info1['Flux_Calibrator'][0]
+    fluxstring1 = info1['Flux_Calibrator_Obs_IDs'][0]
+    fluxid_start = fluxstring1[0:9]
+    fluxstring4 = info4['Flux_Calibrator_Obs_IDs'][0]
+    fluxid_end = fluxstring[-9:]
+    polcal = info1['Pol_Calibrator'][0]
+    polstring1 = info1['Pol_Calibrator_Obs_IDs'][0]
+    polid_start = polstring1[0:9]
+    polstring4 = info4['Pol_Calibrator_Obs_IDs'][0]
+    polid_end = polstring[-9:]
+
+    return fluxcal, fluxid_start, fluxid_end, polcal, polid_start, polid_end
 
 def get_run_times(taskdir):
     """
@@ -121,6 +170,11 @@ def get_run_times(taskdir):
     Outputs:
         runtimes (nparrary): 4x9 array with run time information
     """
+    path1 = os.path.join(taskdir,'qa/apercal_performance/apercal_log_timeinfo_happili-01.csv')
+    path2 = path1[0:5] + "2" + path1[5:-5] + "2" + path1[-4:]
+    path3 = path1[0:5] + "2" + path1[5:-5] + "2" + path1[-4:]
+    path4 = path1[0:5] + "2" + path1[5:-5] + "2" + path1[-4:]
+    runtimes01 = ascii.read(path1)
     
     
 
@@ -156,25 +210,5 @@ def get_apercal_version(taskdir):
 
     return apercal_vers
     
-def make_happili_beam_table():
-    """
-    Make a beam-based table based on happili information
-    This is a longer table that has an entry per taskid/beam pair
-    """
-    
-def update_happili_obstable(oldobsfile):
-    """
-    Take an older observation file
-    Only update for the new taskids
-    Need to test/confirm this is faster 
-    than regenerating everything
-    """
-    
-def update_happili_beamtable(oldbeamfile):
-    """
-    Take an older beam-based file
-    Only update for the new taskids
-    Need to test/confirm this is faster 
-    than regenerating everything
-    """
+
     
