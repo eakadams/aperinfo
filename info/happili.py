@@ -144,10 +144,16 @@ def get_cal_info(taskdir):
     taskid = taskdir[-9:]
     path1 = os.path.join(taskdir,"qa/{0}_obs.ecsv".format(taskid))
     path4 = path1[0:5] + "4" + path1[5:]
-    info1 = ascii.read(path1)
-    info4 = ascii.read(path4)
-    fluxcal = info1['Flux_Calibrator'][0]
-    polcal = info1['Pol_Calibrator'][0]
+    #add a try except in file doesn't exist
+    #this would indicate a processing / autocal issue
+    try:
+        info1 = ascii.read(path1)
+        info4 = ascii.read(path4)
+        fluxcal = info1['Flux_Calibrator'][0]
+        polcal = info1['Pol_Calibrator'][0]
+    except:
+        fluxcal = None
+        polcal = None
     #not all files have id info, so try except
     try:
         fluxstring1 = info1['Flux_Calibrator_Obs_IDs'][0]
