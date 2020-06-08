@@ -60,7 +60,7 @@ def make_happili_obs_table():
     t['polcal'] = np.full(len(tasklist),'3C???',dtype=str)
     t['polcal_firsttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
     t['polcal_lasttaskid'] = np.full(len(tasklist),'YYMMDDTTT',dtype=str)
-    t['apercal_version'] = np.full(len(tasklist),'v?.?-N-12345678',dtype=str)
+    t['apercal_version'] = np.full(len(tasklist),'v?.?-NNN-12345678',dtype=str)
     """
     t['apercal_01_runtime']=np.empty(len(tasklist),dtype=str)
     t['apercal_02_runtime']=np.empty(len(tasklist),dtype=str)
