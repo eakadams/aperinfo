@@ -188,6 +188,7 @@ def get_apercal_version(taskdir):
     Outputs:
          apercal_vers (str): Apercal version. None if no version
     """
+    taskid = taskdir[-9:]
     logfile_name = os.path.join(taskdir, "apercal.log")
     search_phrase = "Apercal version:"
     # make sure the logfile exists
