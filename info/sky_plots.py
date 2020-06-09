@@ -167,7 +167,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         #get pixel coordinates:
         xp,yp=annim.topixel(ra,dec)
         annim.Marker(x=xp,y=yp,
-                     marker='o',mode='pixel',markersize=1, color=cname,
+                     marker='o',mode='pixel',markersize=10, color=cname,
                      label = labname)
 
     #make figure

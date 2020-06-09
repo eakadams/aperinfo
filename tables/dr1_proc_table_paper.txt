@@ -1,0 +1,25 @@
+\begin{table}
+\begin{tabular}{ccccccc}
+taskid & beam & Field & pol_V_pass & pol_QU_pass & HI_all_good & HI_c2_good \\
+190807041 & 1 & M1403+5324 & True & True & False & False \\
+190807041 & 8 & M1403+5324 & True & True & False & False \\
+190807041 & 15 & M1403+5324 & True & True & True & True \\
+190807041 & 32 & M1403+5324 & True & True & True & True \\
+190807041 & 33 & M1403+5324 & True & True & True & True \\
+190807042 & 1 & M0155+3130 & True & True & False & False \\
+190807042 & 3 & M0155+3130 & True & True & True & True \\
+190807042 & 6 & M0155+3130 & True & True & True & True \\
+190807042 & 8 & M0155+3130 & True & True & True & True \\
+190807042 & 10 & M0155+3130 & True & True & False & False \\
+190807042 & 11 & M0155+3130 & True & True & True & True \\
+190807042 & 15 & M0155+3130 & True & True & False & False \\
+190807042 & 23 & M0155+3130 & True & True & False & False \\
+190807042 & 33 & M0155+3130 & False & True & True & True \\
+190807042 & 34 & M0155+3130 & True & True & True & True \\
+190807042 & 38 & M0155+3130 & True & True & False & True \\
+190808041 & 3 & S2306+3130 & True & True & True & True \\
+190808041 & 4 & S2306+3130 & True & True & True & True \\
+190808041 & 5 & S2306+3130 & True & True & True & True \\
+190808041 & 8 & S2306+3130 & True & True & True & True \\
+\end{tabular}
+\end{table}

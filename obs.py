@@ -28,6 +28,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 from kapteyn import maputils
 from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
+import info.sky_plots as sp
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -121,8 +122,33 @@ class ObsCat(object):
                     os.path.join(tabledir,'obs_dr1.csv'),
                     format='csv',
                     overwrite=True)
-                    
 
+    def plot_apercal_dr1(self):
+        """
+        Sky plot of Apercal processing
+        """
+        #have to get separate lists for each Apercal processing
+        #get unique names
+        apercal_names = np.unique(self.dr1['apercal_name'])
+        #get colors
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        mpcolors = prop_cycle.by_key()['color']
+        colorlist = mpcolors[0:len(apercal_names)]
+        #get ra and dec list
+        ralist = []
+        declist = []
+        for name in apercal_names:
+            ind = np.where(self.dr1['apercal_name'] == name)[0]
+            ra = self.dr1['field_ra'][ind]
+            dec = self.dr1['field_dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+        #make the plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            apercal_names,
+                            os.path.join(figdir,'apercal_processing_dr1.pdf'))
 
 def get_apercal_name(version,process=True):
     """
