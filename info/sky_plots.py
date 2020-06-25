@@ -151,11 +151,11 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     # Plot labels inside the plot
     lon_constval = None
     lat_constval = 20
-    lon_kwargs = {'color':'r', 'fontsize':15}
-    lat_kwargs = {'color':'b', 'fontsize':10}
+    lon_kwargs = {'color':'k', 'fontsize':12}
+    lat_kwargs = {'color':'k', 'fontsize':12}
     grat.Insidelabels(wcsaxis=0,
                       world=lon_world, constval=lat_constval,
-                      fmt="Dms",
+                      fmt="Hms",
                       **lon_kwargs)
     grat.Insidelabels(wcsaxis=1,
                       world=lat_world, constval=lon_constval,
@@ -167,7 +167,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         #get pixel coordinates:
         xp,yp=annim.topixel(ra,dec)
         annim.Marker(x=xp,y=yp,
-                     marker='o',mode='pixel',markersize=10, color=cname,
+                     marker='o',mode='pixel',markersize=8, color=cname,
                      label = labname)
 
     #make figure
@@ -176,6 +176,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     plt.legend()
     #save fig
     plt.savefig(figname)
+    plt.close()
     
     
 #annim.plot()

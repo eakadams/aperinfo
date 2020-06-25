@@ -837,6 +837,8 @@ def combine_continuum():
 def combine_pol():
     """
     Use knowledge of structure
+    Note that polarization informaiton is updated via:
+    rsync -arvt happili-05.astron.nl:/tank/apertif/qa/polarisation/ pol_valid/
     """
     #pol valid directory
     poldir = os.path.join(filedir,"pol_valid")

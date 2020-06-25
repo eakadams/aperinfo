@@ -103,10 +103,14 @@ class ObsCat(object):
             else:
                 self.dr1_obs['apercal_name'][i] = "None"
 
+        """
+        This is only for processed data, still releasing for raw 
+        observational data
         #check for 300 MHz processing and remove from consideration for release
         ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
         print(len(self.dr1_obs),len(ind_good_proc))
         self.dr1_obs = self.dr1_obs[ind_good_proc]
+        """
 
     #make MR table for online publication
     def make_dr1_obs_mr(self):
@@ -138,25 +142,85 @@ class ObsCat(object):
         #have to get separate lists for each Apercal processing
         #get unique names
         apercal_names = np.unique(self.dr1_obs['apercal_name'])
+        #add a name for medium-deep
+        apercal_names = np.append(apercal_names,'AMES')
         #get colors
         prop_cycle = plt.rcParams['axes.prop_cycle']
         mpcolors = prop_cycle.by_key()['color']
         colorlist = mpcolors[0:len(apercal_names)]
-        #get ra and dec list
+        #get ra and dec list; need to first separate medium-deep pointings
+        ind_ames = [i for i, s in enumerate(self.dr1_obs['name']) if 'M' in s]
+        ind_awes = [i for i, s in enumerate(self.dr1_obs['name']) if 'S' in s]
+        self.dr1_ames =  self.dr1_obs[ind_ames]
+        self.dr1_awes =  self.dr1_obs[ind_awes]
+        
         ralist = []
         declist = []
-        for name in apercal_names:
+        for name in apercal_names[0:-1]:
             ind = np.where(self.dr1_obs['apercal_name'] == name)[0]
             ra = self.dr1_obs['field_ra'][ind]
             dec = self.dr1_obs['field_dec'][ind]
             ralist.append(ra)
             declist.append(dec)
-        #make the plot
+
+        #add ames to end
+        ra = self.dr1_ames['field_ra']
+        dec = self.dr1_ames['field_dec']
+        ralist.append(ra)
+        declist.append(dec)
+        
+        #make the plots
+        #want to separate medium-deep points so can plot separately
+        #all sky plot
         sp.sky_plot_kapteyn(ralist,
                             declist,
                             colorlist,
                             apercal_names,
                             os.path.join(figdir,'apercal_processing_dr1_obs.pdf'))
+
+        #need to add a separate medium-deep plot
+        #first sort by field name
+        field_name = np.flip(np.sort(np.unique(self.dr1_ames['name'])))
+
+        #then create plot coordinates for everything
+        #base on field name, want to be in same row
+        plot_x = np.full(len(self.dr1_ames),-10)
+        plot_y = np.full(len(self.dr1_ames),-10)
+
+        for i, field in enumerate(field_name):
+            ames_ind = np.where(self.dr1_ames['name'] == field)[0]
+            #all fields in same row, same y coord
+            #offset by 1 for ease of plotting
+            plot_y[ames_ind] = i+1
+            #for x coordinate, have to iterate through all fields
+            #offset by 1 again for plot legibility
+            for k in range(len(ames_ind)):
+                plot_x[ames_ind[k]] = k+1
+
+        #setup figure
+        #fig, ax = plt.subplots(figsize=[6,4])
+        fig = plt.figure(figsize=[6,4])
+        ax = fig.add_axes([0.2, 0.15, .75, .75 ])
+
+
+        #have coordinates for al fields, now have to iterate over Apercal name for colors
+        #skip last one, placeholder for AMES
+        for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
+            plotind = np.where(self.dr1_ames['apercal_name'] == name)[0]
+            ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
+
+        #plt.legend()
+
+        ax.set_yticks(list(range(1,len(field_name)+1)))
+        ax.set_yticklabels(list(field_name))
+
+        ax.set_title('Medium-deep fields')
+        ax.set_xlabel('Number of observations')
+
+        plotname = os.path.join(figdir,'apercal_processing_dr1_ames.pdf')
+        plt.savefig(plotname)
+        plt.close()
+        
 
 #define class that is beam-based for processed data
 #inherits from ObsCat so that I can keep that work
@@ -184,6 +248,10 @@ class ProcCat(ObsCat):
         """
         #first get obs info
         self.get_dr1_obs()
+        #check for 300 MHz processing and remove from consideration for release
+        ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
+        print(len(self.dr1_obs),len(ind_good_proc))
+        self.dr1_obs = self.dr1_obs[ind_good_proc]
         #now get the corresponding beam information
         #only want infomration for taskids that are in dr1_obs
         #and which pass validation
