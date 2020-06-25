@@ -32,6 +32,7 @@ from astropy import units as u
 from kapteyn import maputils
 from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
 import info.sky_plots as sp
+import pandas as pd
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -182,13 +183,35 @@ class ObsCat(object):
         #first sort by field name
         field_name = np.flip(np.sort(np.unique(self.dr1_ames['name'])))
 
+        #also want to find only those that have duplicates, e.g., multiple observations
+        s = pd.Series(self.dr1_ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
+
+
+        #need to find part dr1_ames that contains repeated_fields above
+        #match two string arrays...
+        #almost could get info from pd dup object but it doesn't count first occurence
+        ind_repeats = []
+        for field in repeated_fields:
+            ind = [i for i, s in enumerate(self.dr1_ames['name']) if field in s]
+            ind_repeats.append(ind)
+
+        repeat_array = np.sort(np.hstack(ind_repeats))
+        #np.sort(ind_repeats)
+        print(repeat_array)
+
+        self.dr1_repeated_ames = self.dr1_ames[repeat_array]
+
+        print(len(self.dr1_repeated_ames))
+
         #then create plot coordinates for everything
         #base on field name, want to be in same row
-        plot_x = np.full(len(self.dr1_ames),-10)
-        plot_y = np.full(len(self.dr1_ames),-10)
+        plot_x = np.full(len(self.dr1_repeated_ames),-10)
+        plot_y = np.full(len(self.dr1_repeated_ames),-10)
 
-        for i, field in enumerate(field_name):
-            ames_ind = np.where(self.dr1_ames['name'] == field)[0]
+        for i, field in enumerate(np.unique(self.dr1_repeated_ames['name'])):
+            ames_ind = np.where(self.dr1_repeated_ames['name'] == field)[0]
             #all fields in same row, same y coord
             #offset by 1 for ease of plotting
             plot_y[ames_ind] = i+1
@@ -206,13 +229,13 @@ class ObsCat(object):
         #have coordinates for al fields, now have to iterate over Apercal name for colors
         #skip last one, placeholder for AMES
         for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
-            plotind = np.where(self.dr1_ames['apercal_name'] == name)[0]
+            plotind = np.where(self.dr1_repeated_ames['apercal_name'] == name)[0]
             ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
 
         #plt.legend()
 
-        ax.set_yticks(list(range(1,len(field_name)+1)))
-        ax.set_yticklabels(list(field_name))
+        ax.set_yticks(list(range(1,len(np.unique(self.dr1_repeated_ames['name']))+1)))
+        ax.set_yticklabels(list(np.unique(self.dr1_repeated_ames['name'])))
 
         ax.set_title('Medium-deep fields')
         ax.set_xlabel('Number of observations')
