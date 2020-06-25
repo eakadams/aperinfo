@@ -154,34 +154,7 @@ class ObsCat(object):
         ind_awes = [i for i, s in enumerate(self.dr1_obs['name']) if 'S' in s]
         self.dr1_ames =  self.dr1_obs[ind_ames]
         self.dr1_awes =  self.dr1_obs[ind_awes]
-        
-        ralist = []
-        declist = []
-        for name in apercal_names[0:-1]:
-            ind = np.where(self.dr1_obs['apercal_name'] == name)[0]
-            ra = self.dr1_obs['field_ra'][ind]
-            dec = self.dr1_obs['field_dec'][ind]
-            ralist.append(ra)
-            declist.append(dec)
 
-        #add ames to end
-        ra = self.dr1_ames['field_ra']
-        dec = self.dr1_ames['field_dec']
-        ralist.append(ra)
-        declist.append(dec)
-        
-        #make the plots
-        #want to separate medium-deep points so can plot separately
-        #all sky plot
-        sp.sky_plot_kapteyn(ralist,
-                            declist,
-                            colorlist,
-                            apercal_names,
-                            os.path.join(figdir,'apercal_processing_dr1_obs.pdf'))
-
-        #need to add a separate medium-deep plot
-        #first sort by field name
-        field_name = np.flip(np.sort(np.unique(self.dr1_ames['name'])))
 
         #also want to find only those that have duplicates, e.g., multiple observations
         s = pd.Series(self.dr1_ames['name'])
@@ -202,6 +175,34 @@ class ObsCat(object):
         print(repeat_array)
 
         self.dr1_repeated_ames = self.dr1_ames[repeat_array]
+        
+        ralist = []
+        declist = []
+        for name in apercal_names[0:-1]:
+            ind = np.where(self.dr1_obs['apercal_name'] == name)[0]
+            ra = self.dr1_obs['field_ra'][ind]
+            dec = self.dr1_obs['field_dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        #add repeated ames to end
+        ra = self.dr1_repeated_ames['field_ra']
+        dec = self.dr1_repeated_ames['field_dec']
+        ralist.append(ra)
+        declist.append(dec)
+        
+        #make the plots
+        #want to separate medium-deep points so can plot separately
+        #all sky plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            apercal_names,
+                            os.path.join(figdir,'apercal_processing_dr1_obs.pdf'))
+
+        #need to add a separate medium-deep plot
+        #first sort by field name
+        field_name = np.flip(np.sort(np.unique(self.dr1_repeated_ames['name'])))
 
         print(len(self.dr1_repeated_ames))
 
@@ -210,7 +211,7 @@ class ObsCat(object):
         plot_x = np.full(len(self.dr1_repeated_ames),-10)
         plot_y = np.full(len(self.dr1_repeated_ames),-10)
 
-        for i, field in enumerate(np.unique(self.dr1_repeated_ames['name'])):
+        for i, field in enumerate(field_name):
             ames_ind = np.where(self.dr1_repeated_ames['name'] == field)[0]
             #all fields in same row, same y coord
             #offset by 1 for ease of plotting
@@ -234,8 +235,8 @@ class ObsCat(object):
 
         #plt.legend()
 
-        ax.set_yticks(list(range(1,len(np.unique(self.dr1_repeated_ames['name']))+1)))
-        ax.set_yticklabels(list(np.unique(self.dr1_repeated_ames['name'])))
+        ax.set_yticks(list(range(1,len(field_name)+1)))
+        ax.set_yticklabels(list(field_name))
 
         ax.set_title('Medium-deep fields')
         ax.set_xlabel('Number of observations')
