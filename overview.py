@@ -59,14 +59,51 @@ class ObsCat(object):
         #obsinfo as supplementary information
         self.obsinfo = ascii.read(obsfile)
         self.happili = ascii.read(happilifile)
+        #merge happili info into obsinfo
+        #get indices
+        (taskids, ind_obs,
+         ind_happili) = np.intersect1d(self.obsinfo['taskID'],self.happili['taskid'],
+                                       return_indices=True)
+        #create columns for happili info
+        self.obsinfo['fluxcal'] = np.full(len(self.obsinfo),'3C???')
+        self.obsinfo['flux_first'] = np.full(len(self.obsinfo),'YYMMDDNNN')
+        self.obsinfo['flux_last'] = np.full(len(self.obsinfo),'YYMMDDNNN')
+        self.obsinfo['polcal'] = np.full(len(self.obsinfo),'3C???')
+        self.obsinfo['pol_first'] = np.full(len(self.obsinfo),'YYMMDDNNN')
+        self.obsinfo['pol_last'] = np.full(len(self.obsinfo),'YYMMDDNNN')
+        self.obsinfo['apercal_version'] = np.full(len(self.obsinfo),'v0.0-???-githash-')
+        #then add columns from happili info
+        #first have to create colum
+        self.obsinfo['fluxcal'][ind_obs] = self.happili['fluxcal'][ind_happili]
+        self.obsinfo['flux_first'][ind_obs] = self.happili['fluxcal_firsttaskid'][ind_happili]
+        self.obsinfo['flux_last'][ind_obs] = self.happili['fluxcal_lasttaskid'][ind_happili]
+        self.obsinfo['polcal'][ind_obs] = self.happili['polcal'][ind_happili]
+        self.obsinfo['pol_first'][ind_obs] = self.happili['polcal_firsttaskid'][ind_happili]
+        self.obsinfo['pol_last'][ind_obs] = self.happili['polcal_lasttaskid'][ind_happili]
+        self.obsinfo['apercal_version'][ind_obs] = self.happili['apercal_version'][ind_happili]
 
+        #update for apercal name; need mapping
+        self.obsinfo['apercal_name'] = np.full(len(self.obsinfo),'12345678901234567890123456')
+        for i,version in enumerate(self.obsinfo['apercal_version']):
+            #print(version)
+            if version == "v0.0-???-githash-":
+                self.obsinfo['apercal_name'][i] = "Not processed"
+            elif version != "None":
+                name = get_apercal_name(version, process = True)
+                self.obsinfo['apercal_name'][i] = name
+            else:
+                self.obsinfo['apercal_name'][i] = "None"
+
+
+    #add notes about data
+        
     #get DR1 data
     def get_dr1_obs(self,lastind=149):
         """
         Get information for DR1, through endid
         """
         #obsinfo is already sorted
-        #but need to combine with happili info
+        #and now have added happili info there already
         #first, find ending index for dr1
         #didn't work, did manually, confirm it:
         print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
@@ -76,7 +113,7 @@ class ObsCat(object):
         #print(len(self.dr1_obs),len(goodind))
         #limit to good data (archived, not deleted)
         self.dr1_obs = self.dr1_obs[goodind]
-        #add happili information
+        #check for ahppili info
         (taskids, ind_dr1_obs,
          ind_happili) = np.intersect1d(self.dr1_obs['taskID'],self.happili['taskid'],
                                        return_indices=True)
@@ -86,23 +123,6 @@ class ObsCat(object):
         #might be nothing due to failed processing but at least a directory exists
         #first, only keep indices that have happili entries
         self.dr1_obs = self.dr1_obs[ind_dr1_obs]
-        #then add columns from happili info
-        self.dr1_obs['fluxcal'] = self.happili['fluxcal'][ind_happili]
-        self.dr1_obs['flux_first'] = self.happili['fluxcal_firsttaskid'][ind_happili]
-        self.dr1_obs['flux_last'] = self.happili['fluxcal_lasttaskid'][ind_happili]
-        self.dr1_obs['polcal'] = self.happili['polcal'][ind_happili]
-        self.dr1_obs['pol_first'] = self.happili['polcal_firsttaskid'][ind_happili]
-        self.dr1_obs['pol_last'] = self.happili['polcal_lasttaskid'][ind_happili]
-        self.dr1_obs['apercal_version'] = self.happili['apercal_version'][ind_happili]
-
-        #update for apercal name; need mapping
-        self.dr1_obs['apercal_name'] = np.full(len(self.dr1_obs),'12345678901234567890123456')
-        for i,version in enumerate(self.dr1_obs['apercal_version']):
-            if version != "None":
-                name = get_apercal_name(version, process = True)
-                self.dr1_obs['apercal_name'][i] = name
-            else:
-                self.dr1_obs['apercal_name'][i] = "None"
 
         """
         This is only for processed data, still releasing for raw 
