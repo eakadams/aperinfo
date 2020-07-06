@@ -94,8 +94,19 @@ class ObsCat(object):
             else:
                 self.obsinfo['apercal_name'][i] = "None"
 
+        #add observational notes
+        self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
+        self.obsinfo['reobserve'] = np.full(len(self.obsinfo),'N')
+        self.obsinfo['reprocess'] = np.full(len(self.obsinfo),'N')
+        #object for arbitrary string length
+        self.obsinfo['note'] = np.empty(len(self.obsinfo),dtype='object')
+        (taskids, ind_obs,
+         ind_note) = np.intersect1d(self.obsinfo['taskID'],self.obs_notes['taskid'],
+                                       return_indices=True)
+        self.obsinfo['reobserve'][ind_obs] = self.obs_notes['reobserve'][ind_note]
+        self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
+        self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
 
-    #add notes about data
         
     #get DR1 data
     def get_dr1_obs(self,lastind=149):
@@ -303,12 +314,16 @@ class ProcCat(ObsCat):
         #need to carry polarization and line flags
         #add a field name to valid; want this info
         self.valid['Field'] = np.full(len(self.valid),'X0000+9999')
+        #add a N_pass to obs table
+        self.dr1_obs['N_pass'] = np.full(len(self.dr1_obs),0)
         #initialize empty array for holding indices
         array_passind = np.empty(0,dtype=int)
         #iterate through obs task ids
         for i,taskid in enumerate(self.dr1_obs['taskID']):
             passind = np.where((self.valid['taskid'] == taskid ) &
                                (self.valid['cont_pass'] == 'True') )[0]
+            #add number that pass
+            self.dr1_obs['N_pass'][i] = len(passind)
             if len(passind) > 0:
                 #if there are things that pass on to release, append them
                 array_passind = np.append(array_passind,passind)
@@ -339,7 +354,47 @@ class ProcCat(ObsCat):
                     format='csv',
                     overwrite=True)
 
-        
+    #explore DR1
+    def explore_dr1(self):
+        """
+        Explore the DR1 options
+        Report various numbers / statistics
+        """
+        #first get total fraction of beams that pass
+        nbeam_total = len(self.dr1_obs)*40
+        nbeam_pass = len(self.dr1_proc)
+        print(("{0} beams of {1} possible passed, "
+               "for a total of {2:2.0f}%").format(nbeam_pass,nbeam_total,
+                                             nbeam_pass/nbeam_total*100))
+
+        #now update to remove observations with known issues
+        (bad_taskids, ind_obs,
+         ind_notes) = np.intersect1d(self.dr1_obs['taskID'],self.obs_notes['taskid'],
+                                     return_indices=True)
+        good_taskids = np.setxor1d(bad_taskids,self.dr1_obs['taskID'])
+        mask = np.isin(self.dr1_proc['taskid'],good_taskids)
+        #print(len(mask))
+        #now find how many beams considered here
+        nbeam_good = len(np.where(mask == True)[0])
+        nbeam_poss = len(good_taskids)*40
+        print(("When considering only good observations,"
+               "{0} beams of {1} possible passed, "
+               "for a total of {2:2.0f}%").format(nbeam_good,nbeam_poss,
+                                             nbeam_good/nbeam_poss*100))
+        #
+        #c = np.setdiff1d(np.union1d(a, b), np.intersect1d(a, b))
+
+        #add further constraints here - take data in certain time ranges, for example
+        #based on system improvements / processing
+
+        #search for best taskids
+        #want taskids where fewer than 4 beams fail continuum validation
+        #should add this information to dr1_obs table; easiest way to do things
+        ind_best = np.where(self.dr1_obs['N_pass'] >= 32)[0]
+        print(("There are {0} fields that have 32 or more beams "
+               "pass continuum validation").format(len(ind_best)))
+        #how do these fields do on HI / polarization validation?
+        best_task = self.dr1_obs['taskID'][ind_best]
         
             
             
