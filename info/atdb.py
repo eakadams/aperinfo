@@ -66,9 +66,9 @@ def get_obstable(write=True):
     testinds = []
     earlyscienceinds = []
     argoinds = []
-    for i,(name,taskid) in enumerate(zip(targettable['name'],targettable['taskID'])):
+    for i,(name,taskid,quality) in enumerate(targettable['name','taskID','quality']):
             #first grab specific fields that I know are tests
-            if (taskid == '191030203'):
+            if (taskid == '191030203' or 'test' in name):
                         testinds.append(i)
                             #find ARGO fields
             elif name[0:4] == 'ARGO':
@@ -77,7 +77,8 @@ def get_obstable(write=True):
             elif (int(taskid) < 190702000) and (int(taskid) > 190409000):
                         earlyscienceinds.append(i)
                             #find survey fields based on name length and date
-            elif (len(name) == 10) and (int(taskid) > 190702000):
+            elif ((len(name) == 10) and (int(taskid) > 190702000)
+                  and ((quality == 'good') or (quality=='unknown')) ):
                         surveyinds.append(i)
                             #dump everything else somewhere
             else:
