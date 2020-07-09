@@ -395,6 +395,20 @@ class ProcCat(ObsCat):
                "pass continuum validation").format(len(ind_best)))
         #how do these fields do on HI / polarization validation?
         best_task = self.dr1_obs['taskID'][ind_best]
+        print(("The best taskids are {0}").format(best_task))
+        print(("The best fields are {0}").format(self.dr1_obs['name'][ind_best]))
+        mask_best = np.isin(self.dr1_proc['taskid'],best_task)
+        self.dr1_best_proc = self.dr1_proc[mask_best]
+        pass_cont = np.where(self.dr1_best_proc['cont_pass'] == 'True')[0]
+        print(("There are {0} possible beams "
+               "in best processed fields. "
+               "{1} have images. {2} "
+               "pass continuum validation").format(40*len(best_task),len(self.dr1_best_proc),len(pass_cont)))
+        good_HI_ind = np.where(self.dr1_best_proc['HI_c2_good_ok'] == 'True')[0]
+        print(("{0} beams have good/ok HI "
+               "in cube 2").format(len(good_HI_ind)))
+        pass_pol = np.where(self.dr1_best_proc['pol_pass'] == 'True')[0]
+        print(("{0} pass polarization validation").format(len(pass_pol)))
         
             
             
