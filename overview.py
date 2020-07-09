@@ -275,6 +275,45 @@ class ObsCat(object):
         plotname = os.path.join(figdir,'apercal_processing_dr1_ames.pdf')
         plt.savefig(plotname)
         plt.close()
+
+        
+    def plot_all_obs(self):
+        """
+        Make a sky plot of all observations
+        Won't worry about MDS at this time, 
+        just want to see sky coverage
+        Will still color by Apercal processing
+        Useful to see what is good processing
+        and what hasn't been processed
+        """
+        #have to get separate lists for each Apercal processing
+        #get unique names
+        apercal_names = np.unique(self.obsinfo['apercal_name'])
+        #get colors
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        mpcolors = prop_cycle.by_key()['color']
+        colorlist = mpcolors[0:len(apercal_names)]
+
+        #get ra/dec lists for plotting
+        ralist = []
+        declist = []
+        for name in apercal_names:
+            ind = np.where(self.obsinfo['apercal_name'] == name)[0]
+            ra = self.obsinfo['field_ra'][ind]
+            dec = self.obsinfo['field_dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        #make the plots
+        #want to separate medium-deep points so can plot separately
+        #all sky plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            apercal_names,
+                            os.path.join(figdir,'apercal_all_obs.pdf'))
+        plt.close()
+        
         
 
 #define class that is beam-based for processed data
