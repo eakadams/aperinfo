@@ -148,14 +148,14 @@ class ObsCat(object):
     def make_dr1_obs_mr(self):
         ascii.write(self.dr1_obs,
                     os.path.join(tabledir,'dr1_obs_mr.txt'),
-                    format='cds')
+                    format='cds',overwrite=True)
 
     #make LATEX test table for paper
     def make_dr1_obs_paper_table(self):
         ascii.write(self.dr1_obs['taskID','name','field_ra','field_dec',
                              'fluxcal','flux_first','flux_last',
                              'polcal','pol_first','pol_last',
-                             'apercal_name'][0:20],
+                                 'apercal_name','apercal_version'][0:20],
                     os.path.join(tabledir,'dr1_obs_table_paper.txt'),
                     format='latex',
                     overwrite=True)
