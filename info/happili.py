@@ -165,16 +165,16 @@ def get_cal_info(taskdir):
     polid_end = None
     try:
         fluxstring1 = info1['Flux_Calibrator_Obs_IDs'][0]
-        fluxid_start = fluxstring1[0:9]
+        #Note that lists of cals may not be sorted, so do this manually
+        #use helper function since I have to do four times
+        #twice for first, twice for last
+        fluxid_start = get_id(fluxstring1,place='first')
         fluxstring4 = info4['Flux_Calibrator_Obs_IDs'][0]
-        #print(info1.colnames())
-        fluxid_end = fluxstring4[-9:]
+        fluxid_end = get_id(fluxstring4,place='last')
         polstring1 = info1['Pol_Calibrator_Obs_IDs'][0]
-        #print(polstring1)
-        polid_start = polstring1[0:9]
+        polid_start = get_id(polstring1,place='first')
         polstring4 = info4['Pol_Calibrator_Obs_IDs'][0]
-        polid_end = polstring4[-9:]
-        print(polid_end)
+        polid_end = get_id(polstring4,place='last')
     except:
         fluxid_start = None
         fluxid_end = None
@@ -182,6 +182,26 @@ def get_cal_info(taskdir):
         polid_end = None
 
     return fluxcal, fluxid_start, fluxid_end, polcal, polid_start, polid_end
+
+def get_id(idstring,place='first'):
+    """
+    Get id from the string listing all ten ids
+    place = 'first' or 'last'
+    """
+    #get rid of spaces and split on commas   
+    ids = idstring.replace(" ","").split(',')
+    #sort
+    ids.sort()
+    #get right id
+    if place == 'first':
+        finalid = ids[0]
+    elif place == 'last':
+        finalid = ids[-1]
+    else:
+        print("'place' not recognized. Must be 'first' or 'last'")
+
+    return finalid
+                                            
 
 def get_run_times(taskdir):
     """
