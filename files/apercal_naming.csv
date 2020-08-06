@@ -1,26 +1,26 @@
 Version,Name
-v2.3-433-ge504703,300 MHz
-v2.3-472-gc285853,300 MHz
-v2.3-475-g6a44b02,300 MHz
-v2.3-482-gfca1d02,300 MHz
-v2.3-485-g741b84b,300 MHz
-v2.3-487-gee2f4ce,300 MHz
-v2.3-552-g5beb912,150 MHz
-v2.3-579-gb5609f7,150 MHz
-v2.3-617-gbc7b929,150 MHz
-v2.3-618-ga8820cf,150 MHz and continuum chunks
-  v2.5-1-g31cc003,Autocorrelation flagging
-  v2.5-5-g504d478,Autocorrelation flagging
-  v2.5-6-g80a4300,Autocorrelation flagging
-  v2.5-7-gc408fcf,Flag RTC-RTD
- v2.5-47-g724fc94,Bandpass phase flagging
- v2.5-48-g95b1efc,Bandpass phase flagging
- v2.5-49-ge221ce7,Bandpass phase flagging
- v2.5-62-gde547b9,Bandpass phase flagging
- v2.5-67-g130c637,Bandpass phase flagging
- v2.5-71-gde1f48e,Bandpass phase flagging
- v2.5-76-g66b020a,Add last continuum chunk image
- v2.5-78-g1455579,Add last continuum chunk image
-v2.5-286-g17712e3,Add last continuum chunk image
-v2.5-298-g312934a,Add last continuum chunk image
-v2.5-309-g2f052a5,Add last continuum chunk image
+v2.3-433-ge504703,Apercal_300
+v2.3-472-gc285853,Apercal_300
+v2.3-475-g6a44b02,Apercal_300
+v2.3-482-gfca1d02,Apercal_300
+v2.3-485-g741b84b,Apercal_300
+v2.3-487-gee2f4ce,Apercal_300
+v2.3-552-g5beb912,Apercal_150
+v2.3-579-gb5609f7,Apercal_150
+v2.3-617-gbc7b929,Apercal_150
+v2.3-618-ga8820cf,Apercal_150
+  v2.5-1-g31cc003,Apercal_150_ACF
+  v2.5-5-g504d478,Apercal_150_ACF
+  v2.5-6-g80a4300,Apercal_150_ACF
+  v2.5-7-gc408fcf,Apercal_150_ACF_CDF
+ v2.5-47-g724fc94,Apercal_150_ACF_CDF_BPF
+ v2.5-48-g95b1efc,Apercal_150_ACF_CDF_BPF
+ v2.5-49-ge221ce7,Apercal_150_ACF_CDF_BPF
+ v2.5-62-gde547b9,Apercal_150_ACF_CDF_BPF
+ v2.5-67-g130c637,Apercal_150_ACF_CDF_BPF
+ v2.5-71-gde1f48e,Apercal_150_ACF_CDF_BPF
+ v2.5-76-g66b020a,Apercal_150_ACF_CDF_BPF
+ v2.5-78-g1455579,Apercal_150_ACF_CDF_BPF
+v2.5-286-g17712e3,Apercal_150_ACF_CDF_BPF
+v2.5-298-g312934a,Apercal_150_ACF_CDF_BPF
+v2.5-309-g2f052a5,Apercal_150_ACF_CDF_BPF
