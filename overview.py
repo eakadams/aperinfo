@@ -83,7 +83,7 @@ class ObsCat(object):
         self.obsinfo['apercal_version'][ind_obs] = self.happili['apercal_version'][ind_happili]
 
         #update for apercal name; need mapping
-        self.obsinfo['apercal_name'] = np.full(len(self.obsinfo),'12345678901234567890123456')
+        self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
         for i,version in enumerate(self.obsinfo['apercal_version']):
             #print(version)
             if version == "v0.0-???-githash-":
@@ -93,6 +93,12 @@ class ObsCat(object):
                 self.obsinfo['apercal_name'][i] = name
             else:
                 self.obsinfo['apercal_name'][i] = "None"
+
+        #add tex name for later
+        self.obsinfo['apercal_tex_name'] = self.obsinfo['apercal_name']
+        for i,name in enumerate(self.obsinfo['apercal_tex_name']):
+            self.obsinfo['apercal_tex_name'][i] = name.replace("_","\_")
+            
 
         #add observational notes
         self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
@@ -152,13 +158,46 @@ class ObsCat(object):
 
     #make LATEX test table for paper
     def make_dr1_obs_paper_table(self):
+        #set column names to be tex & user friendly
+        col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux\_first','flux\_last',
+                     'Polcal','pol\_first','pol\_last','Apercal\_name','Apercal\_version']
+        
         ascii.write(self.dr1_obs['taskID','name','field_ra','field_dec',
                              'fluxcal','flux_first','flux_last',
                              'polcal','pol_first','pol_last',
-                                 'apercal_name','apercal_version'][0:20],
+                                 'apercal_tex_name','apercal_version'][0:30],
                     os.path.join(tabledir,'dr1_obs_table_paper.txt'),
                     format='latex',
-                    overwrite=True)
+                    overwrite=True,
+                    names=col_names,
+                    col_align=len(col_names)*'l',
+                    latexdict = {'header_start': "\hline \hline",
+                                 'header_end': "\hline",
+                                 'data_end': "\hline",
+                                 'caption': "Summary of released survey observation",
+                                 'preamble': ["\centering","\label{tab:obs}"]}
+        )
+
+    #make obs_notes table
+    def make_dr1_obs_notes_table(self):
+        """
+        Make a latex formatted table of obsnotes for paper.
+        Example 30 rows; part of obs table in machine-readable version
+        """
+        ascii.write(self.dr1_obs['taskID','name','note'][0:30],
+                    os.path.join(tabledir,'dr1_obs_notes.txt'),
+                    format='latex',
+                    overwrite=True,
+                    names=['ObsID','Name','Notes'],
+                    col_align='llp{12cm}',
+                    latexdict = {'header_start': "\hline \hline",
+                                 'header_end': "\hline",
+                                 'data_end': "\hline",
+                                 'caption': "Example of observation notes",
+                                 'preamble': ["\centering","\label{tab:obsnotes}"],
+                                 'tabletype': "table*"}
+                    )
+        
 
     #csv table for team use
     def make_dr1_obs_csv(self):

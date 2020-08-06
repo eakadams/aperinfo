@@ -1,0 +1,41 @@
+\begin{table*}
+\centering
+\label{tab:obsnotes}
+\caption{Example of observation notes}
+\begin{tabular}{llp{12cm}}
+\hline \hline
+ObsID & Name & Notes \\
+\hline
+190711169 & S2152+4114 & RTC delays bad; Flag beams 6-39 RTC \\
+190712041 & M1403+5324 & RTC,RTD and RTB delays bad \\
+190713001 & M0155+3130 & RTC,RTD and RTB delays bad \\
+190713042 & S2323+2904 & RTC,RTD and RTB delays bad \\
+190714041 & S1444+5058 & RTC,RTD and RTB delays bad \\
+190718124 & S2146+4340 & RTC and RTD delays bad (tuned away) \\
+190719041 & S1242+5058 & RTD and RTD delays bad (tuned away) \\
+190719042 & M0155+3130 & RTC and RTD delays bad (tuned away) \\
+190720041 & S2336+2904 & RTC and RTD delays bad \\
+190721041 & S1426+5058 & RTC and RTD delays bad \\
+190722001 & M0208+3130 & RTC and RTD delays bad \\
+190725041 & S1236+6041 & RTD delays bad; 6 bad beams (20-25) \\
+190725042 & M0155+3130 & RTD delays bad; 6 bad beams (20-25) \\
+190726041 & S2319+3130 & RTD delays bad; 6 bad beams (20-25) \\
+190727041 & S1439+5324 & RTD delays bad; 6 bad beams (20-25), beam 19 missing cal \\
+190727042 & M0208+3356 & RTD delays bad; 6 bad beams \\
+190728041 & S2258+2904 & RTD delays bad; 6 bad beams; only assigned pol calibrator by autocal \\
+190731125 & S2227+3130 & RTD delays bad; wrong calibrators assigned; 6 cal obs failed \\
+190806345 & S2311+2904 & RTD bad delays tuned away (subband phase slope); leading pol cals not scheduled (use later ones); 5-6 bad beams \\
+190807041 & M1403+5324 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190807042 & M0155+3130 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190808041 & S2306+3130 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190809041 & S1421+5324 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190809042 & M0155+3130 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190810041 & S2253+3130 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190811041 & S1409+5058 & RTD bad delays tuned away (subband phase slope); ~6 bad beams \\
+190822046 & S1025+5550 & None \\
+190822047 & S2204+3848 & None \\
+190823041 & S1258+6041 & Flux cal 35-39 failed \\
+190823042 & M0155+3130 & Flux cal 35-39 failed \\
+\hline
+\end{tabular}
+\end{table*}
