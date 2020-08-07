@@ -201,18 +201,21 @@ def combine_validation():
             #do hi metrics
             #cube status requires logic
             #default is bad, so just test good and okay
-            if hi['c2_good'][hi_ind] == 1:
-                t['c2'][ind] = 'G'
-            elif hi['c2_ok'][hi_ind] == 1:
-                t['c2'] = 'O'
-            if hi['c1_good'][hi_ind] == 1:
-                t['c1'][ind] = 'G'
-            elif hi['c1_ok'][hi_ind] == 1:
-                t['c1'] = 'O'
-            if hi['c0_good'][hi_ind] == 1:
-                t['c0'][ind] = 'G'
-            elif hi['c0_ok'][hi_ind] == 1:
-                t['c0'] = 'O'
+            if len(hi_ind) >0:
+                if hi['c2_good'][hi_ind] == 1:
+                    t['c2'][ind] = 'G'
+                elif hi['c2_ok'][hi_ind] == 1:
+                    t['c2'][ind] = 'O'
+                    
+                if hi['c1_good'][hi_ind] == 1:
+                    t['c1'][ind] = 'G'
+                elif hi['c1_ok'][hi_ind] == 1:
+                    t['c1'][ind] = 'O'
+
+                if hi['c0_good'][hi_ind] == 1:
+                    t['c0'][ind] = 'G'
+                elif hi['c0_ok'][hi_ind] == 1:
+                    t['c0'][ind] = 'O'
             #metrics are easy
             #but have to test hi_ind exists
             if len(hi_ind) >0:
