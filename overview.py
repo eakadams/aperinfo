@@ -460,6 +460,81 @@ class ProcCat(ObsCat):
                     format='csv',
                     overwrite=True)
 
+    #make continuum table for paper
+    def make_dr1_cont_table(self):
+        #set column names to be tex & user friendly
+        col_names = ['ObsID','Name','Beam','$\sigma_{in}$',
+                     '$\sigma_{out}$', '$R$', 'N2', 'Ex-2']
+        
+        ascii.write(self.dr1_proc['taskid','Field','beam','s_in','s_out',
+                                 'rat','N2','Ex-2'][0:30],
+                    os.path.join(tabledir,'dr1_cont.txt'),
+                    format='latex',
+                    overwrite=True,
+                    names=col_names,
+                    col_align=len(col_names)*'l',
+                    latexdict = {'header_start': "\hline \hline",
+                                 'header_end': "\hline",
+                                 'data_end': "\hline",
+                                 'caption': "Continuum validation metrics for released data",
+                                 'preamble': ["\centering","\label{tab:cont}","\small"]}
+                    )
+
+    #make pol table for paper
+    def make_dr1_pol_table(self):
+        #set column names to be tex & user friendly
+        col_names = ['ObsID','Name','Beam','Status','V status','QU status',
+                     '$\sigma_{in}$',
+                     '$\sigma_{out}$', '$R$', 'N2', 'Ex-2',
+                     '$FT_{max}$','$p_{in}$','P2','$b_{min}$',
+                     '$Q_{beam}$','$U_{beam}$','$Q_{noise}$','$U_{noise}$']
+        
+        ascii.write(self.dr1_proc['taskid','Field','beam',
+                                 'pol_pass','pol_V_pass','pol_QU_pass',
+                                 'pol_s_in','pol_s_out',
+                                 'pol_rat','pol_N2','pol_Ex-2','pol_ftmax',
+                                 'pol_peak_in','pol_P2','pol_bmin','Q_bm_fg',
+                                 'U_bm_fg', 'Q_st_fg','U_st_fg'][0:30],
+                    os.path.join(tabledir,'dr1_pol.txt'),
+                    format='latex',
+                    overwrite=True,
+                    names=col_names,
+                    col_align=len(col_names)*'l',
+                    latexdict = {'header_start': "\hline \hline",
+                                 'header_end': "\hline",
+                                 'data_end': "\hline",
+                                 'caption': "Polarization validation metrics for released data",
+                                 'preamble': ["\centering","\label{tab:pol}"]}
+                    )
+                    
+
+    #make HI table for paper
+    def make_dr1_hi_table(self):
+    #set column names to be tex & user friendly
+        col_names = ['ObsID','Name','Beam','All good', 'All good/okay',
+                     'cube2', 'cube1', 'cube0','$\sigma_{c2}$',
+                     '$\sigma_{c1}$', '$\sigma_{c0}$',
+                     '$f_{ex,c2}$', '$f_{ex,c1}$', '$f_{ex,c0}$',
+                     '$p_{0.8,c2}$','$p_{0.8,c1}$','$p_{0.8,c0}$']
+        
+        ascii.write(self.dr1_proc['taskid','Field','beam','HI_all_good',
+                                 'HI_all_good_ok','c2','c1','c0','rms_c2',
+                                 'rms_c1','rms_c0','lgfrac_c2','lgfrac_c1',
+                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:30],
+                    os.path.join(tabledir,'dr1_line.txt'),
+                    format='latex',
+                    overwrite=True,
+                    names=col_names,
+                    col_align=len(col_names)*'l',
+                    latexdict = {'header_start': "\hline \hline",
+                                 'header_end': "\hline",
+                                 'data_end': "\hline",
+                                 'caption': "Line validation metrics for released data",
+                                 'preamble': ["\centering","\label{tab:hi}"]}
+                    )
+
+    
+
     def plot_dr1_proc(self):
         """
         Make sky plots of the processed data
