@@ -35,6 +35,8 @@ from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
 this_dir,this_filename = os.path.split(__file__)
 aperinfodir = this_dir[:-4]
 filedir = os.path.join(aperinfodir,"files")
+beampos = os.path.join(filedir,'cb_offsets.txt')
+cb_pos = ascii.read(beampos)
 #print(filedir)
 
 
@@ -92,7 +94,11 @@ class ValidCat(object):
 Helper functions
 """
 def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
-                     color_list,label_list,figname):
+                     color_list,label_list,figname,
+                     survey_pointings = None,
+                     mode = None,
+                     obs = None,
+                     sky = 'all'):
     """
     Make sky plots, using Kapteyn python package
     Inputs:
@@ -101,6 +107,10 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     color_list: List of colors for plotting
     label_list: List of labels
     figname: output name for figure
+    survey_pointings: File with survey pointings. If None, do nothing
+    mode: 'beam' or 'obs' for plotting beams or whole observation. If None, default to obs
+    obs: table w/ tid, ra, dec for obs to go with beams (for ref plotting). If None, do nothing
+    sky: "all", "fall" or "spring"
     """
     #start the figure
     #first define a header
@@ -131,26 +141,39 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
               'CUNIT2' : 'deg', 'CDELT2' : 5.0,
               }
     """
+  
     X = np.arange(0,360.0,15.0)
     Y = np.arange(0,90,15) #[20, 30,45, 60, 75]
+
 
     #figure instance
     fig = plt.figure(figsize=(12,12))
     frame = fig.add_axes((0.1,0.1,0.8,0.8))
     f = maputils.FITSimage(externalheader=header)
+
+    lon_world = np.arange(0,360,30)
+    lat_world = np.arange(0,90,15) #[20, 30, 60, 90]
+    lon_constval = None
+    lat_constval = 20
+    
+    if sky == 'spring':
+        f.set_limits(pxlim=(16,34),pylim=(22,32))
+        X = np.arange(120,270,15.0)
+        Y = np.arange(0,90,15.)
+        lat_constval = None
+        lon_world = None #np.arange(120,270,60)
+        lat_constval = None
+        
     annim = f.Annotatedimage(frame)
     grat = annim.Graticule(axnum=(1,2),wylim=(0.0,90.0), wxlim=(0,360),
                        startx=X, starty=Y)
     #grat = annim.Graticule(wylim=(0.0,90.0), wxlim=(0,360),
     #                       startx=X, starty=Y)
     grat.setp_gratline(color='0.75')
-    lon_world = np.arange(0,360,30)
-    lat_world = np.arange(0,90,15) #[20, 30, 60, 90]
+    
     grat.setp_lineswcs1(20, color='g', linestyle='--')
 
     # Plot labels inside the plot
-    lon_constval = None
-    lat_constval = 20
     lon_kwargs = {'color':'k', 'fontsize':12}
     lat_kwargs = {'color':'k', 'fontsize':12}
     grat.Insidelabels(wcsaxis=0,
@@ -161,15 +184,65 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
                       world=lat_world, constval=lon_constval,
                       fmt="Dms",
                       **lat_kwargs)
+
+    if mode is None:
+        print("'mode' is not set, defaulting to observations")
+        mode = 'obs'
+
+    #set markersize
+    if mode == 'obs' and sky == 'all':
+        ms = 8
+    if mode == 'beam' and sky == 'all':
+        ms = 0.7
+    if mode == 'beam' and sky == 'spring':
+        ms = 2
+        
     #iterate through arrays and add to plot
     for ra,dec,cname,labname in zip(ra_array_lists,
                                     dec_array_lists,color_list,label_list):
         #get pixel coordinates:
         xp,yp=annim.topixel(ra,dec)
         annim.Marker(x=xp,y=yp,
-                     marker='o',mode='pixel',markersize=8, color=cname,
+                     marker='o',mode='pixel',markersize=ms, color=cname,
                      label = labname)
 
+    
+
+    #add survey  pointings
+    if survey_pointings is not None:
+        sra, sdec = get_survey_ra_dec(survey_pointings)
+        xs,ys = annim.topixel(sra,sdec)
+        annim.Marker(x=xs,y=ys,
+                     marker='o',mode='pixel',markersize=8,
+                     color='black',fillstyle='none')
+
+    #add all obs beams for context
+    if mode == 'beam' and obs is not None:
+        bra = np.empty(0)
+        bdec = np.empty(0)
+        #iterate through each obs and make array of full beams
+        for tid,ra,dec in obs['taskID','field_ra','field_dec']:
+            beams = np.arange(40)
+            tids = np.full(40,tid)
+            task = np.full(1,tid)
+            raref = np.full(1,ra)
+            decref = np.full(1,dec)
+            #ras = np.full(40,ra)
+            #decs = np.full(40,dec)
+            ra,dec = get_ra_dec(tids,beams,task,raref,decref,cb_pos)
+            bra =np.append(bra,ra)
+            bdec = np.append(bdec,dec)
+
+        if sky == 'all':
+            msc = 1.5
+            mewc = 0.1
+        if sky == 'spring':
+            msc = 3
+            mewc = 0.1
+        xb,yb = annim.topixel(bra,bdec)
+        annim.Marker(x=xb,y=yb,marker='o',mode='pixel',markersize=msc,
+                     color='black',fillstyle='none',mew=mewc)
+    
     #make figure
     annim.plot()
     #add legend
@@ -178,6 +251,19 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     plt.savefig(figname)
     plt.close()
     
+
+
+def get_survey_ra_dec(survey_pointings):
+    """
+    Take survey pointing file and return ra and dec array
+    """
+    #read  in file
+    fields = ascii.read(survey_pointings,format='fixed_width')
+    #find only survey pointings
+    apertif_fields = fields[(fields['label'] == 'm') | (fields['label'] == 's') | (fields['label'] == 'l')]
+    return apertif_fields['ra'],apertif_fields['dec']
+
+
     
 #annim.plot()
 # Set title for Matplotlib

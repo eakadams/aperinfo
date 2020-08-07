@@ -260,6 +260,7 @@ class ObsCat(object):
         dec = self.dr1_repeated_ames['field_dec']
         ralist.append(ra)
         declist.append(dec)
+
         
         #make the plots
         #want to separate medium-deep points so can plot separately
@@ -268,7 +269,8 @@ class ObsCat(object):
                             declist,
                             colorlist,
                             apercal_names,
-                            os.path.join(figdir,'apercal_processing_dr1_obs.pdf'))
+                            os.path.join(figdir,'apercal_processing_dr1_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
 
         #need to add a separate medium-deep plot
         #first sort by field name
@@ -350,9 +352,22 @@ class ObsCat(object):
                             declist,
                             colorlist,
                             apercal_names,
-                            os.path.join(figdir,'apercal_all_obs.pdf'))
-        plt.close()
+                            os.path.join(figdir,'apercal_all_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
         
+        plt.close()
+
+        
+    def plot_dr1_context(self):
+        """
+        Make a plot of sky  coverage that is color-coded by DR1 and then by  month
+        """
+        ra_dr1 = self.dr1_obs['ra']
+        dec_dr1 = self.dr1_obs['dec']
+
+        #get feb, mar, apr, may
+        #june is incomplete processing
+        #plot w/ dr1 last to deal with feb issue (only 1-3 fields)
         
 
 #define class that is beam-based for processed data
@@ -361,7 +376,8 @@ class ProcCat(ObsCat):
     def __init__(self,
                  obsfile = os.path.join(filedir,'obsatdb.csv'),
                  happilifile = os.path.join(filedir,'happili.csv'),
-                 validfile = os.path.join(filedir,'combined_valid.csv')):
+                 validfile = os.path.join(filedir,'combined_valid.csv'),
+                 beampos = os.path.join(filedir,'cb_offsets.txt')):
         """
         Initalize ProcCat object
         This has information about processing (per beam)
@@ -372,6 +388,8 @@ class ProcCat(ObsCat):
         #add additional initializion
         ObsCat.__init__(self,obsfile,happilifile)
         self.valid = ascii.read(validfile)
+        #and beam position
+        self.cb_pos = ascii.read(beampos)
 
     #can I define a new get dr1_obs that does what i want here?
     #get DR1_OBS data
@@ -414,6 +432,16 @@ class ProcCat(ObsCat):
         #now I want to keep just beams that pass validation and are in release
         self.dr1_proc = self.valid[array_passind]
 
+        #add ra and dec
+        ra_array, dec_array = sp.get_ra_dec(self.dr1_proc['taskid'],
+                                            self.dr1_proc['beam'],
+                                            self.dr1_obs['taskID'],
+                                            self.dr1_obs['field_ra'],
+                                            self.dr1_obs['field_dec'],
+                                            self.cb_pos)
+        self.dr1_proc['ra'] = ra_array
+        self.dr1_proc['dec'] = dec_array
+
         print(len(self.valid),len(self.dr1_proc))
 
     #make LATEX test table for paper
@@ -431,6 +459,36 @@ class ProcCat(ObsCat):
                     os.path.join(tabledir,'dr1_proc.csv'),
                     format='csv',
                     overwrite=True)
+
+    def plot_dr1_proc(self):
+        """
+        Make sky plots of the processed data
+        Will start by showing overall sky coverage, valid cont data
+        Then for released data want plots that show good/okay/bad pol & line
+        """
+        prop_cycle = plt.rcParams['axes.prop_cycle']
+        mpcolors = prop_cycle.by_key()['color']
+        colorlist = [mpcolors[0]]
+        
+        sp.sky_plot_kapteyn([self.dr1_proc['ra']],
+                            [self.dr1_proc['dec']],
+                            colorlist,
+                            ['Released beams'],
+                            os.path.join(figdir,'dr1_proc.pdf'),
+                            mode='beam',
+                            obs = self.dr1_obs['taskID','field_ra','field_dec']
+        )
+
+        sp.sky_plot_kapteyn([self.dr1_proc['ra']],
+                            [self.dr1_proc['dec']],
+                            colorlist,
+                            ['Released beams'],
+                            os.path.join(figdir,'dr1_proc_spring.pdf'),
+                            mode='beam',
+                            obs = self.dr1_obs['taskID','field_ra','field_dec'],
+                            sky='spring'
+        )
+        
 
     #explore DR1
     def explore_dr1(self):
