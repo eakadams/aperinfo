@@ -96,6 +96,19 @@ def combine_validation():
     t['U_bm_fg'] = np.empty(table_length)
     t['Q_st_fg'] = np.empty(table_length)
     t['U_st_fg'] = np.empty(table_length)
+    #get relevant HI metrics
+    t['c2'] = np.full(table_length,'B')
+    t['c1'] = np.full(table_length,'B')
+    t['c0'] = np.full(table_length,'B')
+    t['rms_c2'] = np.empty(table_length)
+    t['rms_c1'] = np.empty(table_length)
+    t['rms_c0'] = np.empty(table_length)
+    t['lgfrac_c2'] = np.empty(table_length)
+    t['lgfrac_c1'] = np.empty(table_length)
+    t['lgfrac_c0'] = np.empty(table_length)
+    t['prom_c2'] = np.empty(table_length)
+    t['prom_c1'] = np.empty(table_length)
+    t['prom_c0'] = np.empty(table_length)
     #now iterate through taskids
     for i,tid in enumerate(common_taskids):
         #and go through the beams
@@ -184,6 +197,44 @@ def combine_validation():
             else:
                 t['HI_c2_good'][ind] = False
                 t['HI_c2_good_ok'][ind] = False
+
+            #do hi metrics
+            #cube status requires logic
+            #default is bad, so just test good and okay
+            if hi['c2_good'][hi_ind] == 1:
+                t['c2'][ind] = 'G'
+            elif hi['c2_ok'][hi_ind] == 1:
+                t['c2'] = 'O'
+            if hi['c1_good'][hi_ind] == 1:
+                t['c1'][ind] = 'G'
+            elif hi['c1_ok'][hi_ind] == 1:
+                t['c1'] = 'O'
+            if hi['c0_good'][hi_ind] == 1:
+                t['c0'][ind] = 'G'
+            elif hi['c0_ok'][hi_ind] == 1:
+                t['c0'] = 'O'
+            #metrics are easy
+            #but have to test hi_ind exists
+            if len(hi_ind) >0:
+                t['rms_c2'][ind] = hi['rms_c2'][hi_ind]
+                t['rms_c1'][ind] = hi['rms_c1'][hi_ind]
+                t['rms_c0'][ind] = hi['rms_c0'][hi_ind]
+                t['lgfrac_c2'][ind] = hi['lgfrac_c2'][hi_ind]
+                t['lgfrac_c1'][ind] = hi['lgfrac_c0'][hi_ind]
+                t['lgfrac_c0'][ind] = hi['lgfrac_c1'][hi_ind]
+                t['prom_c2'][ind] = hi['prom_c2'][hi_ind]
+                t['prom_c1'][ind] = hi['prom_c0'][hi_ind]
+                t['prom_c0'][ind] = hi['prom_c1'][hi_ind]
+            else:
+                t['rms_c2'][ind]  = np.nan
+                t['rms_c1'][ind] = np.nan
+                t['rms_c0'][ind] = np.nan
+                t['lgfrac_c2'][ind] = np.nan
+                t['lgfrac_c1'][ind] = np.nan
+                t['lgfrac_c0'][ind] = np.nan
+                t['prom_c2'][ind] = np.nan
+                t['prom_c1'][ind] = np.nan
+                t['prom_c0'][ind] = np.nan
 
 
     #now print and return some useful information
