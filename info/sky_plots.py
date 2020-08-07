@@ -157,7 +157,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     lat_constval = 20
     
     if sky == 'spring':
-        f.set_limits(pxlim=(16,34),pylim=(22,32))
+        f.set_limits(pxlim=(17,27),pylim=(22,32))
         X = np.arange(120,270,15.0)
         Y = np.arange(0,90,15.)
         lat_constval = None
@@ -195,7 +195,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     if mode == 'beam' and sky == 'all':
         ms = 0.7
     if mode == 'beam' and sky == 'spring':
-        ms = 2
+        ms = 5
         
     #iterate through arrays and add to plot
     for ra,dec,cname,labname in zip(ra_array_lists,
@@ -237,8 +237,8 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
             msc = 1.5
             mewc = 0.1
         if sky == 'spring':
-            msc = 3
-            mewc = 0.1
+            msc = 5
+            mewc = 0.5
         xb,yb = annim.topixel(bra,bdec)
         annim.Marker(x=xb,y=yb,marker='o',mode='pixel',markersize=msc,
                      color='black',fillstyle='none',mew=mewc)
