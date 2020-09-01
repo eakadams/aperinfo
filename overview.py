@@ -639,25 +639,27 @@ class ProcCat(ObsCat):
 
         
         #plot HI data quality
-        #cube 2 to start
+        #iterate through cubes
+        cubes = ['c0','c1','c2']
         quality = ['Good','Bad','Okay']
         colorlist = mpcolors[0:len(quality)]
-        ralist = []
-        declist = []
-        for qual in quality:
-            if qual == 'Good':
-                ind = np.where(self.dr1_proc['c2'] == 'G')[0]
-            if qual == 'Okay':
-                ind = np.where(self.dr1_proc['c2'] == 'O')[0]
-            if qual == 'Bad':
-                ind = np.where(self.dr1_proc['c2'] == 'B')[0]
-            ra = self.dr1_proc['ra'][ind]
-            dec = self.dr1_proc['dec'][ind]
-            ralist.append(ra)
-            declist.append(dec)
+        for cube in cubes:
+            ralist = []
+            declist = []
+            for qual in quality:
+                if qual == 'Good':
+                    ind = np.where(self.dr1_proc[cube] == 'G')[0]
+                if qual == 'Okay':
+                    ind = np.where(self.dr1_proc[cube] == 'O')[0]
+                if qual == 'Bad':
+                    ind = np.where(self.dr1_proc[cube] == 'B')[0]
+                ra = self.dr1_proc['ra'][ind]
+                dec = self.dr1_proc['dec'][ind]
+                ralist.append(ra)
+                declist.append(dec)
 
-        plot_processed_data(ralist,declist,colorlist,quality,
-                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_HIc2')
+            plot_processed_data(ralist,declist,colorlist,quality,
+                                self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_HI'+cube)
 
 
     #explore DR1
