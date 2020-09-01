@@ -44,6 +44,10 @@ tabledir = os.path.join(aperinfodir,"tables")
 figdir = os.path.join(aperinfodir,"figures")
 #print(filedir)
 
+#get mpl colors
+prop_cycle = plt.rcParams['axes.prop_cycle']
+mpcolors = prop_cycle.by_key()['color']
+
 
 #define observation object
 class ObsCat(object):
@@ -206,6 +210,9 @@ class ObsCat(object):
                     format='csv',
                     overwrite=True)
 
+
+        
+
     def plot_apercal_dr1_obs(self):
         """
         Sky plot of Apercal processing
@@ -353,6 +360,47 @@ class ObsCat(object):
                             colorlist,
                             apercal_names,
                             os.path.join(figdir,'apercal_all_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+        
+        plt.close()
+        
+
+    def plot_obs_by_month(self):
+        """
+        Sky plot of observations, color coded by time
+        Take everything w/in DR1 as one color, then plot by month after that
+        Don't use a full alpha so can see mds a bit - still need to do this
+        Manually set months and update as needed:
+        Feb, Mar, Apr, May, June
+        Know everything has been processed already
+        """
+        month_list = ['DR1','02','03','04','05','06']
+        colorlist = mpcolors[0:len(month_list)]
+
+        ralist = []
+        declist = []
+        for month in month_list:
+            if month == 'DR1':
+                ra = self.dr1_obs['field_ra']
+                dec = self.dr1_obs['field_dec']
+            else:
+                yymm = '20'+month
+                str_taskid = self.obsinfo['taskID'].astype(str)
+                ind = np.flatnonzero(np.core.defchararray.find(
+                    str_taskid,
+                    yymm,
+                    end=4)!=-1)
+                ra = self.obsinfo['field_ra'][ind]
+                dec = self.obsinfo['field_dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        #all sky plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            month_list,
+                            os.path.join(figdir,'apercal_obs_by_month.pdf'),
                             survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
         
         plt.close()
@@ -544,26 +592,73 @@ class ProcCat(ObsCat):
         prop_cycle = plt.rcParams['axes.prop_cycle']
         mpcolors = prop_cycle.by_key()['color']
         colorlist = [mpcolors[0]]
-        
-        sp.sky_plot_kapteyn([self.dr1_proc['ra']],
-                            [self.dr1_proc['dec']],
-                            colorlist,
-                            ['Released beams'],
-                            os.path.join(figdir,'dr1_proc.pdf'),
-                            mode='beam',
-                            obs = self.dr1_obs['taskID','field_ra','field_dec']
-        )
 
-        sp.sky_plot_kapteyn([self.dr1_proc['ra']],
+        plot_processed_data([self.dr1_proc['ra']],
                             [self.dr1_proc['dec']],
                             colorlist,
                             ['Released beams'],
-                            os.path.join(figdir,'dr1_proc_spring.pdf'),
-                            mode='beam',
-                            obs = self.dr1_obs['taskID','field_ra','field_dec'],
-                            sky='spring'
-        )
+                            self.dr1_obs['taskID','field_ra','field_dec'],
+                            'dr1_proc')
+
+        #plot Stokes V quality
+        quality = ['Pass','Fail']
+        colorlist = mpcolors[0:len(quality)]
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Pass':
+                ind = np.where(self.dr1_proc['pol_V_pass'] == 'True')[0]
+            if qual == 'Fail':
+                ind = np.where(self.dr1_proc['pol_V_pass'] == 'False')[0]
+            ra = self.dr1_proc['ra'][ind]
+            dec = self.dr1_proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_V')
+
         
+        #plot Stokes QU quality
+        quality = ['Pass','Fail']
+        colorlist = mpcolors[0:len(quality)]
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Pass':
+                ind = np.where(self.dr1_proc['pol_QU_pass'] == 'True')[0]
+            if qual == 'Fail':
+                ind = np.where(self.dr1_proc['pol_QU_pass'] == 'False')[0]
+            ra = self.dr1_proc['ra'][ind]
+            dec = self.dr1_proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_QU')
+
+        
+        #plot HI data quality
+        #cube 2 to start
+        quality = ['Good','Bad','Okay']
+        colorlist = mpcolors[0:len(quality)]
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Good':
+                ind = np.where(self.dr1_proc['c2'] == 'G')[0]
+            if qual == 'Okay':
+                ind = np.where(self.dr1_proc['c2'] == 'O')[0]
+            if qual == 'Bad':
+                ind = np.where(self.dr1_proc['c2'] == 'B')[0]
+            ra = self.dr1_proc['ra'][ind]
+            dec = self.dr1_proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_HIc2')
+
 
     #explore DR1
     def explore_dr1(self):
@@ -649,3 +744,41 @@ def get_apercal_name(version,process=True):
         if name == "Add last continuum chunk image":
             name = "Bandpass phase flagging"
     return name
+
+
+def plot_processed_data(ralist,declist,colorlist,labellist,obsdata,figbase):
+    """
+    A helper  function to produce sky plots for processed data
+    Takes ralist, declist, colorlist, labellist as inputs for plotting
+    also takes an array/list of info for plotting all obs for reference
+    And finally a base name for figure, updated for spring & fall views
+    Produces fully sky, spring and fall views
+    """
+    sp.sky_plot_kapteyn(ralist,
+                        declist,
+                        colorlist,
+                        labellist,
+                        os.path.join(figdir,figbase+'.pdf'),
+                        mode='beam',
+                        obs = obsdata
+    )
+
+    sp.sky_plot_kapteyn(ralist,
+                        declist,
+                        colorlist,
+                        labellist,
+                        os.path.join(figdir,figbase+'_spring.pdf'),
+                        mode='beam',
+                        obs = obsdata,
+                        sky='spring'
+    )
+
+    sp.sky_plot_kapteyn(ralist,
+                        declist,
+                        colorlist,
+                        labellist,
+                        os.path.join(figdir,figbase+'_fall.pdf'),
+                        mode='beam',
+                        obs = obsdata,
+                        sky='fall'
+    )

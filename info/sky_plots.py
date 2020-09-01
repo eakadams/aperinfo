@@ -163,6 +163,14 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         lat_constval = None
         lon_world = None #np.arange(120,270,60)
         lat_constval = None
+
+    if sky == 'fall':
+        f.set_limits(pxlim=(13,25.5),pylim=(8,13))
+        X = np.arange(-90,180,15.0)
+        Y = np.arange(0,90,15.)
+        lat_constval = None
+        lon_world = None #np.arange(-120,240,60)
+        lat_constval = None
         
     annim = f.Annotatedimage(frame)
     grat = annim.Graticule(axnum=(1,2),wylim=(0.0,90.0), wxlim=(0,360),
@@ -195,6 +203,8 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     if mode == 'beam' and sky == 'all':
         ms = 0.7
     if mode == 'beam' and sky == 'spring':
+        ms = 5
+    if mode == 'beam' and sky == 'fall':
         ms = 5
         
     #iterate through arrays and add to plot
@@ -237,6 +247,9 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
             msc = 1.5
             mewc = 0.1
         if sky == 'spring':
+            msc = 5
+            mewc = 0.5
+        if sky == 'fall':
             msc = 5
             mewc = 0.5
         xb,yb = annim.topixel(bra,bdec)
