@@ -564,10 +564,15 @@ class ProcCat(ObsCat):
                      '$\sigma_{c1}$', '$\sigma_{c0}$',
                      '$f_{ex,c2}$', '$f_{ex,c1}$', '$f_{ex,c0}$',
                      '$p_{0.8,c2}$','$p_{0.8,c1}$','$p_{0.8,c0}$']
+
+        #put sigma into mJy, rather than Jy units before formatting
+        self.dr1_proc['rms_c1_mJy'] = 1e3*self.dr1_proc['rms_c1']
+        self.dr1_proc['rms_c2_mJy'] = 1e3*self.dr1_proc['rms_c2']
+        self.dr1_proc['rms_c0_mJy'] = 1e3*self.dr1_proc['rms_c0']
         
         ascii.write(self.dr1_proc['taskid','Field','beam','HI_all_good',
-                                 'HI_all_good_ok','c2','c1','c0','rms_c2',
-                                 'rms_c1','rms_c0','lgfrac_c2','lgfrac_c1',
+                                 'HI_all_good_ok','c2','c1','c0','rms_c2_mJy',
+                                 'rms_c1_mJy','rms_c0_mJy','lgfrac_c2','lgfrac_c1',
                                  'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:30],
                     os.path.join(tabledir,'dr1_line.txt'),
                     format='latex',
@@ -578,7 +583,12 @@ class ProcCat(ObsCat):
                                  'header_end': "\hline",
                                  'data_end': "\hline",
                                  'caption': "Line validation metrics for released data",
-                                 'preamble': ["\centering","\label{tab:hi}"]}
+                                 'preamble': ["\centering","\label{tab:hi}"]},
+                    formats = {'$\sigma_{c2}$': '4.2f', '$\sigma_{c1}$': '4.2f',
+                               '$\sigma_{c0}$': '4.2f', '$f_{ex,c2}$': '5.2f',
+                               '$f_{ex,c1}$': '5.2f', '$f_{ex,c0}$': '5.2f',
+                               '$p_{0.8,c2}$': '4.2f', '$p_{0.8,c1}$': '4.2f',
+                               '$p_{0.8,c0}$': '4.2f'}
                     )
 
     
