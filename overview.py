@@ -117,43 +117,79 @@ class ObsCat(object):
         self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
         self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
 
-        
-    #get DR1 data
-    def get_dr1_obs(self,lastind=148):
+
+    #get obs for data release
+    def get_data_release_obs(self,firstind=0,lastind=148):
         """
-        Get information for DR1, through endid
+        Get obs specified by firstind/lastind
         """
-        #obsinfo is already sorted
-        #and now have added happili info there already
-        #first, find ending index for dr1
-        #didn't work, did manually, confirm it:
+        print('First taskid is {}'.format(self.obsinfo['taskID'][firstind]))
         print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
-        self.dr1_obs = self.obsinfo[0:(lastind+1)]
+        data_release = self.obsinfo[firstind:(lastind+1)]
         #check for bad data
-        goodind = np.where(self.dr1_obs['quality'] == 'good')[0]
+        goodind = np.where(data_release['quality'] == 'good')[0]
         #print(len(self.dr1_obs),len(goodind))
         #limit to good data (archived, not deleted)
-        self.dr1_obs = self.dr1_obs[goodind]
+        data_release = data_release[goodind]
         #check for ahppili info
         (taskids, ind_dr1_obs,
-         ind_happili) = np.intersect1d(self.dr1_obs['taskID'],self.happili['taskid'],
+         ind_happili) = np.intersect1d(data_release['taskID'],self.happili['taskid'],
                                        return_indices=True)
         #note that there are two obs in obsinfo that hsouldnt be -- argo and early sci
         #need to check that codebut will ignore for now
         #and assume all taskids have an entry on happili
         #might be nothing due to failed processing but at least a directory exists
         #first, only keep indices that have happili entries
-        self.dr1_obs = self.dr1_obs[ind_dr1_obs]
+        data_release = data_release[ind_dr1_obs]
+        return data_release
 
-        """
-        This is only for processed data, still releasing for raw 
-        observational data
-        #check for 300 MHz processing and remove from consideration for release
-        ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
-        print(len(self.dr1_obs),len(ind_good_proc))
-        self.dr1_obs = self.dr1_obs[ind_good_proc]
-        """
+    #get dr1 data
+    def get_dr1_obs(self):
+        self.dr1_obs = self.get_data_release_obs(firstind=0,lastind=148)
 
+    #get dr1 plus
+    def get_dr1plus_obs(self):
+        self.dr1_plus_obs = self.get_data_release_obs(firstind=0,lastind=180)
+
+       
+#    #get DR1 data
+#    def get_dr1_obs(self,lastind=148):
+#        """
+#        Get information for DR1, through endid
+#        """
+#        #obsinfo is already sorted
+#        #and now have added happili info there already
+#        #first, find ending index for dr1
+#        #didn't work, did manually, confirm it:
+#        print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
+#        self.dr1_obs = self.obsinfo[0:(lastind+1)]
+#        #check for bad data
+#        goodind = np.where(self.dr1_obs['quality'] == 'good')[0]
+#        #print(len(self.dr1_obs),len(goodind))
+#        #limit to good data (archived, not deleted)
+#        self.dr1_obs = self.dr1_obs[goodind]
+#        #check for ahppili info
+#        (taskids, ind_dr1_obs,
+#         ind_happili) = np.intersect1d(self.dr1_obs['taskID'],self.happili['taskid'],
+#                                       return_indices=True)
+#        #note that there are two obs in obsinfo that hsouldnt be -- argo and early sci
+#        #need to check that codebut will ignore for now
+#        #and assume all taskids have an entry on happili
+#        #might be nothing due to failed processing but at least a directory exists
+#        #first, only keep indices that have happili entries
+#        self.dr1_obs = self.dr1_obs[ind_dr1_obs]
+#
+#        """
+#        This is only for processed data, still releasing for raw 
+#        observational data
+#        #check for 300 MHz processing and remove from consideration for release
+#        ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
+#        print(len(self.dr1_obs),len(ind_good_proc))
+#        self.dr1_obs = self.dr1_obs[ind_good_proc]
+#        """
+
+
+        
     #make MR table for online publication
     def make_dr1_obs_mr(self):
         ascii.write(self.dr1_obs,
