@@ -119,7 +119,7 @@ class ObsCat(object):
 
         
     #get DR1 data
-    def get_dr1_obs(self,lastind=149):
+    def get_dr1_obs(self,lastind=148):
         """
         Get information for DR1, through endid
         """
@@ -448,7 +448,29 @@ class ProcCat(ObsCat):
         #first get obs info
         self.get_dr1_obs()
         #check for 300 MHz processing and remove from consideration for release
-        ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
+        #also for data sets that weren't processed
+        #and any other where I have notes:
+        """
+        190806345 - no processed data produced; probably due to missing set of cals at start
+        191024043 - RT2 delays bad; need to flag and reprocess
+        191024044 - RT2 delays bad; need to flag and reprocess
+        191209025 - RT9 off source in middle of observation; flag and reprocess
+        191227014 - RT9 not on source; flag and reprocess
+        191230041 - RT9 not on source for ~first hour; 
+                    RT8 had large self-cal amp solutions after that. Flag & reprocess
+        191031242 - bright stripes --> bad time at start to be flagged. Also RT3
+        191209026 - bright sources on edge not in mask. Need updated pipeline version
+        """
+        ind_good_proc = np.where((self.dr1_obs['apercal_name'] != "Apercal_300") &
+                                 (self.dr1_obs['apercal_name'] != "None") &
+                                 (self.dr1_obs['taskID'] != 190806345) &
+                                 (self.dr1_obs['taskID'] != 191024043) &
+                                 (self.dr1_obs['taskID'] != 191024044) &
+                                 (self.dr1_obs['taskID'] != 191209025) &
+                                 (self.dr1_obs['taskID'] != 191227014) &
+                                 (self.dr1_obs['taskID'] != 191230041) &
+                                 (self.dr1_obs['taskID'] != 191031242) &
+                                 (self.dr1_obs['taskID'] != 191209026))[0]
         print(len(self.dr1_obs),len(ind_good_proc))
         self.dr1_obs = self.dr1_obs[ind_good_proc]
         #now get the corresponding beam information
