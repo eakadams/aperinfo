@@ -148,45 +148,9 @@ class ObsCat(object):
         self.dr1_obs = self.get_data_release_obs(firstind=0,lastind=148)
 
     #get dr1 plus
-    def get_dr1plus_obs(self):
-        self.dr1_plus_obs = self.get_data_release_obs(firstind=0,lastind=180)
+    def get_dr1plus_obs(self,lastind=201):
+        self.dr1_plus_obs = self.get_data_release_obs(firstind=0,lastind=lastind)
 
-       
-#    #get DR1 data
-#    def get_dr1_obs(self,lastind=148):
-#        """
-#        Get information for DR1, through endid
-#        """
-#        #obsinfo is already sorted
-#        #and now have added happili info there already
-#        #first, find ending index for dr1
-#        #didn't work, did manually, confirm it:
-#        print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
-#        self.dr1_obs = self.obsinfo[0:(lastind+1)]
-#        #check for bad data
-#        goodind = np.where(self.dr1_obs['quality'] == 'good')[0]
-#        #print(len(self.dr1_obs),len(goodind))
-#        #limit to good data (archived, not deleted)
-#        self.dr1_obs = self.dr1_obs[goodind]
-#        #check for ahppili info
-#        (taskids, ind_dr1_obs,
-#         ind_happili) = np.intersect1d(self.dr1_obs['taskID'],self.happili['taskid'],
-#                                       return_indices=True)
-#        #note that there are two obs in obsinfo that hsouldnt be -- argo and early sci
-#        #need to check that codebut will ignore for now
-#        #and assume all taskids have an entry on happili
-#        #might be nothing due to failed processing but at least a directory exists
-#        #first, only keep indices that have happili entries
-#        self.dr1_obs = self.dr1_obs[ind_dr1_obs]
-#
-#        """
-#        This is only for processed data, still releasing for raw 
-#        observational data
-#        #check for 300 MHz processing and remove from consideration for release
-#        ind_good_proc = np.where(self.dr1_obs['apercal_name'] != "300 MHz")[0]
-#        print(len(self.dr1_obs),len(ind_good_proc))
-#        self.dr1_obs = self.dr1_obs[ind_good_proc]
-#        """
 
 
         
@@ -247,60 +211,55 @@ class ObsCat(object):
                     overwrite=True)
 
 
-        
-
-    def plot_apercal_dr1_obs(self):
+    def plot_apercal_obs(self,datarelease,drname):
         """
-        Sky plot of Apercal processing
+        Plot skyview of Apercal observations for a provided data release
+        Data release is part of object, comes from calling "get_data_release_obs"
+        drname is a string, used for naming output files
         """
         #have to get separate lists for each Apercal processing
         #get unique names
-        apercal_names = np.unique(self.dr1_obs['apercal_name'])
+        apercal_names = np.unique(datarelease['apercal_name'])
         #add a name for medium-deep
         apercal_names = np.append(apercal_names,'AMES')
         #get colors
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        mpcolors = prop_cycle.by_key()['color']
         colorlist = mpcolors[0:len(apercal_names)]
         #get ra and dec list; need to first separate medium-deep pointings
-        ind_ames = [i for i, s in enumerate(self.dr1_obs['name']) if 'M' in s]
-        ind_awes = [i for i, s in enumerate(self.dr1_obs['name']) if 'S' in s]
-        self.dr1_ames =  self.dr1_obs[ind_ames]
-        self.dr1_awes =  self.dr1_obs[ind_awes]
-
+        ind_ames = [i for i, s in enumerate(datarelease['name']) if 'M' in s]
+        ind_awes = [i for i, s in enumerate(datarelease['name']) if 'S' in s]
+        dr_ames =  datarelease[ind_ames]
+        dr_awes =  datarelease[ind_awes]
 
         #also want to find only those that have duplicates, e.g., multiple observations
-        s = pd.Series(self.dr1_ames['name'])
+        s = pd.Series(dr_ames['name'])
         dup = s[s.duplicated()]
         repeated_fields = np.unique(dup)
 
-
-        #need to find part dr1_ames that contains repeated_fields above
+        #need to find part dr_ames that contains repeated_fields above
         #match two string arrays...
         #almost could get info from pd dup object but it doesn't count first occurence
         ind_repeats = []
         for field in repeated_fields:
-            ind = [i for i, s in enumerate(self.dr1_ames['name']) if field in s]
+            ind = [i for i, s in enumerate(dr_ames['name']) if field in s]
             ind_repeats.append(ind)
 
         repeat_array = np.sort(np.hstack(ind_repeats))
-        #np.sort(ind_repeats)
         print(repeat_array)
 
-        self.dr1_repeated_ames = self.dr1_ames[repeat_array]
+        repeated_ames = dr_ames[repeat_array]
         
         ralist = []
         declist = []
         for name in apercal_names[0:-1]:
-            ind = np.where(self.dr1_obs['apercal_name'] == name)[0]
-            ra = self.dr1_obs['field_ra'][ind]
-            dec = self.dr1_obs['field_dec'][ind]
+            ind = np.where(datarelease['apercal_name'] == name)[0]
+            ra = datarelease['field_ra'][ind]
+            dec = datarelease['field_dec'][ind]
             ralist.append(ra)
             declist.append(dec)
 
         #add repeated ames to end
-        ra = self.dr1_repeated_ames['field_ra']
-        dec = self.dr1_repeated_ames['field_dec']
+        ra = repeated_ames['field_ra']
+        dec = repeated_ames['field_dec']
         ralist.append(ra)
         declist.append(dec)
 
@@ -312,22 +271,22 @@ class ObsCat(object):
                             declist,
                             colorlist,
                             apercal_names,
-                            os.path.join(figdir,'apercal_processing_dr1_obs.pdf'),
+                            os.path.join(figdir,'apercal_processing_'+drname+'_obs.pdf'),
                             survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
 
         #need to add a separate medium-deep plot
         #first sort by field name
-        field_name = np.flip(np.sort(np.unique(self.dr1_repeated_ames['name'])))
+        field_name = np.flip(np.sort(np.unique(repeated_ames['name'])))
 
-        print(len(self.dr1_repeated_ames))
+        print(len(repeated_ames))
 
         #then create plot coordinates for everything
         #base on field name, want to be in same row
-        plot_x = np.full(len(self.dr1_repeated_ames),-10)
-        plot_y = np.full(len(self.dr1_repeated_ames),-10)
+        plot_x = np.full(len(repeated_ames),-10)
+        plot_y = np.full(len(repeated_ames),-10)
 
         for i, field in enumerate(field_name):
-            ames_ind = np.where(self.dr1_repeated_ames['name'] == field)[0]
+            ames_ind = np.where(repeated_ames['name'] == field)[0]
             #all fields in same row, same y coord
             #offset by 1 for ease of plotting
             plot_y[ames_ind] = i+1
@@ -345,7 +304,7 @@ class ObsCat(object):
         #have coordinates for al fields, now have to iterate over Apercal name for colors
         #skip last one, placeholder for AMES
         for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
-            plotind = np.where(self.dr1_repeated_ames['apercal_name'] == name)[0]
+            plotind = np.where(repeated_ames['apercal_name'] == name)[0]
             ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
 
         #plt.legend()
@@ -356,9 +315,17 @@ class ObsCat(object):
         ax.set_title('Medium-deep fields')
         ax.set_xlabel('Number of observations')
 
-        plotname = os.path.join(figdir,'apercal_processing_dr1_ames.pdf')
+        plotname = os.path.join(figdir,'apercal_processing_'+drname+'_ames.pdf')
         plt.savefig(plotname)
         plt.close()
+
+
+    def plot_apercal_dr1_obs(self):
+        self.plot_apercal_obs(self.dr1_obs,'dr1')
+
+        
+    def plot_apercal_dr1plus_obs(self):
+        self.plot_apercal_obs(self.dr1_plus_obs,'dr1_plus')
 
         
     def plot_all_obs(self):
@@ -428,6 +395,8 @@ class ObsCat(object):
                     end=4)!=-1)
                 ra = self.obsinfo['field_ra'][ind]
                 dec = self.obsinfo['field_dec'][ind]
+                print(month)
+                print(self.obsinfo['taskID'][ind])
             ralist.append(ra)
             declist.append(dec)
 
