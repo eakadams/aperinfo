@@ -1,0 +1,55 @@
+Observations to attempt to reprocess before data release
+Emphasis is on those already processed with data products in ALTA -
+want to update with proper ones before release
+
+192014043 & 191024044 share calibrators; can retrieve together
+
+Target ('S1402+3622'): 191024043
+Fluxcal ('3C147'): 191024 003-042
+Polcal ('3C286'): 191025 001-040
+Notes: Flag RT2
+
+Target ('M0155+3622): 191024044
+Fluxcal ('3C147'): 191024 003-042
+Polcal  ('3C286'): 191025 001-040
+Notes: Flag RT2
+
+Target ('M1342+2904'): 191209025
+Fluxcal ('3C147'): 191210 001- 040
+Polcal ('3C138'):  191208 042-57; 191209 001-024
+Notes: Flag RT9
+
+Target ('M0155+3356'): 191227014
+Fluxcal (3C147): 191226 042-069; 191227 001-012
+Polcal (3C286): 191228 001-040
+Notes: Flag RT9
+
+Target ('S2300+3848'): 191230041
+Fluxcal (3C147): 191230 042-070; 191231 001-011
+Polcal (3C286): 191230 001-040
+Notes: Flag RT9
+
+Target ('M0155+3622'): 191031242
+Fluxcal (3C295): 191031 202-241
+Polcal (3C286): 191101 001-040
+Notes: Flag starting time - first ten minutes should be sufficient; '2019-10-31 17:01:17~17:11:17'
+
+Target (M0141+3622): 200305001
+Fluxcal (3C147): 200304 033-072
+Polcal (3C286): 200305 002-011; 200306 001-030
+Notes: Flag after 19:51:12; '2020-03-05 19:51:13~21:01:12'
+
+Target (S1427+3130): 200427042
+Fluxcal (3C147): 200427 002-041
+Polcal (3C138): 200428 001-040
+Notes: Flag RTB
+
+
+That is eight fields, which is probably plenty given the time constraints.
+There are other potential fields to consider, but those are ones
+that never processed in the first place, so there's no bad processing
+to replace:
+190711169 - 190728041: 300 MHz pipeline
+190731125 - autocal misidentified calibrators due to system scans
+190806345 - first set of cals no done; autocal didn't know to look beyond
+200429042 - following polcal is missing C&D; have to use an earlier polcal
