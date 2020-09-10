@@ -144,11 +144,11 @@ class ObsCat(object):
         return data_release
 
     #get dr1 data
-    def get_dr1(self):
+    def get_dr1_obs(self):
         self.dr1_obs = self.get_data_release_obs(firstind=0,lastind=148)
 
     #get dr1 plus
-    def get_dr1plus(self,lastind=221):
+    def get_dr1plus_obs(self,lastind=221):
         self.dr1_plus_obs = self.get_data_release_obs(firstind=0,lastind=lastind)
 
 
@@ -311,80 +311,17 @@ class ProcCat(ObsCat):
         #and beam position
         self.cb_pos = ascii.read(beampos)
 
-    #can I define a new get dr1_obs that does what i want here?
-    #get DR1_OBS data
+
     def get_dr1_proc(self):
-        """
-        Get information for DR1 processing
-        """
-        #first get obs info
         self.get_dr1_obs()
-        #check for 300 MHz processing and remove from consideration for release
-        #also for data sets that weren't processed
-        #and any other where I have notes:
-        """
-        190806345 - no processed data produced; probably due to missing set of cals at start
-        191024043 - RT2 delays bad; need to flag and reprocess
-        191024044 - RT2 delays bad; need to flag and reprocess
-        191209025 - RT9 off source in middle of observation; flag and reprocess
-        191227014 - RT9 not on source; flag and reprocess
-        191230041 - RT9 not on source for ~first hour; 
-                    RT8 had large self-cal amp solutions after that. Flag & reprocess
-        191031242 - bright stripes --> bad time at start to be flagged. Also RT3
-        191209026 - bright sources on edge not in mask. Need updated pipeline version
-        """
-        ind_good_proc = np.where((self.dr1_obs['apercal_name'] != "Apercal_300") &
-                                 (self.dr1_obs['apercal_name'] != "None") &
-                                 (self.dr1_obs['taskID'] != 190806345) &
-                                 (self.dr1_obs['taskID'] != 191024043) &
-                                 (self.dr1_obs['taskID'] != 191024044) &
-                                 (self.dr1_obs['taskID'] != 191209025) &
-                                 (self.dr1_obs['taskID'] != 191227014) &
-                                 (self.dr1_obs['taskID'] != 191230041) &
-                                 (self.dr1_obs['taskID'] != 191031242) &
-                                 (self.dr1_obs['taskID'] != 191209026))[0]
-        print(len(self.dr1_obs),len(ind_good_proc))
-        self.dr1_obs = self.dr1_obs[ind_good_proc]
-        #now get the corresponding beam information
-        #only want infomration for taskids that are in dr1_obs
-        #and which pass validation
-        #validation is only on continuum currently
-        #need to carry polarization and line flags
-        #add a field name to valid; want this info
-        self.valid['Field'] = np.full(len(self.valid),'X0000+9999')
-        #add a N_pass to obs table
-        self.dr1_obs['N_pass'] = np.full(len(self.dr1_obs),0)
-        #initialize empty array for holding indices
-        array_passind = np.empty(0,dtype=int)
-        #iterate through obs task ids
-        for i,taskid in enumerate(self.dr1_obs['taskID']):
-            passind = np.where((self.valid['taskid'] == taskid ) &
-                               (self.valid['cont_pass'] == 'True') )[0]
-            #add number that pass
-            self.dr1_obs['N_pass'][i] = len(passind)
-            if len(passind) > 0:
-                #if there are things that pass on to release, append them
-                array_passind = np.append(array_passind,passind)
+        self.dr1_obs, self.dr1_proc = get_dr_proc(
+            self.dr1_obs, self.valid,self.cb_pos)
 
-            #also update field name
-            taskind = np.where(self.valid['taskid'] == taskid)[0]
-            if len(taskind) > 0:
-                self.valid['Field'][taskind] = self.dr1_obs['name'][i]
-
-        #now I want to keep just beams that pass validation and are in release
-        self.dr1_proc = self.valid[array_passind]
-
-        #add ra and dec
-        ra_array, dec_array = sp.get_ra_dec(self.dr1_proc['taskid'],
-                                            self.dr1_proc['beam'],
-                                            self.dr1_obs['taskID'],
-                                            self.dr1_obs['field_ra'],
-                                            self.dr1_obs['field_dec'],
-                                            self.cb_pos)
-        self.dr1_proc['ra'] = ra_array
-        self.dr1_proc['dec'] = dec_array
-
-        print(len(self.valid),len(self.dr1_proc))
+    def get_dr1plus_proc(self):
+        self.get_dr1plus_obs()
+        self.dr1_plus_obs, self.dr1_plus_proc = get_dr_proc(
+            self.dr1_plus_obs, self.valid,self.cb_pos)
+   
 
     #make LATEX test table for paper
     def make_dr1_proc_paper_table(self):
@@ -822,3 +759,64 @@ def plot_apercal_obs(datarelease,drname):
     plotname = os.path.join(figdir,'apercal_processing_'+drname+'_ames.pdf')
     plt.savefig(plotname)
     plt.close()
+
+
+def get_dr_proc(drobs,valid,cb_pos):
+    """
+    Get processed info for drobs (ProcCat.dr_obs object)
+    Need valid object (ProcCat.valid)
+    And cb pos (ProcCat.cb_pos
+    """
+    #check for 300 MHz processing and remove from consideration for release
+    #also any other datasets with specific notes
+    """
+    190806345 - no processed data produced; probably due to missing set of cals at start
+    190731125 - never processed
+    """
+    ind_good_proc = np.where((drobs['apercal_name'] != "Apercal_300") &
+                             (drobs['taskID'] != 190806345) &
+                             (drobs['taskID'] != 190731125))[0]
+    print(len(drobs),len(ind_good_proc))
+    drobs = drobs[ind_good_proc]
+    #now get the corresponding beam information
+    #only want infomration for taskids that are in dr
+    #and which pass validation
+    #validation is only on continuum currently
+    #need to carry polarization and line flags
+    #add a field name to valid; want this info
+    valid['Field'] = np.full(len(valid),'X0000+9999')
+    #add a N_pass to obs table
+    drobs['N_pass'] = np.full(len(drobs),0)
+    #initialize empty array for holding indices
+    array_passind = np.empty(0,dtype=int)
+    #iterate through obs task ids
+    for i,taskid in enumerate(drobs['taskID']):
+        passind = np.where((valid['taskid'] == taskid ) &
+                           (valid['cont_pass'] == 'True') )[0]
+        #add number that pass
+        drobs['N_pass'][i] = len(passind)
+        if len(passind) > 0:
+            #if there are things that pass on to release, append them
+            array_passind = np.append(array_passind,passind)
+
+        #also update field name
+        taskind = np.where(valid['taskid'] == taskid)[0]
+        if len(taskind) > 0:
+            valid['Field'][taskind] = drobs['name'][i]
+
+    #now I want to keep just beams that pass validation and are in release
+    dr_proc = valid[array_passind]
+
+    #add ra and dec
+    ra_array, dec_array = sp.get_ra_dec(dr_proc['taskid'],
+                                        dr_proc['beam'],
+                                        drobs['taskID'],
+                                        drobs['field_ra'],
+                                        drobs['field_dec'],
+                                        cb_pos)
+    dr_proc['ra'] = ra_array
+    dr_proc['dec'] = dec_array
+
+    print(len(valid),len(dr_proc))
+    
+    return drobs,dr_proc

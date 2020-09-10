@@ -52,6 +52,7 @@ def combine_validation():
     common_taskids = np.intersect1d(pol_cont_taskids, hi_taskids)
     #make sure things are sorted
     common_taskids.sort()
+    cont_taskids.sort()
     print("There are {} observations with continuum validation".
           format(len(cont_taskids)))
     print("There are {} observations with HI validation".
@@ -61,56 +62,60 @@ def combine_validation():
     print("There are {} observations with all validation".
           format(len(common_taskids)))
     #setup table
+    #use continuum as basis for now; other valid not up to date
+    #and cont determines release
     table_length = len(common_taskids) * 40
+    table_length = len(cont_taskids) * 40
     t = Table()
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
-    t['cont_pass'] = np.empty(table_length,dtype=bool)
-    t['pol_pass'] = np.empty(table_length,dtype=bool)
-    t['pol_V_pass'] = np.empty(table_length,dtype=bool)
-    t['pol_QU_pass'] = np.empty(table_length,dtype=bool)
-    t['HI_all_good'] = np.empty(table_length,dtype=bool)
-    t['HI_all_good_ok'] = np.empty(table_length,dtype=bool)
-    t['HI_c2_good_ok'] = np.empty(table_length,dtype=bool)
-    t['HI_c2_good'] = np.empty(table_length,dtype=bool)
-    t['HI_pass'] = np.empty(table_length,dtype=bool)
-    t['all_pass'] = np.empty(table_length,dtype=bool)
+    t['cont_pass'] = np.full(table_length,False,dtype=bool)
+    t['pol_pass'] = np.full(table_length,False,dtype=bool)
+    t['pol_V_pass'] = np.full(table_length,False,dtype=bool)
+    t['pol_QU_pass'] = np.full(table_length,False,dtype=bool)
+    t['HI_all_good'] = np.full(table_length,False,dtype=bool)
+    t['HI_all_good_ok'] = np.full(table_length,False,dtype=bool)
+    t['HI_c2_good_ok'] = np.full(table_length,False,dtype=bool)
+    t['HI_c2_good'] = np.full(table_length,False,dtype=bool)
+    t['HI_pass'] = np.full(table_length,False,dtype=bool)
+    t['all_pass'] = np.full(table_length,False,dtype=bool)
     #get relevant cont metrics (used for valid)
     #so that I can plot
-    t['s_in'] = np.empty(table_length)
-    t['s_out'] = np.empty(table_length)
-    t['rat'] = np.empty(table_length)
+    t['s_in'] = np.full(table_length,np.nan)
+    t['s_out'] = np.full(table_length,np.nan)
+    t['rat'] = np.full(table_length,np.nan)
     t['N2'] = np.full(table_length,np.nan)
-    t['Ex-2'] = np.empty(table_length)
+    t['Ex-2'] = np.full(table_length,np.nan)
     #get relevant pol metrics
-    t['pol_s_in'] = np.empty(table_length)
-    t['pol_s_out'] = np.empty(table_length)
-    t['pol_rat'] = np.empty(table_length)
+    t['pol_s_in'] = np.full(table_length,np.nan)
+    t['pol_s_out'] = np.full(table_length,np.nan)
+    t['pol_rat'] = np.full(table_length,np.nan)
     t['pol_N2'] = np.full(table_length,np.nan)
-    t['pol_Ex-2'] = np.empty(table_length)
-    t['pol_ftmax'] = np.empty(table_length)
-    t['pol_peak_in'] = np.empty(table_length)
-    t['pol_P2'] = np.empty(table_length)
-    t['pol_bmin'] = np.empty(table_length)
-    t['Q_bm_fg'] = np.empty(table_length)
-    t['U_bm_fg'] = np.empty(table_length)
-    t['Q_st_fg'] = np.empty(table_length)
-    t['U_st_fg'] = np.empty(table_length)
+    t['pol_Ex-2'] = np.full(table_length,np.nan)
+    t['pol_ftmax'] = np.full(table_length,np.nan)
+    t['pol_peak_in'] = np.full(table_length,np.nan)
+    t['pol_P2'] = np.full(table_length,np.nan)
+    t['pol_bmin'] = np.full(table_length,np.nan)
+    t['Q_bm_fg'] = np.full(table_length,np.nan)
+    t['U_bm_fg'] = np.full(table_length,np.nan)
+    t['Q_st_fg'] = np.full(table_length,np.nan)
+    t['U_st_fg'] = np.full(table_length,np.nan)
     #get relevant HI metrics
     t['c2'] = np.full(table_length,'B')
     t['c1'] = np.full(table_length,'B')
     t['c0'] = np.full(table_length,'B')
-    t['rms_c2'] = np.empty(table_length)
-    t['rms_c1'] = np.empty(table_length)
-    t['rms_c0'] = np.empty(table_length)
-    t['lgfrac_c2'] = np.empty(table_length)
-    t['lgfrac_c1'] = np.empty(table_length)
-    t['lgfrac_c0'] = np.empty(table_length)
-    t['prom_c2'] = np.empty(table_length)
-    t['prom_c1'] = np.empty(table_length)
-    t['prom_c0'] = np.empty(table_length)
+    t['rms_c2'] = np.full(table_length,np.nan)
+    t['rms_c1'] = np.full(table_length,np.nan)
+    t['rms_c0'] = np.full(table_length,np.nan)
+    t['lgfrac_c2'] = np.full(table_length,np.nan)
+    t['lgfrac_c1'] = np.full(table_length,np.nan)
+    t['lgfrac_c0'] = np.full(table_length,np.nan)
+    t['prom_c2'] = np.full(table_length,np.nan)
+    t['prom_c1'] = np.full(table_length,np.nan)
+    t['prom_c0'] = np.full(table_length,np.nan)
     #now iterate through taskids
-    for i,tid in enumerate(common_taskids):
+    #for i,tid in enumerate(common_taskids):
+    for i,tid in enumerate(cont_taskids):
         #and go through the beams
         for b in range(40):
             ind = i*40 + b
@@ -130,78 +135,83 @@ def combine_validation():
             #something weird is happening with continuum so do if statement
             #t['cont_pass'][ind] = cont['pass'][cont_ind]
             #column is string, not boolean. booo.
-            if cont['pass'][cont_ind] == 'True':
-                t['cont_pass'][ind] = True
-            else:
-                t['cont_pass'][ind] = False
-            #add cont metric
-            t['s_in'][ind] = cont['s_in'][cont_ind]
-            t['s_out'][ind] = cont['s_out'][cont_ind]
-            t['rat'][ind] = cont['rat'][cont_ind]
-            t['N2'][ind] = cont['N2'][cont_ind]
-            t['Ex-2'][ind] = cont['Ex-2'][cont_ind]
+            #need to check that index exists
+            #should have length exactly one; only one index
+            if len(cont_ind) == 1:
+                if cont['pass'][cont_ind] == 'True':
+                    t['cont_pass'][ind] = True
+                else:
+                    t['cont_pass'][ind] = False
+                #add cont metric
+                t['s_in'][ind] = cont['s_in'][cont_ind]
+                t['s_out'][ind] = cont['s_out'][cont_ind]
+                t['rat'][ind] = cont['rat'][cont_ind]
+                t['N2'][ind] = cont['N2'][cont_ind]
+                t['Ex-2'][ind] = cont['Ex-2'][cont_ind]
             #and do polarization
-            if pol['pass_V'][pol_ind] == 'True':
-                t['pol_V_pass'][ind] = True
-            else:
-                t['pol_V_pass'][ind] = False
+            if len(pol_ind) == 1:
+                if pol['pass_V'][pol_ind] == 'True':
+                    t['pol_V_pass'][ind] = True
+                else:
+                    t['pol_V_pass'][ind] = False
                 
-            if pol['pass_QU'][pol_ind] == 'True':
-                t['pol_QU_pass'][ind] = True
-            else:
-                t['pol_QU_pass'][ind] = False
+                if pol['pass_QU'][pol_ind] == 'True':
+                    t['pol_QU_pass'][ind] = True
+                else:
+                    t['pol_QU_pass'][ind] = False
 
-            #do combined passing
-            if (pol['pass_V'][pol_ind] == 'True') and (pol['pass_QU'][pol_ind] == 'True' ):
-                t['pol_pass'][ind] = True
-            else:
-                t['pol_pass'][ind] = False
+                #do combined passing
+                if (pol['pass_V'][pol_ind] == 'True') and (pol['pass_QU'][pol_ind] == 'True' ):
+                    t['pol_pass'][ind] = True
+                else:
+                    t['pol_pass'][ind] = False
 
-            #do pol metrics
-            t['pol_s_in'][ind] = pol['s_in'][pol_ind]
-            t['pol_s_out'][ind] = pol['s_out'][pol_ind]
-            t['pol_rat'][ind] = pol['rat'][pol_ind]
-            t['pol_N2'][ind] = pol['N2'][pol_ind]
-            t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
-            t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
-            t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
-            t['pol_P2'][ind] = pol['P2'][pol_ind]
-            t['pol_bmin'][ind] = pol['bmin'][pol_ind]
-            t['Q_bm_fg'][ind] = pol['Q_bm_fg'][pol_ind]
-            t['U_bm_fg'][ind] = pol['U_bm_fg'][pol_ind]
-            t['Q_st_fg'][ind] = pol['Q_st_fg'][pol_ind]
-            t['U_st_fg'][ind] = pol['U_st_fg'][pol_ind]
+                #do pol metrics
+                t['pol_s_in'][ind] = pol['s_in'][pol_ind]
+                t['pol_s_out'][ind] = pol['s_out'][pol_ind]
+                t['pol_rat'][ind] = pol['rat'][pol_ind]
+                t['pol_N2'][ind] = pol['N2'][pol_ind]
+                t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
+                t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
+                t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
+                t['pol_P2'][ind] = pol['P2'][pol_ind]
+                t['pol_bmin'][ind] = pol['bmin'][pol_ind]
+                t['Q_bm_fg'][ind] = pol['Q_bm_fg'][pol_ind]
+                t['U_bm_fg'][ind] = pol['U_bm_fg'][pol_ind]
+                t['Q_st_fg'][ind] = pol['Q_st_fg'][pol_ind]
+                t['U_st_fg'][ind] = pol['U_st_fg'][pol_ind]
     
             #for line, have to convert to boolean
             #also filling multiple columns so that I
             #can test different versions of passing
             #test all passing, that is also "pass"
-            if hi['all_good'][hi_ind] == 1:
-                t['HI_pass'][ind] = True
-                t['HI_all_good'][ind] = True
-            else:
-                t['HI_pass'][ind] = False
-                t['HI_all_good'][ind] = False
-            #test good plus ok, all cubes
-            if hi['all_good_ok'][hi_ind] == 1:
-                t['HI_all_good_ok'][ind] = True
-            else:
-                t['HI_all_good_ok'][ind] = False
-            #test cube 2
-            if hi['c2_good'][hi_ind] == 1:
-                t['HI_c2_good'][ind] = True
-                t['HI_c2_good_ok'][ind] = True
-            elif hi['c2_ok'][hi_ind] == 1:
-                t['HI_c2_good'][ind] = False
-                t['HI_c2_good_ok'][ind] = True
-            else:
-                t['HI_c2_good'][ind] = False
-                t['HI_c2_good_ok'][ind] = False
+            #check index exists
+            if len(hi_ind) == 1:
+                if hi['all_good'][hi_ind] == 1:
+                    t['HI_pass'][ind] = True
+                    t['HI_all_good'][ind] = True
+                else:
+                    t['HI_pass'][ind] = False
+                    t['HI_all_good'][ind] = False
+                #test good plus ok, all cubes
+                if hi['all_good_ok'][hi_ind] == 1:
+                    t['HI_all_good_ok'][ind] = True
+                else:
+                    t['HI_all_good_ok'][ind] = False
+                #test cube 2
+                if hi['c2_good'][hi_ind] == 1:
+                    t['HI_c2_good'][ind] = True
+                    t['HI_c2_good_ok'][ind] = True
+                elif hi['c2_ok'][hi_ind] == 1:
+                    t['HI_c2_good'][ind] = False
+                    t['HI_c2_good_ok'][ind] = True
+                else:
+                    t['HI_c2_good'][ind] = False
+                    t['HI_c2_good_ok'][ind] = False
 
-            #do hi metrics
-            #cube status requires logic
-            #default is bad, so just test good and okay
-            if len(hi_ind) >0:
+                #do hi metrics
+                #cube status requires logic
+                #default is bad, so just test good and okay
                 if hi['c2_good'][hi_ind] == 1:
                     t['c2'][ind] = 'G'
                 elif hi['c2_ok'][hi_ind] == 1:
@@ -216,9 +226,8 @@ def combine_validation():
                     t['c0'][ind] = 'G'
                 elif hi['c0_ok'][hi_ind] == 1:
                     t['c0'][ind] = 'O'
-            #metrics are easy
-            #but have to test hi_ind exists
-            if len(hi_ind) >0:
+
+                #metrics are easy
                 t['rms_c2'][ind] = hi['rms_c2'][hi_ind]
                 t['rms_c1'][ind] = hi['rms_c1'][hi_ind]
                 t['rms_c0'][ind] = hi['rms_c0'][hi_ind]
@@ -228,16 +237,7 @@ def combine_validation():
                 t['prom_c2'][ind] = hi['prom_c2'][hi_ind]
                 t['prom_c1'][ind] = hi['prom_c0'][hi_ind]
                 t['prom_c0'][ind] = hi['prom_c1'][hi_ind]
-            else:
-                t['rms_c2'][ind]  = np.nan
-                t['rms_c1'][ind] = np.nan
-                t['rms_c0'][ind] = np.nan
-                t['lgfrac_c2'][ind] = np.nan
-                t['lgfrac_c1'][ind] = np.nan
-                t['lgfrac_c0'][ind] = np.nan
-                t['prom_c2'][ind] = np.nan
-                t['prom_c1'][ind] = np.nan
-                t['prom_c0'][ind] = np.nan
+
 
 
     #now print and return some useful information
