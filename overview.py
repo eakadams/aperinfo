@@ -321,6 +321,12 @@ class ProcCat(ObsCat):
         self.get_dr1plus_obs()
         self.dr1_plus_obs, self.dr1_plus_proc = get_dr_proc(
             self.dr1_plus_obs, self.valid,self.cb_pos)
+
+    def plot_dr1_proc(self):
+        plot_proc(self.dr1_proc,self.dr1_obs,'dr1')
+
+    def plot_dr1plus_proc(self):
+        plot_proc(self.dr1_plus_proc,self.dr1_plus_obs,'dr1')
    
 
     #make LATEX test table for paper
@@ -423,84 +429,6 @@ class ProcCat(ObsCat):
                     )
 
     
-
-    def plot_dr1_proc(self):
-        """
-        Make sky plots of the processed data
-        Will start by showing overall sky coverage, valid cont data
-        Then for released data want plots that show good/okay/bad pol & line
-        """
-        prop_cycle = plt.rcParams['axes.prop_cycle']
-        mpcolors = prop_cycle.by_key()['color']
-        colorlist = [mpcolors[0]]
-
-        plot_processed_data([self.dr1_proc['ra']],
-                            [self.dr1_proc['dec']],
-                            colorlist,
-                            ['Released beams'],
-                            self.dr1_obs['taskID','field_ra','field_dec'],
-                            'dr1_proc')
-
-        #plot Stokes V quality
-        quality = ['Pass','Fail']
-        colorlist = mpcolors[0:len(quality)]
-        ralist = []
-        declist = []
-        for qual in quality:
-            if qual == 'Pass':
-                ind = np.where(self.dr1_proc['pol_V_pass'] == 'True')[0]
-            if qual == 'Fail':
-                ind = np.where(self.dr1_proc['pol_V_pass'] == 'False')[0]
-            ra = self.dr1_proc['ra'][ind]
-            dec = self.dr1_proc['dec'][ind]
-            ralist.append(ra)
-            declist.append(dec)
-
-        plot_processed_data(ralist,declist,colorlist,quality,
-                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_V')
-
-        
-        #plot Stokes QU quality
-        quality = ['Pass','Fail']
-        colorlist = mpcolors[0:len(quality)]
-        ralist = []
-        declist = []
-        for qual in quality:
-            if qual == 'Pass':
-                ind = np.where(self.dr1_proc['pol_QU_pass'] == 'True')[0]
-            if qual == 'Fail':
-                ind = np.where(self.dr1_proc['pol_QU_pass'] == 'False')[0]
-            ra = self.dr1_proc['ra'][ind]
-            dec = self.dr1_proc['dec'][ind]
-            ralist.append(ra)
-            declist.append(dec)
-
-        plot_processed_data(ralist,declist,colorlist,quality,
-                            self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_QU')
-
-        
-        #plot HI data quality
-        #iterate through cubes
-        cubes = ['c0','c1','c2']
-        quality = ['Good','Bad','Okay']
-        colorlist = mpcolors[0:len(quality)]
-        for cube in cubes:
-            ralist = []
-            declist = []
-            for qual in quality:
-                if qual == 'Good':
-                    ind = np.where(self.dr1_proc[cube] == 'G')[0]
-                if qual == 'Okay':
-                    ind = np.where(self.dr1_proc[cube] == 'O')[0]
-                if qual == 'Bad':
-                    ind = np.where(self.dr1_proc[cube] == 'B')[0]
-                ra = self.dr1_proc['ra'][ind]
-                dec = self.dr1_proc['dec'][ind]
-                ralist.append(ra)
-                declist.append(dec)
-
-            plot_processed_data(ralist,declist,colorlist,quality,
-                                self.dr1_obs['taskID','field_ra','field_dec'],'dr1_proc_HI'+cube)
 
 
     #explore DR1
@@ -772,10 +700,21 @@ def get_dr_proc(drobs,valid,cb_pos):
     """
     190806345 - no processed data produced; probably due to missing set of cals at start
     190731125 - never processed
+    200429042 - never processed due to issues w/ ants changing for cals
+    200430053-200505057 : RTC & RTD left out
     """
     ind_good_proc = np.where((drobs['apercal_name'] != "Apercal_300") &
                              (drobs['taskID'] != 190806345) &
-                             (drobs['taskID'] != 190731125))[0]
+                             (drobs['taskID'] != 190731125) &
+                             (drobs['taskID'] != 200429042) &
+                             (drobs['taskID'] != 200430053) &
+                             (drobs['taskID'] != 200501001) &
+                             (drobs['taskID'] != 200501042) &
+                             (drobs['taskID'] != 200502054) &
+                             (drobs['taskID'] != 200503001) &
+                             (drobs['taskID'] != 200503042) &
+                             (drobs['taskID'] != 200505016) &
+                             (drobs['taskID'] != 200505057))[0]
     print(len(drobs),len(ind_good_proc))
     drobs = drobs[ind_good_proc]
     #now get the corresponding beam information
@@ -820,3 +759,86 @@ def get_dr_proc(drobs,valid,cb_pos):
     print(len(valid),len(dr_proc))
     
     return drobs,dr_proc
+
+def plot_proc(proc,obs,drname):
+    """
+    Make sky plots of the processed data
+    Will start by showing overall sky coverage, valid cont data
+    Then for released data want plots that show good/okay/bad pol & line
+    Inputs:
+    - proc : ProcCat.dr_proc obj
+    - obs : ProcCat.dr_obs obj
+    - drname : string drname
+    """
+
+
+    colorlist = [mpcolors[0]]
+
+    plot_processed_data([proc['ra']],
+                        [proc['dec']],
+                        colorlist,
+                        ['Released beams'],
+                        obs['taskID','field_ra','field_dec'],
+                        drname)
+
+    #plot Stokes V quality
+    quality = ['Pass','Fail']
+    colorlist = mpcolors[0:len(quality)]
+    ralist = []
+    declist = []
+    for qual in quality:
+        if qual == 'Pass':
+            ind = np.where(proc['pol_V_pass'] == 'True')[0]
+        if qual == 'Fail':
+            ind = np.where(proc['pol_V_pass'] == 'False')[0]
+        ra = proc['ra'][ind]
+        dec = proc['dec'][ind]
+        ralist.append(ra)
+        declist.append(dec)
+
+    plot_processed_data(ralist,declist,colorlist,quality,
+                        obs['taskID','field_ra','field_dec'],drname+'_V')
+
+        
+    #plot Stokes QU quality
+    quality = ['Pass','Fail']
+    colorlist = mpcolors[0:len(quality)]
+    ralist = []
+    declist = []
+    for qual in quality:
+        if qual == 'Pass':
+            ind = np.where(proc['pol_QU_pass'] == 'True')[0]
+        if qual == 'Fail':
+            ind = np.where(proc['pol_QU_pass'] == 'False')[0]
+        ra = proc['ra'][ind]
+        dec = proc['dec'][ind]
+        ralist.append(ra)
+        declist.append(dec)
+
+    plot_processed_data(ralist,declist,colorlist,quality,
+                        obs['taskID','field_ra','field_dec'],drname+'_QU')
+
+        
+    #plot HI data quality
+    #iterate through cubes
+    cubes = ['c0','c1','c2']
+    quality = ['Good','Bad','Okay']
+    colorlist = mpcolors[0:len(quality)]
+    for cube in cubes:
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Good':
+                ind = np.where(proc[cube] == 'G')[0]
+            if qual == 'Okay':
+                ind = np.where(proc[cube] == 'O')[0]
+            if qual == 'Bad':
+                ind = np.where(proc[cube] == 'B')[0]
+            ra = proc['ra'][ind]
+            dec = proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            obs['taskID','field_ra','field_dec'],drname+'_HI'+cube)
+
