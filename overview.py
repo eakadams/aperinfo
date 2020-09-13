@@ -326,7 +326,8 @@ class ProcCat(ObsCat):
         plot_proc(self.dr1_proc,self.dr1_obs,'dr1')
 
     def plot_dr1plus_proc(self):
-        plot_proc(self.dr1_plus_proc,self.dr1_plus_obs,'dr1')
+        plot_proc(self.dr1_plus_proc,self.dr1_plus_obs,'dr1_plus')
+
    
 
     #make LATEX test table for paper

@@ -157,7 +157,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     lat_constval = 20
     
     if sky == 'spring':
-        f.set_limits(pxlim=(17,27),pylim=(22,32))
+        f.set_limits(pxlim=(17,28),pylim=(22,32))
         X = np.arange(120,270,15.0)
         Y = np.arange(0,90,15.)
         lat_constval = None
@@ -165,7 +165,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         lat_constval = None
 
     if sky == 'fall':
-        f.set_limits(pxlim=(13,25.5),pylim=(8,13))
+        f.set_limits(pxlim=(12,25.5),pylim=(8,14))
         X = np.arange(-90,180,15.0)
         Y = np.arange(0,90,15.)
         lat_constval = None
