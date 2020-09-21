@@ -528,8 +528,11 @@ class ProcCat(ObsCat):
         Sky plots of processed pol data quality
         """
         #plot Stokes V quality
-        quality = ['Pass','Fail']
-        colorlist = mpcolors[0:len(quality)]
+        #quality = ['Pass','Fail']
+        #colorlist = mpcolors[0:len(quality)]
+        #set order so that good will overplot bad
+        quality = ['Fail','Pass']
+        colorlist = [mpcolors[1],mpcolors[0]]
         ralist = []
         declist = []
         for qual in quality:
