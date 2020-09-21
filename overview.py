@@ -328,8 +328,11 @@ class ProcCat(ObsCat):
     def plot_dr1plus_proc(self):
         plot_proc(self.dr1_plus_proc,self.dr1_plus_obs,'dr1_plus')
 
-   
+    def get_valid_overview_dr1plus(self):
+        get_valid_overview(self.dr1_plus_proc,'dr1_plus')
 
+
+        
     #make LATEX test table for paper
     def make_dr1_proc_paper_table(self):
         ascii.write(self.dr1_proc['taskid','beam','Field',
@@ -760,6 +763,104 @@ def get_dr_proc(drobs,valid,cb_pos):
     print(len(valid),len(dr_proc))
     
     return drobs,dr_proc
+
+def get_valid_overview(proc,drname):
+    """
+    Get a look at validation metrics
+    Inputs:
+    - proc : ProcCat.dr_proc object
+    - drname: string w/ drname for file output
+    """
+    #plot histogram of continuum rms values
+    fig, (ax1, ax2) = plt.subplots(1,2,figsize=(8,8),
+                                   sharex=True, sharey=True)
+    ax1.hist(proc['s_in'],histtype='step',bins=np.arange(20,65,1))
+    ax1.set_title('Cont Inner noise')
+    ax1.set_xlabel('RMS [uJy]')
+    ax1.set_ylabel('Number')
+    
+    ax2.hist(proc['s_out'],
+            histtype='step',bins=np.arange(20,65,1))
+    ax2.set_title('Cont Outer noise')
+    ax2.set_xlabel('RMS [uJy]')
+    ax2.set_ylabel('Number')
+
+    #find median and overplot
+    med_inner = np.nanmedian(proc['s_in'])
+    med_outer = np.nanmedian(proc['s_out'])
+    ylim = ax2.get_ylim()
+    ax1.plot([med_inner,med_inner],ylim,label='Median = {}'.format(med_inner))
+    ax1.legend()
+    
+    ax2.plot([med_outer,med_outer],ylim,label='Median = {}'.format(med_outer))
+    ax2.legend()
+    
+    plt.savefig(os.path.join(figdir,'cont_noise_'+drname+'.png'))
+    plt.close()
+
+    #do the same for polarization
+    # am going  to copy  code which means I should probably put in another function...
+    fig, (ax1, ax2) = plt.subplots(1,2,figsize=(8,8),
+                                   sharex=True, sharey=True)
+    ax1.hist(proc['pol_s_in'],histtype='step',bins=np.arange(20,65,1))
+    ax1.set_title('Pol Inner noise')
+    ax1.set_xlabel('RMS [uJy]')
+    ax1.set_ylabel('Number')
+    
+    ax2.hist(proc['pol_s_out'],histtype='step',bins=np.arange(20,65,1))
+    ax2.set_title('Pol Outer noise')
+    ax2.set_xlabel('RMS [uJy]')
+    ax2.set_ylabel('Number')
+
+    #find median and overplot
+    med_inner = np.nanmedian(proc['pol_s_in'])
+    med_outer = np.nanmedian(proc['pol_s_out'])
+    ylim = ax2.get_ylim()
+    ax1.plot([med_inner,med_inner],ylim,label='Median = {}'.format(med_inner))
+    ax1.legend()
+    
+    ax2.plot([med_outer,med_outer],ylim,label='Median = {}'.format(med_outer))
+    ax2.legend()
+    
+    plt.savefig(os.path.join(figdir,'pol_noise_'+drname+'.png'))
+    plt.close()
+
+    #get c0,c1,c2 noise values
+    fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(12,8),
+                                        sharex=True, sharey=True)
+    ax1.hist((1e3*proc['rms_c0']),histtype='step',
+             bins=np.arange(1.0,3.5,0.05))
+    ax1.set_title('Cube 0')
+    ax1.set_xlabel('RMS [mJy]')
+    ax1.set_ylabel('Number')
+    
+    ax2.hist((1e3*proc['rms_c1']),histtype='step',
+             bins=np.arange(1.0,3.5,0.05))
+    ax2.set_title('Cube 1')
+    ax2.set_xlabel('RMS [mJy]')
+    ax2.set_ylabel('Number')
+
+    ax3.hist((1e3*proc['rms_c2']),histtype='step',
+             bins=np.arange(1.0,3.5,0.05))
+    ax3.set_title('Cube 2')
+    ax3.set_xlabel('RMS [mJy]')
+    ax3.set_ylabel('Number')
+
+    #find median and overplot
+    med_c0 = 1e3*np.nanmedian(proc['rms_c0'])
+    med_c1 = 1e3*np.nanmedian(proc['rms_c1'])
+    med_c2 = 1e3*np.nanmedian(proc['rms_c2'])
+
+    ylim = ax3.get_ylim()
+    ax1.plot([med_c0,med_c0],ylim,label='Median = {0:4.2f}'.format(med_c0))
+    ax1.legend()
+    ax2.plot([med_c1,med_c1],ylim,label='Median = {0:4.2f}'.format(med_c1))
+    ax2.legend()
+    ax3.plot([med_c2,med_c2],ylim,label='Median = {0:4.2f}'.format(med_c2))
+    ax3.legend()
+    
+    plt.savefig(os.path.join(figdir,'hi_noise_'+drname+'.png'))
+    plt.close()
 
 def plot_proc(proc,obs,drname):
     """
