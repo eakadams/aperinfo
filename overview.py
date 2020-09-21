@@ -440,24 +440,162 @@ class ProcCat(ObsCat):
         self.cb_pos = ascii.read(beampos)
 
 
-    def get_dr1_proc(self):
-        self.get_dr1_obs()
-        self.dr1_obs, self.dr1_proc = get_dr_proc(
-            self.dr1_obs, self.valid,self.cb_pos)
+    def get_dr_proc(self,firstind=0,lastind=221,name='dr_year1'):
+            """
+            Get processed info for dr
+            """
+            self.get_dr_obs(firstind,lastind,name)
+            #check for 300 MHz processing and remove from consideration for release
+            #also any other datasets with specific notes
+            #want to leave them out of statistics/plots
+            """
+            190806345 - no processed data produced; probably due to missing set of cals at start
+            190731125 - never processed
+            200429042 - never processed due to issues w/ ants changing for cals
+            200430053-200505057 : RTC & RTD left out
+            """
+            ind_good_proc = np.where((self.dr_obs['apercal_name'] != "Apercal_300") &
+                                     (self.dr_obs['taskID'] != 190806345) &
+                                     (self.dr_obs['taskID'] != 190731125) &
+                                     (self.dr_obs['taskID'] != 200429042) &
+                                     (self.dr_obs['taskID'] != 200430053) &
+                                     (self.dr_obs['taskID'] != 200501001) &
+                                     (self.dr_obs['taskID'] != 200501042) &
+                                     (self.dr_obs['taskID'] != 200502054) &
+                                     (self.dr_obs['taskID'] != 200503001) &
+                                     (self.dr_obs['taskID'] != 200503042) &
+                                     (self.dr_obs['taskID'] != 200505016) &
+                                     (self.dr_obs['taskID'] != 200505057))[0]
+            print(len(self.dr_obs),len(ind_good_proc))
+            self.dr_obs = self.dr_obs[ind_good_proc]
+            #now get the corresponding beam information
+            #only want infomration for taskids that are in dr
+            #and which pass self.validation
+            #self.validation is only on continuum currently
+            #need to carry polarization and line flags
+            #add a field name to self.valid; want this info
+            self.valid['Field'] = np.full(len(self.valid),'X0000+9999')
+            #add a N_pass to obs table
+            self.dr_obs['N_pass'] = np.full(len(self.dr_obs),0)
+            #initialize empty array for holding indices
+            array_passind = np.empty(0,dtype=int)
+            #iterate through obs task ids
+            for i,taskid in enumerate(self.dr_obs['taskID']):
+                passind = np.where((self.valid['taskid'] == taskid ) &
+                                   (self.valid['cont_pass'] == 'True') )[0]
+                #add number that pass
+                self.dr_obs['N_pass'][i] = len(passind)
+                if len(passind) > 0:
+                    #if there are things that pass on to release, append them
+                    array_passind = np.append(array_passind,passind)
 
-    def get_dr1plus_proc(self):
-        self.get_dr1plus_obs()
-        self.dr1_plus_obs, self.dr1_plus_proc = get_dr_proc(
-            self.dr1_plus_obs, self.valid,self.cb_pos)
+                #also update field name
+                taskind = np.where(self.valid['taskid'] == taskid)[0]
+                if len(taskind) > 0:
+                    self.valid['Field'][taskind] = self.dr_obs['name'][i]
 
-    def plot_dr1_proc(self):
-        plot_proc(self.dr1_proc,self.dr1_obs,'dr1')
+            #now I want to keep just beams that pass self.validation and are in release
+            self.dr_proc = self.valid[array_passind]
 
-    def plot_dr1plus_proc(self):
-        plot_proc(self.dr1_plus_proc,self.dr1_plus_obs,'dr1_plus')
+            #add ra and dec
+            ra_array, dec_array = sp.get_ra_dec(self.dr_proc['taskid'],
+                                                self.dr_proc['beam'],
+                                                self.dr_obs['taskID'],
+                                                self.dr_obs['field_ra'],
+                                                self.dr_obs['field_dec'],
+                                                self.cb_pos)
+            self.dr_proc['ra'] = ra_array
+            self.dr_proc['dec'] = dec_array
 
-    def get_valid_overview_dr1plus(self):
-        get_valid_overview(self.dr1_plus_proc,'dr1_plus')
+            print(len(self.valid),len(self.dr_proc))
+    
+    def plot_dr_cont(self):
+        """
+        Sky plots of processed continuum data
+        """
+
+        colorlist = [mpcolors[0]]
+
+        plot_processed_data([self.dr_proc['ra']],
+                            [self.dr_proc['dec']],
+                            colorlist,
+                            ['Released beams'],
+                            self.dr_obs['taskID','field_ra','field_dec'],
+                            self.dr_name+'_cont')
+
+    def plot_dr_pol(self):
+        """
+        Sky plots of processed pol data quality
+        """
+        #plot Stokes V quality
+        quality = ['Pass','Fail']
+        colorlist = mpcolors[0:len(quality)]
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Pass':
+                ind = np.where(self.dr_proc['pol_V_pass'] == 'True')[0]
+            if qual == 'Fail':
+                ind = np.where(self.dr_proc['pol_V_pass'] == 'False')[0]
+            ra = self.dr_proc['ra'][ind]
+            dec = self.dr_proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            self.dr_obs['taskID','field_ra','field_dec'],self.dr_name+'_V')
+
+        
+        #plot Stokes QU quality
+        #quality = ['Pass','Fail']
+        #colorlist = mpcolors[0:len(quality)]
+        #set order so that good will overplot bad
+        quality = ['Fail','Pass']
+        colorlist = [mpcolors[1],mpcolors[0]]
+        ralist = []
+        declist = []
+        for qual in quality:
+            if qual == 'Pass':
+                ind = np.where(self.dr_proc['pol_QU_pass'] == 'True')[0]
+            if qual == 'Fail':
+                ind = np.where(self.dr_proc['pol_QU_pass'] == 'False')[0]
+            ra = self.dr_proc['ra'][ind]
+            dec = self.dr_proc['dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        plot_processed_data(ralist,declist,colorlist,quality,
+                            self.dr_obs['taskID','field_ra','field_dec'],self.dr_name+'_QU')
+
+    def plot_dr_hi(self):
+        """
+        Sky plots of HI cube data quality
+        """
+        #plot HI data quality
+        #iterate through cubes
+        cubes = ['c0','c1','c2']
+        #quality = ['Good','Bad','Okay']
+        #colorlist = mpcolors[0:len(quality)]
+        #set order so that good will overplot bad
+        quality = ['Bad','Okay','Good']
+        colorlist = [mpcolors[1], mpcolors[2], mpcolors[0]]
+        for cube in cubes:
+            ralist = []
+            declist = []
+            for qual in quality:
+                if qual == 'Good':
+                    ind = np.where(self.dr_proc[cube] == 'G')[0]
+                if qual == 'Okay':
+                    ind = np.where(self.dr_proc[cube] == 'O')[0]
+                if qual == 'Bad':
+                    ind = np.where(self.dr_proc[cube] == 'B')[0]
+                ra = self.dr_proc['ra'][ind]
+                dec = self.dr_proc['dec'][ind]
+                ralist.append(ra)
+                declist.append(dec)
+
+            plot_processed_data(ralist,declist,colorlist,quality,
+                                obs['taskID','field_ra','field_dec'],self.dr_name+'_HI'+cube)
 
 
         
@@ -493,7 +631,7 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Continuum validation metrics for released data",
+                                 'caption': "Continuum self.validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:cont}","\small"]}
                     )
 
@@ -520,7 +658,7 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Polarization validation metrics for released data",
+                                 'caption': "Polarization self.validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:pol}"]}
                     )
                     
@@ -551,7 +689,7 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Line validation metrics for released data",
+                                 'caption': "Line self.validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:hi}"]},
                     formats = {'$\sigma_{c2}$': '4.2f', '$\sigma_{c1}$': '4.2f',
                                '$\sigma_{c0}$': '4.2f', '$f_{ex,c2}$': '5.2f',
@@ -597,12 +735,12 @@ class ProcCat(ObsCat):
         #based on system improvements / processing
 
         #search for best taskids
-        #want taskids where fewer than 4 beams fail continuum validation
+        #want taskids where fewer than 4 beams fail continuum self.validation
         #should add this information to dr1_obs table; easiest way to do things
         ind_best = np.where(self.dr1_obs['N_pass'] >= 32)[0]
         print(("There are {0} fields that have 32 or more beams "
-               "pass continuum validation").format(len(ind_best)))
-        #how do these fields do on HI / polarization validation?
+               "pass continuum self.validation").format(len(ind_best)))
+        #how do these fields do on HI / polarization self.validation?
         best_task = self.dr1_obs['taskID'][ind_best]
         print(("The best taskids are {0}").format(best_task))
         print(("The best fields are {0}").format(self.dr1_obs['name'][ind_best]))
@@ -612,12 +750,12 @@ class ProcCat(ObsCat):
         print(("There are {0} possible beams "
                "in best processed fields. "
                "{1} have images. {2} "
-               "pass continuum validation").format(40*len(best_task),len(self.dr1_best_proc),len(pass_cont)))
+               "pass continuum self.validation").format(40*len(best_task),len(self.dr1_best_proc),len(pass_cont)))
         good_HI_ind = np.where(self.dr1_best_proc['HI_c2_good_ok'] == 'True')[0]
         print(("{0} beams have good/ok HI "
                "in cube 2").format(len(good_HI_ind)))
         pass_pol = np.where(self.dr1_best_proc['pol_pass'] == 'True')[0]
-        print(("{0} pass polarization validation").format(len(pass_pol)))
+        print(("{0} pass polarization self.validation").format(len(pass_pol)))
         
             
             
@@ -689,80 +827,10 @@ def plot_processed_data(ralist,declist,colorlist,labellist,obsdata,figbase):
 
 
 
-def get_dr_proc(drobs,valid,cb_pos):
-    """
-    Get processed info for drobs (ProcCat.dr_obs object)
-    Need valid object (ProcCat.valid)
-    And cb pos (ProcCat.cb_pos
-    """
-    #check for 300 MHz processing and remove from consideration for release
-    #also any other datasets with specific notes
-    """
-    190806345 - no processed data produced; probably due to missing set of cals at start
-    190731125 - never processed
-    200429042 - never processed due to issues w/ ants changing for cals
-    200430053-200505057 : RTC & RTD left out
-    """
-    ind_good_proc = np.where((drobs['apercal_name'] != "Apercal_300") &
-                             (drobs['taskID'] != 190806345) &
-                             (drobs['taskID'] != 190731125) &
-                             (drobs['taskID'] != 200429042) &
-                             (drobs['taskID'] != 200430053) &
-                             (drobs['taskID'] != 200501001) &
-                             (drobs['taskID'] != 200501042) &
-                             (drobs['taskID'] != 200502054) &
-                             (drobs['taskID'] != 200503001) &
-                             (drobs['taskID'] != 200503042) &
-                             (drobs['taskID'] != 200505016) &
-                             (drobs['taskID'] != 200505057))[0]
-    print(len(drobs),len(ind_good_proc))
-    drobs = drobs[ind_good_proc]
-    #now get the corresponding beam information
-    #only want infomration for taskids that are in dr
-    #and which pass validation
-    #validation is only on continuum currently
-    #need to carry polarization and line flags
-    #add a field name to valid; want this info
-    valid['Field'] = np.full(len(valid),'X0000+9999')
-    #add a N_pass to obs table
-    drobs['N_pass'] = np.full(len(drobs),0)
-    #initialize empty array for holding indices
-    array_passind = np.empty(0,dtype=int)
-    #iterate through obs task ids
-    for i,taskid in enumerate(drobs['taskID']):
-        passind = np.where((valid['taskid'] == taskid ) &
-                           (valid['cont_pass'] == 'True') )[0]
-        #add number that pass
-        drobs['N_pass'][i] = len(passind)
-        if len(passind) > 0:
-            #if there are things that pass on to release, append them
-            array_passind = np.append(array_passind,passind)
-
-        #also update field name
-        taskind = np.where(valid['taskid'] == taskid)[0]
-        if len(taskind) > 0:
-            valid['Field'][taskind] = drobs['name'][i]
-
-    #now I want to keep just beams that pass validation and are in release
-    dr_proc = valid[array_passind]
-
-    #add ra and dec
-    ra_array, dec_array = sp.get_ra_dec(dr_proc['taskid'],
-                                        dr_proc['beam'],
-                                        drobs['taskID'],
-                                        drobs['field_ra'],
-                                        drobs['field_dec'],
-                                        cb_pos)
-    dr_proc['ra'] = ra_array
-    dr_proc['dec'] = dec_array
-
-    print(len(valid),len(dr_proc))
-    
-    return drobs,dr_proc
 
 def get_valid_overview(proc,drname):
     """
-    Get a look at validation metrics
+    Get a look at self.validation metrics
     Inputs:
     - proc : ProcCat.dr_proc object
     - drname: string w/ drname for file output
@@ -858,85 +926,7 @@ def get_valid_overview(proc,drname):
     plt.savefig(os.path.join(figdir,'hi_noise_'+drname+'.png'))
     plt.close()
 
-def plot_proc(proc,obs,drname):
-    """
-    Make sky plots of the processed data
-    Will start by showing overall sky coverage, valid cont data
-    Then for released data want plots that show good/okay/bad pol & line
-    Inputs:
-    - proc : ProcCat.dr_proc obj
-    - obs : ProcCat.dr_obs obj
-    - drname : string drname
-    """
 
 
-    colorlist = [mpcolors[0]]
 
-    plot_processed_data([proc['ra']],
-                        [proc['dec']],
-                        colorlist,
-                        ['Released beams'],
-                        obs['taskID','field_ra','field_dec'],
-                        drname)
-
-    #plot Stokes V quality
-    quality = ['Pass','Fail']
-    colorlist = mpcolors[0:len(quality)]
-    ralist = []
-    declist = []
-    for qual in quality:
-        if qual == 'Pass':
-            ind = np.where(proc['pol_V_pass'] == 'True')[0]
-        if qual == 'Fail':
-            ind = np.where(proc['pol_V_pass'] == 'False')[0]
-        ra = proc['ra'][ind]
-        dec = proc['dec'][ind]
-        ralist.append(ra)
-        declist.append(dec)
-
-    plot_processed_data(ralist,declist,colorlist,quality,
-                        obs['taskID','field_ra','field_dec'],drname+'_V')
-
-        
-    #plot Stokes QU quality
-    quality = ['Pass','Fail']
-    colorlist = mpcolors[0:len(quality)]
-    ralist = []
-    declist = []
-    for qual in quality:
-        if qual == 'Pass':
-            ind = np.where(proc['pol_QU_pass'] == 'True')[0]
-        if qual == 'Fail':
-            ind = np.where(proc['pol_QU_pass'] == 'False')[0]
-        ra = proc['ra'][ind]
-        dec = proc['dec'][ind]
-        ralist.append(ra)
-        declist.append(dec)
-
-    plot_processed_data(ralist,declist,colorlist,quality,
-                        obs['taskID','field_ra','field_dec'],drname+'_QU')
-
-        
-    #plot HI data quality
-    #iterate through cubes
-    cubes = ['c0','c1','c2']
-    quality = ['Good','Bad','Okay']
-    colorlist = mpcolors[0:len(quality)]
-    for cube in cubes:
-        ralist = []
-        declist = []
-        for qual in quality:
-            if qual == 'Good':
-                ind = np.where(proc[cube] == 'G')[0]
-            if qual == 'Okay':
-                ind = np.where(proc[cube] == 'O')[0]
-            if qual == 'Bad':
-                ind = np.where(proc[cube] == 'B')[0]
-            ra = proc['ra'][ind]
-            dec = proc['dec'][ind]
-            ralist.append(ra)
-            declist.append(dec)
-
-        plot_processed_data(ralist,declist,colorlist,quality,
-                            obs['taskID','field_ra','field_dec'],drname+'_HI'+cube)
-
+    
