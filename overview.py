@@ -33,6 +33,9 @@ from kapteyn import maputils
 from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
 import info.sky_plots as sp
 import pandas as pd
+from cds import *
+
+tablemaker = CDSTablesMaker()
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -119,54 +122,84 @@ class ObsCat(object):
 
 
     #get obs for data release
-    def get_data_release_obs(self,firstind=0,lastind=148):
+    def get_dr_obs(self,firstind=0,lastind=221,name='dr_year1'):
         """
         Get obs specified by firstind/lastind
         """
         print('First taskid is {}'.format(self.obsinfo['taskID'][firstind]))
         print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
-        data_release = self.obsinfo[firstind:(lastind+1)]
+        self.dr_name = name
+        self.dr_obs = self.obsinfo[firstind:(lastind+1)]
         #check for bad data
-        goodind = np.where(data_release['quality'] == 'good')[0]
+        goodind = np.where(self.dr_obs['quality'] == 'good')[0]
         #print(len(self.dr1_obs),len(goodind))
         #limit to good data (archived, not deleted)
-        data_release = data_release[goodind]
+        self.dr_obs = self.dr_obs[goodind]
         #check for ahppili info
         (taskids, ind_dr1_obs,
-         ind_happili) = np.intersect1d(data_release['taskID'],self.happili['taskid'],
+         ind_happili) = np.intersect1d(self.dr_obs['taskID'],self.happili['taskid'],
                                        return_indices=True)
         #note that there are two obs in obsinfo that hsouldnt be -- argo and early sci
         #need to check that codebut will ignore for now
         #and assume all taskids have an entry on happili
         #might be nothing due to failed processing but at least a directory exists
         #first, only keep indices that have happili entries
-        data_release = data_release[ind_dr1_obs]
-        return data_release
-
-    #get dr1 data
-    def get_dr1_obs(self):
-        self.dr1_obs = self.get_data_release_obs(firstind=0,lastind=148)
-
-    #get dr1 plus
-    def get_dr1plus_obs(self,lastind=221):
-        self.dr1_plus_obs = self.get_data_release_obs(firstind=0,lastind=lastind)
-
+        self.dr_obs = self.dr_obs[ind_dr1_obs]
 
 
         
     #make MR table for online publication
-    def make_dr1_obs_mr(self):
-        ascii.write(self.dr1_obs,
-                    os.path.join(tabledir,'dr1_obs_mr.txt'),
-                    format='cds',overwrite=True)
+    def make_dr_obs_mr(self):
+        """
+        Use cds python package: http://cds.u-strasbg.fr/resources/doku.php?id=anafile
+        """
+        data = self.dr_obs['taskID','name','field_ra','field_dec',
+                           'fluxcal','flux_first','flux_last',
+                           'polcal','pol_first','pol_last',
+                           'apercal_tex_name','apercal_version']
+        data.rename_columns(['taskID','name','field_ra','field_dec',
+                             'fluxcal','flux_first','flux_last',
+                             'polcal','pol_first','pol_last',
+                             'apercal_tex_name','apercal_version'],
+                            ['ObsID','Name','RA','Dec','Fluxcal','flux_first','flux_last',
+                             'Polcal','pol_first','pol_last','Apercal_name','Apercal_version'])
+        table = tablemaker.addTable(data, name=os.path.join(tabledir,self.dr_name+'_obs.cds'))
+        tablemaker.makeReadMe()
+        tablemaker.writeCDSTables()
+
+        """
+        Looks like I have to manually add ReadMe to top of the file (or paste into separte file)
+        Description of different columns is also not set
+        But it does do the byte-by-byte description for me, which is the super annoying part, 
+        so I can handle manually adding everything else later
+        """
+                        
 
     #make LATEX test table for paper
-    def make_dr1_obs_paper_table(self):
-        make_obs_paper_table(self.dr1_obs,'dr1')
+    def make_dr_obs_paper_table(self):
+         """
+         Make a latex-formatted table for placing in paper
+         """
+         #set column names to be tex & user friendly
+         col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux\_first','flux\_last',
+                      'Polcal','pol\_first','pol\_last','Apercal\_name','Apercal\_version']
+         ascii.write(self.dr_obs['taskID','name','field_ra','field_dec',
+                                 'fluxcal','flux_first','flux_last',
+                                 'polcal','pol_first','pol_last',
+                                 'apercal_tex_name','apercal_version'][0:30],
+                     os.path.join(tabledir,self.dr_name+'_obs_table_paper.tex'),
+                     format='latex',
+                     overwrite=True,
+                     names=col_names,
+                     col_align=len(col_names)*'l',
+                     latexdict = {'header_start': "\hline \hline",
+                                  'header_end': "\hline",
+                                  'data_end': "\hline",
+                                  'caption': "Summary of released survey observation",
+                                  'preamble': ["\centering","\label{tab:obs}"]}
+         )
 
-    def make_dr1plus_obs_paper_table(self):
-        make_obs_paper_table(self.dr1_plus_obs,'dr1_plus')
-        
+
  
 
     #make obs_notes table
@@ -175,8 +208,8 @@ class ObsCat(object):
         Make a latex formatted table of obsnotes for paper.
         Example 30 rows; part of obs table in machine-readable version
         """
-        ascii.write(self.dr1_obs['taskID','name','note'][0:30],
-                    os.path.join(tabledir,'dr1_obs_notes.txt'),
+        ascii.write(self.dr_obs['taskID','name','note'][0:30],
+                    os.path.join(tabledir,self.dr_name+'_obs_notes.tex'),
                     format='latex',
                     overwrite=True,
                     names=['ObsID','Name','Notes'],
@@ -191,19 +224,114 @@ class ObsCat(object):
         
 
     #csv table for team use
-    def make_dr1_obs_csv(self):
-        ascii.write(self.dr1_obs,
-                    os.path.join(tabledir,'dr1_obs.csv'),
+    def make_dr_obs_csv(self):
+        ascii.write(self.dr_obs,
+                    os.path.join(tabledir,self.dr_name+'_obs.csv'),
                     format='csv',
                     overwrite=True)
     
 
-    def plot_apercal_dr1_obs(self):
-        plot_apercal_obs(self.dr1_obs,'dr1')
+    def plot_apercal_dr_obs(self):
+        """
+        Sky plot of DR obs,
+        color-coded by Apercal processing
+        """
+        #have to get separate lists for each Apercal processing
+        #get unique names
+        apercal_names = np.unique(self.dr_obs['apercal_name'])
+        #add a name for medium-deep
+        apercal_names = np.append(apercal_names,'AMES')
+        #get colors
+        colorlist = mpcolors[0:len(apercal_names)]
+        #get ra and dec list; need to first separate medium-deep pointings
+        ind_ames = [i for i, s in enumerate(self.dr_obs['name']) if 'M' in s]
+        ind_awes = [i for i, s in enumerate(self.dr_obs['name']) if 'S' in s]
+        dr_ames =  self.dr_obs[ind_ames]
+        dr_awes =  self.dr_obs[ind_awes]
 
-        
-    def plot_apercal_dr1plus_obs(self):
-        plot_apercal_obs(self.dr1_plus_obs,'dr1_plus')
+        #also want to find only those that have duplicates, e.g., multiple observations
+        s = pd.Series(dr_ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
+
+        #need to find part dr_ames that contains repeated_fields above
+        #match two string arrays...
+        #almost could get info from pd dup object but it doesn't count first occurence
+        ind_repeats = []
+        for field in repeated_fields:
+            ind = [i for i, s in enumerate(dr_ames['name']) if field in s]
+            ind_repeats.append(ind)
+
+            repeat_array = np.sort(np.hstack(ind_repeats))
+            print(repeat_array)
+
+            repeated_ames = dr_ames[repeat_array]
+    
+        ralist = []
+        declist = []
+        for name in apercal_names[0:-1]:
+            ind = np.where(self.dr_obs['apercal_name'] == name)[0]
+            ra = self.dr_obs['field_ra'][ind]
+            dec = self.dr_obs['field_dec'][ind]
+            ralist.append(ra)
+            declist.append(dec)
+
+        #add repeated ames to end
+        ra = repeated_ames['field_ra']
+        dec = repeated_ames['field_dec']
+        ralist.append(ra)
+        declist.append(dec)
+    
+        #make the plots
+        #want to separate medium-deep points so can plot separately
+        #all sky plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            apercal_names,
+                            os.path.join(figdir,self.dr_name+'_apercal_processing_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+
+        #need to add a separate medium-deep plot
+        #first sort by field name
+        field_name = np.flip(np.sort(np.unique(repeated_ames['name'])))
+
+        print(len(repeated_ames))
+
+        #then create plot coordinates for everything
+        #base on field name, want to be in same row
+        plot_x = np.full(len(repeated_ames),-10)
+        plot_y = np.full(len(repeated_ames),-10)
+
+        for i, field in enumerate(field_name):
+            ames_ind = np.where(repeated_ames['name'] == field)[0]
+            #all fields in same row, same y coord
+            #offset by 1 for ease of plotting
+            plot_y[ames_ind] = i+1
+            #for x coordinate, have to iterate through all fields
+            #offset by 1 again for plot legibility
+            for k in range(len(ames_ind)):
+                plot_x[ames_ind[k]] = k+1
+
+        #setup figure
+        #fig, ax = plt.subplots(figsize=[6,4])
+        fig = plt.figure(figsize=[6,4])
+        ax = fig.add_axes([0.2, 0.15, .75, .75 ])
+
+        #have coordinates for al fields, now have to iterate over Apercal name for colors
+        #skip last one, placeholder for AMES
+        for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
+            plotind = np.where(repeated_ames['apercal_name'] == name)[0]
+            ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
+
+        ax.set_yticks(list(range(1,len(field_name)+1)))
+        ax.set_yticklabels(list(field_name))
+        ax.set_title('Medium-deep fields')
+        ax.set_xlabel('Number of observations')
+
+        plotname = os.path.join(figdir,self.dr_name+'_apercal_processing_ames.pdf')
+        plt.savefig(plotname)
+        plt.close()
 
         
     def plot_all_obs(self):
@@ -255,15 +383,15 @@ class ObsCat(object):
         Feb, Mar, Apr, May, June
         Know everything has been processed already
         """
-        month_list = ['DR1','02','03','04','05','06']
+        month_list = ['DR','02','03','04','05','06','07','08']
         colorlist = mpcolors[0:len(month_list)]
 
         ralist = []
         declist = []
         for month in month_list:
-            if month == 'DR1':
-                ra = self.dr1_obs['field_ra']
-                dec = self.dr1_obs['field_dec']
+            if month == 'DR':
+                ra = self.dr_obs['field_ra']
+                dec = self.dr_obs['field_dec']
             else:
                 yymm = '20'+month
                 str_taskid = self.obsinfo['taskID'].astype(str)
@@ -559,138 +687,6 @@ def plot_processed_data(ralist,declist,colorlist,labellist,obsdata,figbase):
     )
 
 
-def make_obs_paper_table(obstab,drname):
-     """
-     Make a latex-formatted table for placing in paper
-     Takes a data release obs table from ObsCat
-     And dr name as a string for output file
-     """
-     #set column names to be tex & user friendly
-     col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux\_first','flux\_last',
-                  'Polcal','pol\_first','pol\_last','Apercal\_name','Apercal\_version']
-     ascii.write(obstab['taskID','name','field_ra','field_dec',
-                        'fluxcal','flux_first','flux_last',
-                        'polcal','pol_first','pol_last',
-                        'apercal_tex_name','apercal_version'][0:30],
-                 os.path.join(tabledir,drname+'_obs_table_paper.txt'),
-                 format='latex',
-                 overwrite=True,
-                 names=col_names,
-                 col_align=len(col_names)*'l',
-                 latexdict = {'header_start': "\hline \hline",
-                              'header_end': "\hline",
-                              'data_end': "\hline",
-                              'caption': "Summary of released survey observation",
-                              'preamble': ["\centering","\label{tab:obs}"]}
-     )
-
-def plot_apercal_obs(datarelease,drname):
-    """
-    Plot skyview of Apercal observations for a provided data release
-    Data release is part of object, comes from calling "get_data_release_obs"
-    drname is a string, used for naming output files
-    """
-    #have to get separate lists for each Apercal processing
-    #get unique names
-    apercal_names = np.unique(datarelease['apercal_name'])
-    #add a name for medium-deep
-    apercal_names = np.append(apercal_names,'AMES')
-    #get colors
-    colorlist = mpcolors[0:len(apercal_names)]
-    #get ra and dec list; need to first separate medium-deep pointings
-    ind_ames = [i for i, s in enumerate(datarelease['name']) if 'M' in s]
-    ind_awes = [i for i, s in enumerate(datarelease['name']) if 'S' in s]
-    dr_ames =  datarelease[ind_ames]
-    dr_awes =  datarelease[ind_awes]
-
-    #also want to find only those that have duplicates, e.g., multiple observations
-    s = pd.Series(dr_ames['name'])
-    dup = s[s.duplicated()]
-    repeated_fields = np.unique(dup)
-
-    #need to find part dr_ames that contains repeated_fields above
-    #match two string arrays...
-    #almost could get info from pd dup object but it doesn't count first occurence
-    ind_repeats = []
-    for field in repeated_fields:
-        ind = [i for i, s in enumerate(dr_ames['name']) if field in s]
-        ind_repeats.append(ind)
-
-    repeat_array = np.sort(np.hstack(ind_repeats))
-    print(repeat_array)
-
-    repeated_ames = dr_ames[repeat_array]
-    
-    ralist = []
-    declist = []
-    for name in apercal_names[0:-1]:
-        ind = np.where(datarelease['apercal_name'] == name)[0]
-        ra = datarelease['field_ra'][ind]
-        dec = datarelease['field_dec'][ind]
-        ralist.append(ra)
-        declist.append(dec)
-
-    #add repeated ames to end
-    ra = repeated_ames['field_ra']
-    dec = repeated_ames['field_dec']
-    ralist.append(ra)
-    declist.append(dec)
-
-    
-    #make the plots
-    #want to separate medium-deep points so can plot separately
-    #all sky plot
-    sp.sky_plot_kapteyn(ralist,
-                        declist,
-                        colorlist,
-                        apercal_names,
-                        os.path.join(figdir,'apercal_processing_'+drname+'_obs.pdf'),
-                        survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
-
-    #need to add a separate medium-deep plot
-    #first sort by field name
-    field_name = np.flip(np.sort(np.unique(repeated_ames['name'])))
-
-    print(len(repeated_ames))
-
-    #then create plot coordinates for everything
-    #base on field name, want to be in same row
-    plot_x = np.full(len(repeated_ames),-10)
-    plot_y = np.full(len(repeated_ames),-10)
-
-    for i, field in enumerate(field_name):
-        ames_ind = np.where(repeated_ames['name'] == field)[0]
-        #all fields in same row, same y coord
-        #offset by 1 for ease of plotting
-        plot_y[ames_ind] = i+1
-        #for x coordinate, have to iterate through all fields
-        #offset by 1 again for plot legibility
-        for k in range(len(ames_ind)):
-            plot_x[ames_ind[k]] = k+1
-
-    #setup figure
-    #fig, ax = plt.subplots(figsize=[6,4])
-    fig = plt.figure(figsize=[6,4])
-    ax = fig.add_axes([0.2, 0.15, .75, .75 ])
-
-
-    #have coordinates for al fields, now have to iterate over Apercal name for colors
-    #skip last one, placeholder for AMES
-    for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
-        plotind = np.where(repeated_ames['apercal_name'] == name)[0]
-        ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
-
-    #plt.legend()
-
-    ax.set_yticks(list(range(1,len(field_name)+1)))
-    ax.set_yticklabels(list(field_name))
-
-    ax.set_title('Medium-deep fields')
-    ax.set_xlabel('Number of observations')
-
-    plotname = os.path.join(figdir,'apercal_processing_'+drname+'_ames.pdf')
-    plt.savefig(plotname)
-    plt.close()
 
 
 def get_dr_proc(drobs,valid,cb_pos):
