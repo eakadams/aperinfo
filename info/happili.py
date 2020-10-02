@@ -43,6 +43,35 @@ def get_dir_list():
     taskdirlist.sort()
     return taskdirlist
 
+
+def get_bad_pol():
+    """
+    Have to find observation/beam combinations where
+    there is no pol calibrator
+    Pipeline errors mean polarization data products are 
+    produced,  but they're not calibrated.
+    Need to find and remove from ALTA
+    Also happili ?
+    Two cal tables: .Kcross and .Xf indicate pol cal is present
+    """
+    #first, get directory list
+    taskdirlist = get_dir_list()
+    #then go through each, checking each beam
+    for taskdir in taskdirlist:
+        for i in range(40):
+            rawbeamdir = os.path.join(taskdir,'{0:02d}/raw'.format(i))
+            #first check dir exists, otherwise can skip completely
+            if os.path.exists(rawbeamdir):
+                #need to check fluxcal also
+                #think no fluxcal should do things properly
+                #and also no pol solutions?
+                #but first verify that
+                polXf = glob.glob(os.path.join(rawbeamdir,'3C???.Xf'))
+                if len(polXf) == 0:
+                    print(('No Xf pol solution for'
+                           ' {0}, beam {1}').format(taskdir[-9:],i))
+            
+
 def make_happili_obs_table():
     """
     Make an observation / field - based table
