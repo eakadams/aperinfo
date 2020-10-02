@@ -155,21 +155,34 @@ class ObsCat(object):
 
         
     #make MR table for online publication
-    def make_dr_obs_mr(self):
+    #Use cds
+    def make_dr_obs_cds(self):
         """
         Use cds python package: http://cds.u-strasbg.fr/resources/doku.php?id=anafile
         """
         data = self.dr_obs['taskID','name','field_ra','field_dec',
                            'fluxcal','flux_first','flux_last',
                            'polcal','pol_first','pol_last',
-                           'apercal_tex_name','apercal_version']
+                           'apercal_name','apercal_version']
         data.rename_columns(['taskID','name','field_ra','field_dec',
                              'fluxcal','flux_first','flux_last',
                              'polcal','pol_first','pol_last',
-                             'apercal_tex_name','apercal_version'],
+                             'apercal_name','apercal_version'],
                             ['ObsID','Name','RA','Dec','Fluxcal','flux_first','flux_last',
                              'Polcal','pol_first','pol_last','Apercal_name','Apercal_version'])
+        #data['RA'].info.format = '10.6f'
+        #data['Dec'].info.format ='9.6f'
         table = tablemaker.addTable(data, name=os.path.join(tabledir,self.dr_name+'_obs.cds'))
+        tablemaker.title = 'First Apertif Imaging Data Release'
+        tablemaker.author = 'E.A.K. Adams'
+        tablemaker.authors = 'Apertif Imaging Team + Apertif Builders'
+        tablemaker.abstract = 'Table of observations included in the first Apertif imaging data release'
+        table.columns[2].fmt='10.6f'
+        table.columns[2].description='Right Ascension'
+        table.columns[2].unit = 'deg'
+        table.columns[3].fmt='9.6f'
+        table.columns[3].description='Declination'
+        table.columns[3].unit = 'deg'
         tablemaker.makeReadMe()
         tablemaker.writeCDSTables()
 
@@ -179,7 +192,26 @@ class ObsCat(object):
         But it does do the byte-by-byte description for me, which is the super annoying part, 
         so I can handle manually adding everything else later
         """
-                        
+
+        
+    #make MR table for sharing/team use
+    #Use cvs because it's easy
+    def make_dr_obs_csv(self):
+        """
+        """
+        col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux_first','flux_last',
+                      'Polcal','pol_first','pol_last','Apercal_name','Apercal_version']
+        ascii.write(self.dr_obs['taskID','name','field_ra','field_dec',
+                                 'fluxcal','flux_first','flux_last',
+                                 'polcal','pol_first','pol_last',
+                                 'apercal_name','apercal_version'],
+                    os.path.join(tabledir,self.dr_name+'_obs.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats = {'RA': '10.6f', 'Dec':'9.6f'}
+                    )
+   
 
     #make LATEX test table for paper
     def make_dr_obs_paper_table(self):
@@ -227,14 +259,6 @@ class ObsCat(object):
                                  'preamble': ["\centering","\label{tab:obsnotes}"],
                                  'tabletype': "table*"}
                     )
-        
-
-    #csv table for team use
-    def make_dr_obs_csv(self):
-        ascii.write(self.dr_obs,
-                    os.path.join(tabledir,self.dr_name+'_obs.csv'),
-                    format='csv',
-                    overwrite=True)
     
 
     def plot_apercal_dr_obs(self):
@@ -631,8 +655,25 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Continuum self.validation metrics for released data",
+                                 'caption': "Continuum validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:cont}","\small"]}
+                    )
+
+    #make csv cont table
+    def make_dr_cont_csv(self):
+        """
+        csv formatted table of continuum for data release
+        add ra,dec compared to paper version
+        """
+        col_names = ['ObsID','Name','Beam','RA','Dec','sigma_in',
+                     'sigma_out', 'R', 'MaxNeg', 'Ex-2']
+        ascii.write(self.dr_proc['taskid','Field','beam','ra','dec','s_in','s_out',
+                                 'rat','N2','Ex-2'],
+                    os.path.join(tabledir,self.dr_name+'_cont.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats = {'RA': '10.6f', 'Dec':'9.6f'}
                     )
 
     #make pol table for paper
@@ -658,15 +699,38 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Polarization self.validation metrics for released data",
+                                 'caption': "Polarization validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:pol}"]}
                     )
+
+    #make pol csv table
+    def make_dr_pol_csv(self):
+        """
+        csv formatted table of polarization for data release
+        add ra,dec compared to paper version
+        """
+        col_names = ['ObsID','Name','Beam','RA','Dec','V valid','QU valid',
+                     'sigma_in','sigma_out','FT_max','peak_inner','bmin',
+                     'Q_beam_frac','U_beam_frac','Q_noise_frac','U_noise_frac']
+        #col_names = ['ObsID','Name','Beam','RA','Dec','V valid','QU valid',
+        #             'pol_s_in', 'pol_s_out',]
+        ascii.write(self.dr_proc['taskid','Field','beam','ra','dec',
+                                 'pol_V_pass','pol_QU_pass',
+                                 'pol_s_in','pol_s_out',
+                                 'pol_ftmax','pol_peak_in','pol_bmin','Q_bm_fg',
+                                 'U_bm_fg', 'Q_st_fg','U_st_fg'],
+                    os.path.join(tabledir,self.dr_name+'_pol.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats = {'RA': '10.6f', 'Dec':'9.6f'}
+        )
                     
 
     #make HI table for paper
     def make_dr_hi_table(self):
     #set column names to be tex & user friendly
-        col_names = ['ObsID','Name','Beam','All good', 'All good/okay',
+        col_names = ['ObsID','Name','Beam',
                      'cube2', 'cube1', 'cube0','$\sigma_{c2}$',
                      '$\sigma_{c1}$', '$\sigma_{c0}$',
                      '$f_{ex,c2}$', '$f_{ex,c1}$', '$f_{ex,c0}$',
@@ -677,8 +741,8 @@ class ProcCat(ObsCat):
         self.dr_proc['rms_c2_mJy'] = 1e3*self.dr_proc['rms_c2']
         self.dr_proc['rms_c0_mJy'] = 1e3*self.dr_proc['rms_c0']
         
-        ascii.write(self.dr_proc['taskid','Field','beam','HI_all_good',
-                                 'HI_all_good_ok','c2','c1','c0','rms_c2_mJy',
+        ascii.write(self.dr_proc['taskid','Field','beam',
+                                 'c2','c1','c0','rms_c2_mJy',
                                  'rms_c1_mJy','rms_c0_mJy','lgfrac_c2','lgfrac_c1',
                                  'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:30],
                     os.path.join(tabledir,self.dr_name+'_line.txt'),
@@ -698,7 +762,38 @@ class ProcCat(ObsCat):
                                '$p_{0.8,c0}$': '4.2f'}
                     )
 
-    
+    #make hi csv table
+    def make_dr_hi_csv(self):
+        """
+        csv table for data release
+        add ra,dec compared to table version
+        """
+        col_names = ['ObsID','Name','Beam','RA','Dec',
+                     'cube2_qual', 'cube1_qual', 'cube0_qual','sigma_c2',
+                     'sigma_c1', 'sigma_c0',
+                     'f_ex_c2', 'f_ex_c1', 'f_ex_c0',
+                     'p_0.8_c2','p_0.8_c1','p_0.8_c0']
+
+        #put sigma into mJy, rather than Jy units before formatting
+        self.dr_proc['rms_c1_mJy'] = 1e3*self.dr_proc['rms_c1']
+        self.dr_proc['rms_c2_mJy'] = 1e3*self.dr_proc['rms_c2']
+        self.dr_proc['rms_c0_mJy'] = 1e3*self.dr_proc['rms_c0']
+        
+        ascii.write(self.dr_proc['taskid','Field','beam','ra','dec',
+                                 'c2','c1','c0','rms_c2_mJy',
+                                 'rms_c1_mJy','rms_c0_mJy','lgfrac_c2','lgfrac_c1',
+                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'],
+                    os.path.join(tabledir,self.dr_name+'_line.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats = {'sigma_c2': '4.2f', 'sigma_c1': '4.2f',
+                               'sigma_c0': '4.2f', 'f_ex_c2': '5.2f',
+                               'f_ex_c1': '5.2f', 'f_ex_c0': '5.2f',
+                               'p_0.8_c2': '4.2f', 'p_0.8_c1': '4.2f',
+                               'p_0.8_c0': '4.2f',
+                               'RA': '10.6f', 'Dec':'9.6f'}
+                    )
 
 
     #explore DR1
@@ -739,7 +834,7 @@ class ProcCat(ObsCat):
 
         #separate valid and not valid
         #very little difference, so don't show (for now)
-        '''
+
         goodind = np.where(self.dr_proc['pol_V_pass'] == 'True')[0]
         badind = np.where(self.dr_proc['pol_V_pass'] == 'Fail')[0]
 
@@ -747,7 +842,7 @@ class ProcCat(ObsCat):
                  bins=np.arange(20,65,1))
         ax2.hist(self.dr_proc['pol_s_out'][goodind],
                  histtype='step',bins=np.arange(20,65,1))
-        '''
+
         #find median and overplot
         med_inner = np.nanmedian(self.dr_proc['pol_s_in'])
         med_outer = np.nanmedian(self.dr_proc['pol_s_out'])
@@ -756,31 +851,34 @@ class ProcCat(ObsCat):
         inner_84 = np.nanpercentile(self.dr_proc['pol_s_in'],84)
         outer_16 = np.nanpercentile(self.dr_proc['pol_s_out'],16)
         outer_84 = np.nanpercentile(self.dr_proc['pol_s_out'],84)
-        ylim = ax2.get_ylim()
-        ax1.plot([med_inner,med_inner],ylim,color=mpcolors[1],
-                 label='Median = {0:4.1f} (+ {1:3.1f} - {2:3.1f}) $\mu$Jy'.format(med_inner,
-                                                                    (inner_84-med_inner),
-                                                                    (med_inner-inner_16)))
+        ylim = (0,350)#ax2.get_ylim()
+        ax1.plot([med_inner,med_inner],ylim,color=mpcolors[0],
+                 label=('All (N={3}); Median = {0:4.1f}'
+                        ' (+ {1:3.1f} - {2:3.1f}) $\mu$Jy').format(med_inner,
+                                                                   (inner_84-med_inner),
+                                                                   (med_inner-inner_16),
+                                                                   len(self.dr_proc)))
         ax1.legend()
         ax1.plot([inner_84,inner_84],
-                 ylim,linestyle='--',color=mpcolors[1])
+                 ylim,linestyle='--',color=mpcolors[0])
         ax1.plot([inner_16,inner_16],
-                 ylim,linestyle='--',color=mpcolors[1])
+                 ylim,linestyle='--',color=mpcolors[0])
             
-        ax2.plot([med_outer,med_outer],ylim,color=mpcolors[1],
-                 label='Median = {0:4.1f} (+ {1:3.1f} - {2:3.1f}) $\mu$Jy'.format(med_outer,
-                                                                    (outer_84-med_outer),
-                                                                    (med_outer-outer_16)))
+        ax2.plot([med_outer,med_outer],ylim,color=mpcolors[0],
+                 label=('All; Median = {0:4.1f}'
+                        ' (+ {1:3.1f} - {2:3.1f}) $\mu$Jy').format(med_outer,
+                                                                   (outer_84-med_outer),
+                                                                   (med_outer-outer_16),
+                                                                   len(self.dr_proc)))
         ax2.legend()
         ax2.plot([outer_84,outer_84],
-                 ylim,linestyle='--',color=mpcolors[1])
+                 ylim,linestyle='--',color=mpcolors[0])
         ax2.plot([outer_16,outer_16],
-                 ylim,linestyle='--',color=mpcolors[1])
+                 ylim,linestyle='--',color=mpcolors[0])
 
         #repeat only for valid
         #find median and overplot
         #no statistical difference, so leave
-        '''
         med_inner = np.nanmedian(self.dr_proc['pol_s_in'][goodind])
         med_outer = np.nanmedian(self.dr_proc['pol_s_out'][goodind])
         #also 68% (1 sigma) range:
@@ -788,11 +886,13 @@ class ProcCat(ObsCat):
         inner_84 = np.nanpercentile(self.dr_proc['pol_s_in'][goodind],84)
         outer_16 = np.nanpercentile(self.dr_proc['pol_s_out'][goodind],16)
         outer_84 = np.nanpercentile(self.dr_proc['pol_s_out'][goodind],84)
-        ylim = ax2.get_ylim()
+        #ylim = ax2.get_ylim()
         ax1.plot([med_inner,med_inner],ylim,color=mpcolors[1],
-                 label='Valid; Median = {0:4.1f} (+ {1:3.1f} - {2:3.1f}) $\mu$Jy'.format(med_inner,
-                                                                    (inner_84-med_inner),
-                                                                    (med_inner-inner_16)))
+                 label=('Valid (N={3}); Median = {0:4.1f}'
+                        ' (+ {1:3.1f} - {2:3.1f}) $\mu$Jy').format(med_inner,
+                                                                   (inner_84-med_inner),
+                                                                   (med_inner-inner_16),
+                                                                   len(goodind)))
         ax1.legend()
         ax1.plot([inner_84,inner_84],
                  ylim,linestyle='--',color=mpcolors[1])
@@ -800,22 +900,27 @@ class ProcCat(ObsCat):
                  ylim,linestyle='--',color=mpcolors[1])
             
         ax2.plot([med_outer,med_outer],ylim,color=mpcolors[1],
-                 label='Valid; Median = {0:4.1f} (+ {1:3.1f} - {2:3.1f}) $\mu$Jy'.format(med_outer,
-                                                                    (outer_84-med_outer),
-                                                                    (med_outer-outer_16)))
+                 label=('Valid; Median = {0:4.1f} '
+                        '(+ {1:3.1f} - {2:3.1f}) $\mu$Jy').format(med_outer,
+                                                                  (outer_84-med_outer),
+                                                                  (med_outer-outer_16),
+                                                                  len(goodind)))
         ax2.legend()
         ax2.plot([outer_84,outer_84],
                  ylim,linestyle='--',color=mpcolors[1])
         ax2.plot([outer_16,outer_16],
                  ylim,linestyle='--',color=mpcolors[1])
 
-        '''
         #reset axis limit manually
         ax1.set_ylim(ylim)
         
     
         plt.savefig(os.path.join(figdir,self.dr_name+'_pol_noise.png'))
         plt.close()
+
+        #get best noise values
+        outer_5 = np.nanpercentile(self.dr_proc['pol_s_out'][goodind],5)
+        print('The best achievable continuum noise (5th percentile) is {}'.format(outer_5))
 
 
     def get_qual_cont(self):
@@ -883,7 +988,7 @@ class ProcCat(ObsCat):
         Split by quality
         """
         #get c0,c1,c2 noise values
-        fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(12,8),
+        fig, (ax1, ax2, ax3) = plt.subplots(1,3,figsize=(14,8),
                                             sharex=True, sharey=True)
         ax1.hist((1e3*self.dr_proc['rms_c0']),histtype='step',
                  bins=np.arange(1.0,3.5,0.05))
@@ -895,11 +1000,11 @@ class ProcCat(ObsCat):
         okayind0 = np.where(self.dr_proc['c0'] == 'O')[0]
         badind0 = np.where(self.dr_proc['c0'] == 'B')[0]
         ax1.hist((1e3*self.dr_proc['rms_c0'][goodind0]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[2])
         ax1.hist((1e3*self.dr_proc['rms_c0'][okayind0]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[1])
         ax1.hist((1e3*self.dr_proc['rms_c0'][badind0]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[3])
     
         ax2.hist((1e3*self.dr_proc['rms_c1']),histtype='step',
                  bins=np.arange(1.0,3.5,0.05))
@@ -911,11 +1016,11 @@ class ProcCat(ObsCat):
         okayind1 = np.where(self.dr_proc['c1'] == 'O')[0]
         badind1 = np.where(self.dr_proc['c1'] == 'B')[0]
         ax2.hist((1e3*self.dr_proc['rms_c1'][goodind1]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[2])
         ax2.hist((1e3*self.dr_proc['rms_c1'][okayind1]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[1])
         ax2.hist((1e3*self.dr_proc['rms_c1'][badind1]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[3])
 
         ax3.hist((1e3*self.dr_proc['rms_c2']),histtype='step',
                  bins=np.arange(1.0,3.5,0.05))
@@ -927,11 +1032,11 @@ class ProcCat(ObsCat):
         okayind2 = np.where(self.dr_proc['c2'] == 'O')[0]
         badind2 = np.where(self.dr_proc['c2'] == 'B')[0]
         ax3.hist((1e3*self.dr_proc['rms_c2'][goodind2]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[2])
         ax3.hist((1e3*self.dr_proc['rms_c2'][okayind2]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[1])
         ax3.hist((1e3*self.dr_proc['rms_c2'][badind2]),histtype='step',
-                 bins=np.arange(1.0,3.5,0.05))
+                 bins=np.arange(1.0,3.5,0.05),color=mpcolors[3])
 
         #find median and overplot
         #also for just good
@@ -941,6 +1046,12 @@ class ProcCat(ObsCat):
         med_c0_good = 1e3*np.nanmedian(self.dr_proc['rms_c0'][goodind0])
         med_c1_good = 1e3*np.nanmedian(self.dr_proc['rms_c1'][goodind1])
         med_c2_good = 1e3*np.nanmedian(self.dr_proc['rms_c2'][goodind2])
+        med_c0_okay = 1e3*np.nanmedian(self.dr_proc['rms_c0'][okayind0])
+        med_c1_okay = 1e3*np.nanmedian(self.dr_proc['rms_c1'][okayind1])
+        med_c2_okay = 1e3*np.nanmedian(self.dr_proc['rms_c2'][okayind2])
+        med_c0_bad = 1e3*np.nanmedian(self.dr_proc['rms_c0'][badind0])
+        med_c1_bad = 1e3*np.nanmedian(self.dr_proc['rms_c1'][badind1])
+        med_c2_bad = 1e3*np.nanmedian(self.dr_proc['rms_c2'][badind2])
 
         #don't seem to be very different - most cubes are good
         #which is very nice
@@ -951,11 +1062,49 @@ class ProcCat(ObsCat):
         c2_16 = 1000.*np.nanpercentile(self.dr_proc['rms_c2'],16)
         c2_84 = 1000.*np.nanpercentile(self.dr_proc['rms_c2'],84)
 
-        ylim = ax3.get_ylim()
-        ax1.plot([med_c0,med_c0],ylim,color=mpcolors[0],
-                 label='Median (all) = {0:4.2f} (+ {1:3.1f} - {2:3.1f}) mJy'.format(med_c0,
-                                                                    (c0_84-med_c0),
-                                                                    (med_c0-c0_16)))
+        c0_16_good = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][goodind0],16)
+        c0_84_good = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][goodind0],84)
+        c1_16_good = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][goodind1],16)
+        c1_84_good = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][goodind1],84)
+        c2_16_good = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],16)
+        c2_84_good = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],84)
+
+        c0_16_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][okayind0],16)
+        c0_84_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][okayind0],84)
+        c1_16_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][okayind1],16)
+        c1_84_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][okayind1],84)
+        c2_16_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][okayind2],16)
+        c2_84_okay = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][okayind2],84)
+
+        c0_16_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][badind0],16)
+        c0_84_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c0'][badind0],84)
+        c1_16_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][badind1],16)
+        c1_84_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c1'][badind1],84)
+        c2_16_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][badind2],16)
+        c2_84_bad = 1000.*np.nanpercentile(self.dr_proc['rms_c2'][badind2],84)
+
+        ylim = (0,375)#ax3.get_ylim()
+        ax1.plot([med_c0,med_c0],(0,0),color=mpcolors[0],
+                 label=('All; median  = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c0,
+                                                               (c0_84-med_c0),
+                                                               (med_c0-c0_16)))
+        ax1.plot([med_c0_good,med_c0_good],(0,0),color=mpcolors[2],
+                 label=('Good; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c0_good,
+                                                               (c0_84_good-med_c0_good),
+                                                               (med_c0_good-c0_16_good)))
+        ax1.plot([med_c0_okay,med_c0_okay],(0,0),color=mpcolors[1],
+                 label=('Okay; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c0_okay,
+                                                               (c0_84_okay-med_c0_okay),
+                                                               (med_c0_okay-c0_16_okay)))
+        ax1.plot([med_c0_bad,med_c0_bad],(0,0),color=mpcolors[3],
+                 label=('Bad; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c0_bad,
+                                                               (c0_84_bad-med_c0_bad),
+                                                               (med_c0_bad-c0_16_bad)))
+        '''    
         ax1.plot([c0_84,c0_84],
                  ylim,linestyle='--',color=mpcolors[0])
         ax1.plot([c0_16,c0_16],
@@ -969,18 +1118,51 @@ class ProcCat(ObsCat):
                  ylim,linestyle='--',color=mpcolors[0])
         ax3.plot([c2_16,c2_16],
                  ylim,linestyle='--',color=mpcolors[0])
+        '''
         
         ax1.legend()
 
-        ax2.plot([med_c1,med_c1],ylim,color=mpcolors[0],
-                 label='Median (all) = {0:4.2f} (+ {1:3.1f} - {2:3.1f}) mJy'.format(med_c1,
+        ax2.plot([med_c1,med_c1],(0,0),color=mpcolors[0],
+                 label='All; median = {0:4.2f} (+ {1:4.2f} - {2:4.2f}) mJy'.format(med_c1,
                                                                     (c1_84-med_c1),
                                                                     (med_c1-c1_16)))
+        ax2.plot([med_c1_good,med_c1_good],(0,0),color=mpcolors[2],
+                 label=('Good; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c1_good,
+                                                               (c1_84_good-med_c1_good),
+                                                               (med_c1_good-c1_16_good)))
+        ax2.plot([med_c1_okay,med_c1_okay],(0,0),color=mpcolors[1],
+                 label=('Okay; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c1_okay,
+                                                               (c1_84_okay-med_c1_okay),
+                                                               (med_c1_okay-c1_16_okay)))
+        ax2.plot([med_c1_bad,med_c1_bad],(0,0),color=mpcolors[3],
+                 label=('Bad; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c1_bad,
+                                                               (c1_84_bad-med_c1_bad),
+                                                               (med_c1_bad-c1_16_bad)))
+        
         ax2.legend()
-        ax3.plot([med_c2,med_c2],ylim,color=mpcolors[0],
-                 label='Median (all) = {0:4.2f} (+ {1:3.1f} - {2:3.1f}) mJy'.format(med_c2,
+        ax3.plot([med_c2,med_c2],(0,0),color=mpcolors[0],
+                 label='All; median = {0:4.2f} (+ {1:4.2f} - {2:4.2f}) mJy'.format(med_c2,
                                                                     (c2_84-med_c2),
                                                                     (med_c2-c2_16)))
+        ax3.plot([med_c2_good,med_c2_good],(0,0),color=mpcolors[2],
+                 label=('Good; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c2_good,
+                                                               (c2_84_good-med_c2_good),
+                                                               (med_c2_good-c2_16_good)))
+        ax3.plot([med_c2_okay,med_c2_okay],(0,0),color=mpcolors[1],
+                 label=('Okay; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c2_okay,
+                                                               (c2_84_okay-med_c2_okay),
+                                                               (med_c2_okay-c2_16_okay)))
+        ax3.plot([med_c2_bad,med_c2_bad],(0,0),color=mpcolors[3],
+                 label=('Bad; median = {0:4.2f}'
+                        ' (+ {1:4.2f} - {2:4.2f}) mJy').format(med_c2_bad,
+                                                               (c2_84_bad-med_c2_bad),
+                                                               (med_c2_bad-c2_16_bad)))
+        
         ax3.legend()
 
         #reset axis limit manually
@@ -990,7 +1172,7 @@ class ProcCat(ObsCat):
         plt.close()
 
         #get best noise values
-        outer_5 = 1000*np.nanpercentile(self.dr_proc['rms_c2'],5)
+        outer_5 = 1000*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],5)
         print('The best achievable continuum noise (5th percentile) for cube 2 is {0:4.2f} mJy'.format(outer_5))
 
 

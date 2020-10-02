@@ -90,12 +90,17 @@ def combine_validation():
     t['pol_s_in'] = np.full(table_length,np.nan)
     t['pol_s_out'] = np.full(table_length,np.nan)
     t['pol_rat'] = np.full(table_length,np.nan)
+    t['pol_peak'] = np.full(table_length,np.nan)
+    t['pol_peak_s'] = np.full(table_length,np.nan)
     t['pol_N2'] = np.full(table_length,np.nan)
+    t['pol_P2'] = np.full(table_length,np.nan)
     t['pol_Ex-2'] = np.full(table_length,np.nan)
+    t['pol_Ex+2'] = np.full(table_length,np.nan)
     t['pol_ftmax'] = np.full(table_length,np.nan)
     t['pol_peak_in'] = np.full(table_length,np.nan)
-    t['pol_P2'] = np.full(table_length,np.nan)
     t['pol_bmin'] = np.full(table_length,np.nan)
+    t['pol_bmaj'] = np.full(table_length,np.nan)
+    t['pol_bpa'] = np.full(table_length,np.nan)
     t['Q_bm_fg'] = np.full(table_length,np.nan)
     t['U_bm_fg'] = np.full(table_length,np.nan)
     t['Q_st_fg'] = np.full(table_length,np.nan)
@@ -174,8 +179,13 @@ def combine_validation():
                 t['pol_Ex-2'][ind] = pol['Ex-2'][pol_ind]
                 t['pol_ftmax'][ind] = pol['ftmax'][pol_ind]
                 t['pol_peak_in'][ind] = pol['peak_in'][pol_ind]
+                t['pol_peak_s'][ind] = pol['peak_s'][pol_ind]
+                t['pol_peak'][ind] = pol['peak'][pol_ind]
                 t['pol_P2'][ind] = pol['P2'][pol_ind]
                 t['pol_bmin'][ind] = pol['bmin'][pol_ind]
+                t['pol_bmaj'][ind] = pol['bmaj'][pol_ind]
+                t['pol_bpa'][ind] = pol['bpa'][pol_ind]
+                t['pol_Ex+2'][ind] = pol['Ex+2'][pol_ind]
                 t['Q_bm_fg'][ind] = pol['Q_bm_fg'][pol_ind]
                 t['U_bm_fg'][ind] = pol['U_bm_fg'][pol_ind]
                 t['Q_st_fg'][ind] = pol['Q_st_fg'][pol_ind]
@@ -985,7 +995,7 @@ def combine_pol():
                 t['ftmax'][ind] = valid_V['ftmax'][valid_ind_V]
                 t['bmaj'][ind] = valid_V['bmaj'][valid_ind_V]
                 t['bmin'][ind] = valid_V['bmin'][valid_ind_V]
-                t['bpa'][ind] = valid_V['pa'][valid_ind_V]
+                t['bpa'][ind] = valid_V['bpa'][valid_ind_V]
             else:
                 #make sure pass is false if beam doesn't exist
                 t['pass_V'][ind] = False
@@ -1009,6 +1019,46 @@ def combine_pol():
                 os.path.join(filedir,'pol_allbeams.csv'),
                 overwrite = True,format='csv')
 
+def do_pol_valid():
+    """
+    Use the local csv file to update the polarization validation
+    This can account for changing criteria
+    Motivated 30 Sep 2020 by change from 12.5" to 15" for b_min
+    """
+    poltable = ascii.read(os.path.join(filedir,'pol_allbeams.csv'))
+    QU_pass_new = np.full(len(poltable),True,dtype=bool)
+    V_pass_new = np.full(len(poltable),True,dtype=bool)
+    #find where V fails
+    failind_sin = np.where(poltable['s_in'] > 60.)[0]
+    failind_sout = np.where(poltable['s_out'] > 60.)[0]
+    failind_bmin = np.where(poltable['bmin'] > 15.)[0]
+    failind_ftmax = np.where(poltable['ftmax'] > 25.)[0]
+    failind_peak_in = np.where(poltable['peak_in'] > 4000.)[0]
+    failind_nodata = np.hstack(np.argwhere(np.isnan(poltable['s_in'])))
+    failind_V = np.unique(np.concatenate((failind_sin,failind_sout,failind_bmin,
+                               failind_ftmax,failind_peak_in,failind_nodata)))
+
+    V_pass_new[failind_V] = False
+    poltable['pass_V'] = V_pass_new
+    
+    #check QU also, but should be good
+
+    #now check for where things fails
+    failind_Qbm = np.where(poltable['Q_bm_fg'] > 0.31)[0]
+    failind_Ubm = np.where(poltable['U_bm_fg'] > 0.31)[0]
+    failind_Qst = np.where(poltable['Q_st_fg'] > 0.31)[0]
+    failind_Ust = np.where(poltable['U_st_fg'] > 0.31)[0]
+
+    failind_QU = np.unique(np.concatenate((failind_Qbm,failind_Ubm,
+                                           failind_Qst,failind_Ust)))
+
+    #nothing actually changed, as I hoped/expected
+    QU_pass_new[failind_QU] = False
+    poltable['pass_QU'] = QU_pass_new
+
+    ascii.write(poltable,
+                os.path.join(filedir,'pol_allbeams.csv'),
+                overwrite = True,format='csv')
     
 
 #helper script to put updated continuum files in right place
