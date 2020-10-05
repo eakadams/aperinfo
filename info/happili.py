@@ -57,20 +57,48 @@ def get_bad_pol():
     #first, get directory list
     taskdirlist = get_dir_list()
     #then go through each, checking each beam
+    #create empty lists to hold things
+    beamlist = []
+    tasklist = []
     for taskdir in taskdirlist:
-        for i in range(40):
-            rawbeamdir = os.path.join(taskdir,'{0:02d}/raw'.format(i))
-            #first check dir exists, otherwise can skip completely
-            if os.path.exists(rawbeamdir):
-                #need to check fluxcal also
-                #think no fluxcal should do things properly
-                #and also no pol solutions?
-                #but first verify that
-                polXf = glob.glob(os.path.join(rawbeamdir,'3C???.Xf'))
-                if len(polXf) == 0:
-                    print(('No Xf pol solution for'
-                           ' {0}, beam {1}').format(taskdir[-9:],i))
-            
+        taskid = taskdir[-9:]
+        day = np.float(taskid[0:6])
+        #ignore July and start August, to make my life easier
+        if day > 190806:
+            for i in range(40):
+                #!!!Have to updatee for right happili node
+                if i < 10:
+                    rawbeamdir = os.path.join(taskdir,
+                                              '{0:02d}/raw'.format(i))
+                elif i < 20:
+                    happilidir = os.path.join('/data2/apertif/',taskid)
+                    rawbeamdir = os.path.join(happilidir,
+                                              '{0:02d}/raw'.format(i))
+                elif i < 30:
+                    happilidir = os.path.join('/data3/apertif/',taskid)
+                    rawbeamdir = os.path.join(happilidir,
+                                              '{0:02d}/raw'.format(i))
+                else:
+                    happilidir = os.path.join('/data4/apertif/',taskid)
+                    rawbeamdir = os.path.join(happilidir,
+                                              '{0:02d}/raw'.format(i))
+                #first check dir exists, otherwise can skip completely
+                if os.path.exists(rawbeamdir):
+                    #need to check fluxcal also
+                    #think no fluxcal should do things properly
+                    #and also no pol solutions?
+                    #but first verify that
+                    polXf = glob.glob(os.path.join(rawbeamdir,'3C???.Xf'))
+                    if len(polXf) == 0:
+                        print(('No Xf pol solution for'
+                               ' {0}, beam {1}').format(taskid,i))
+                        beamlist.append(i)
+                        tasklist.append(taskid)
+    #write everything out to a file
+    #make a table
+    badpol = Table([tasklist,beamlist],names=['taskid','beam'])
+    ascii.write(badpol,os.path.join(filedir,'badpol.csv'),format='csv',
+                overwrite=True)
 
 def make_happili_obs_table():
     """
