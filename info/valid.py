@@ -69,16 +69,16 @@ def combine_validation():
     t = Table()
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
-    t['cont_pass'] = np.full(table_length,False,dtype=bool)
-    t['pol_pass'] = np.full(table_length,False,dtype=bool)
-    t['pol_V_pass'] = np.full(table_length,False,dtype=bool)
-    t['pol_QU_pass'] = np.full(table_length,False,dtype=bool)
-    t['HI_all_good'] = np.full(table_length,False,dtype=bool)
-    t['HI_all_good_ok'] = np.full(table_length,False,dtype=bool)
-    t['HI_c2_good_ok'] = np.full(table_length,False,dtype=bool)
-    t['HI_c2_good'] = np.full(table_length,False,dtype=bool)
-    t['HI_pass'] = np.full(table_length,False,dtype=bool)
-    t['all_pass'] = np.full(table_length,False,dtype=bool)
+    t['cont_pass'] = np.full(table_length,'None',dtype=object)
+    t['pol_pass'] = np.full(table_length,'None',dtype=object)
+    t['pol_V_pass'] = np.full(table_length,'None',dtype=object)
+    t['pol_QU_pass'] = np.full(table_length,'None',dtype=object)
+    t['HI_all_good'] = np.full(table_length,'None',dtype=object)
+    t['HI_all_good_ok'] = np.full(table_length,'None',dtype=object)
+    t['HI_c2_good_ok'] = np.full(table_length,'None',dtype=object)
+    t['HI_c2_good'] = np.full(table_length,'None',dtype=object)
+    t['HI_pass'] = np.full(table_length,'None',dtype=object)
+    t['all_pass'] = np.full(table_length,'None',dtype=object)
     #get relevant cont metrics (used for valid)
     #so that I can plot
     t['s_in'] = np.full(table_length,np.nan)
@@ -106,9 +106,9 @@ def combine_validation():
     t['Q_st_fg'] = np.full(table_length,np.nan)
     t['U_st_fg'] = np.full(table_length,np.nan)
     #get relevant HI metrics
-    t['c2'] = np.full(table_length,'B')
-    t['c1'] = np.full(table_length,'B')
-    t['c0'] = np.full(table_length,'B')
+    t['c2'] = np.full(table_length,'N')
+    t['c1'] = np.full(table_length,'N')
+    t['c0'] = np.full(table_length,'N')
     t['rms_c2'] = np.full(table_length,np.nan)
     t['rms_c1'] = np.full(table_length,np.nan)
     t['rms_c0'] = np.full(table_length,np.nan)
@@ -157,17 +157,21 @@ def combine_validation():
             if len(pol_ind) == 1:
                 if pol['pass_V'][pol_ind] == 'True':
                     t['pol_V_pass'][ind] = True
-                else:
+                elif pol['pass_V'][pol_ind] == 'False':
                     t['pol_V_pass'][ind] = False
                 
                 if pol['pass_QU'][pol_ind] == 'True':
                     t['pol_QU_pass'][ind] = True
-                else:
+                elif pol['pass_QU'][pol_ind] == 'False':
                     t['pol_QU_pass'][ind] = False
 
                 #do combined passing
-                if (pol['pass_V'][pol_ind] == 'True') and (pol['pass_QU'][pol_ind] == 'True' ):
+                if ((pol['pass_V'][pol_ind] == 'True') and
+                    (pol['pass_QU'][pol_ind] == 'True' )):
                     t['pol_pass'][ind] = True
+                elif ((pol['pass_V'][pol_ind] == 'None') and
+                      (pol['pass_QU'][pol_ind] == 'None' )):
+                    t['pol_pass'][ind] = 'None'
                 else:
                     t['pol_pass'][ind] = False
 
@@ -200,13 +204,13 @@ def combine_validation():
                 if hi['all_good'][hi_ind] == 1:
                     t['HI_pass'][ind] = True
                     t['HI_all_good'][ind] = True
-                else:
+                elif hi['all_good'][hi_ind] == 0:
                     t['HI_pass'][ind] = False
                     t['HI_all_good'][ind] = False
                 #test good plus ok, all cubes
                 if hi['all_good_ok'][hi_ind] == 1:
                     t['HI_all_good_ok'][ind] = True
-                else:
+                elif hi['all_good_ok'][hi_ind] == 0:
                     t['HI_all_good_ok'][ind] = False
                 #test cube 2
                 if hi['c2_good'][hi_ind] == 1:
@@ -226,16 +230,22 @@ def combine_validation():
                     t['c2'][ind] = 'G'
                 elif hi['c2_ok'][hi_ind] == 1:
                     t['c2'][ind] = 'O'
+                else:
+                    t['c2'][ind] = 'B'
                     
                 if hi['c1_good'][hi_ind] == 1:
                     t['c1'][ind] = 'G'
                 elif hi['c1_ok'][hi_ind] == 1:
                     t['c1'][ind] = 'O'
+                else:
+                    t['c1'][ind] = 'B'
 
                 if hi['c0_good'][hi_ind] == 1:
                     t['c0'][ind] = 'G'
                 elif hi['c0_ok'][hi_ind] == 1:
                     t['c0'][ind] = 'O'
+                else:
+                    t['c0'][ind] = 'B'
 
                 #metrics are easy
                 t['rms_c2'][ind] = hi['rms_c2'][hi_ind]
@@ -838,7 +848,7 @@ def combine_continuum():
     t = Table()
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
-    t['pass'] = np.empty(table_length,dtype=bool)
+    t['pass'] = np.full(table_length,'None',dtype=object)
     t['s_in'] = np.full(table_length,np.nan)
     t['s_out'] = np.full(table_length,np.nan) 
     t['rat'] = np.full(table_length,np.nan) 
@@ -871,7 +881,7 @@ def combine_continuum():
                 #check for pass as True/Fail
                 if valid['col2'][valid_ind] == '.':
                     t['pass'][ind] = True
-                elif valid['col2'][valid_ind] == 'X':
+                elif (valid['col2'][valid_ind] == 'X'):
                     t['pass'][ind] = False
                 #fill in rest of columns
                 t['s_in'][ind] = valid['col3'][valid_ind]
@@ -919,8 +929,8 @@ def combine_pol():
     t = Table()
     t['taskid'] = np.full(table_length,'000000000')
     t['beam'] = np.empty(table_length,dtype=int)
-    t['pass_V'] = np.empty(table_length,dtype=bool)
-    t['pass_QU'] = np.empty(table_length,dtype=bool)
+    t['pass_V'] = np.full(table_length,'None',dtype=object)
+    t['pass_QU'] = np.full(table_length,'None',dtype=object)
     t['Q_bm_fg'] = np.full(table_length,np.nan)
     t['U_bm_fg'] = np.full(table_length,np.nan) 
     t['Q_st_fg'] = np.full(table_length,np.nan) 
@@ -979,6 +989,10 @@ def combine_pol():
                 #check for pass as True/Fail
                 if valid_V['Q'][valid_ind_V] == '.':
                     t['pass_V'][ind] = True
+                elif ( (valid_V['Q'][valid_ind_V] == 'X') and
+                       np.isnan(valid_V['s_in'][valid_ind_V]) ):
+                    t['pass_V'][ind] = 'None'
+                    #print(taskid,b)
                 elif valid_V['Q'][valid_ind_V] == 'X':
                     t['pass_V'][ind] = False
                 #fill in rest of columns
@@ -1004,6 +1018,9 @@ def combine_pol():
                 #check for pass as True/Fail
                 if valid_QU['Q'][valid_ind_QU] == '.':
                     t['pass_QU'][ind] = True
+                elif ( (valid_QU['Q'][valid_ind_QU] == 'X') and
+                       (valid_QU['Q_bm_fg'][valid_ind_QU] == 1.0) ):
+                    t['pass_QU'][ind] = 'None'
                 elif valid_QU['Q'][valid_ind_QU] == 'X':
                     t['pass_QU'][ind] = False
                 #fill in rest of columns
@@ -1026,8 +1043,8 @@ def do_pol_valid():
     Motivated 30 Sep 2020 by change from 12.5" to 15" for b_min
     """
     poltable = ascii.read(os.path.join(filedir,'pol_allbeams.csv'))
-    QU_pass_new = np.full(len(poltable),True,dtype=bool)
-    V_pass_new = np.full(len(poltable),True,dtype=bool)
+    QU_pass_new = np.full(len(poltable),True,dtype=object)
+    V_pass_new = np.full(len(poltable),True,dtype=object)
     #find where V fails
     failind_sin = np.where(poltable['s_in'] > 60.)[0]
     failind_sout = np.where(poltable['s_out'] > 60.)[0]
@@ -1039,6 +1056,8 @@ def do_pol_valid():
                                failind_ftmax,failind_peak_in,failind_nodata)))
 
     V_pass_new[failind_V] = False
+    noind_V = np.where(poltable['pass_V'] == 'None')[0]
+    V_pass_new[noind_V] = 'None'
     poltable['pass_V'] = V_pass_new
     
     #check QU also, but should be good
@@ -1054,15 +1073,22 @@ def do_pol_valid():
 
     #nothing actually changed, as I hoped/expected
     QU_pass_new[failind_QU] = False
+    noind_QU = np.where(poltable['pass_QU'] == 'None')[0]
+    QU_pass_new[noind_QU] = 'None'
     poltable['pass_QU'] = QU_pass_new
 
     #update to set 200309042 as nan
+    #want to do this quickly, in bulk, but doesn't seem possible
     badtask = np.where(poltable['taskid'] == 200309042)[0]
     print(poltable[badtask])
-    cols = poltable.columns
-    poltable[cols[2:4]][badtask] = False
-    poltable[cols[4:6]][badtask] = 1.0
-    poltable[cols[6:-1]][badtask] = np.nan
+    cols = poltable.colnames
+    poltable[cols[2]][badtask] = np.full(len(badtask),'None')
+    poltable[cols[3]][badtask] = np.full(len(badtask),'None')
+    for i in range(4,8):
+        poltable[cols[i]][badtask] = np.full(len(badtask),1.0)
+    for c in cols[8:]:
+        poltable[c][badtask] = np.full(len(badtask),np.nan)
+
     print(poltable[badtask])
     
     ascii.write(poltable,

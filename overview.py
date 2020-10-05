@@ -537,6 +537,8 @@ class ProcCat(ObsCat):
             self.dr_proc['ra'] = ra_array
             self.dr_proc['dec'] = dec_array
 
+            #want to update
+
             print(len(self.valid),len(self.dr_proc))
     
     def plot_dr_cont(self):
