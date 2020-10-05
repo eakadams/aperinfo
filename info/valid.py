@@ -1056,6 +1056,15 @@ def do_pol_valid():
     QU_pass_new[failind_QU] = False
     poltable['pass_QU'] = QU_pass_new
 
+    #update to set 200309042 as nan
+    badtask = np.where(poltable['taskid'] == 200309042)[0]
+    print(poltable[badtask])
+    cols = poltable.columns
+    poltable[cols[2:4]][badtask] = False
+    poltable[cols[4:6]][badtask] = 1.0
+    poltable[cols[6:-1]][badtask] = np.nan
+    print(poltable[badtask])
+    
     ascii.write(poltable,
                 os.path.join(filedir,'pol_allbeams.csv'),
                 overwrite = True,format='csv')
