@@ -537,7 +537,8 @@ class ProcCat(ObsCat):
             self.dr_proc['ra'] = ra_array
             self.dr_proc['dec'] = dec_array
 
-            #want to update
+            #want to update to check pol & line
+            #added N as default status 
 
             print(len(self.valid),len(self.dr_proc))
     
@@ -563,11 +564,13 @@ class ProcCat(ObsCat):
         #quality = ['Pass','Fail']
         #colorlist = mpcolors[0:len(quality)]
         #set order so that good will overplot bad
-        quality = ['Fail','Pass']
-        colorlist = [mpcolors[1],mpcolors[0]]
+        quality = ['No data','Fail','Pass']
+        colorlist = ['gray',mpcolors[1],mpcolors[0]]
         ralist = []
         declist = []
         for qual in quality:
+            if qual == 'No data':
+                ind = np.where(self.dr_proc['pol_V_pass'] == 'None')[0]
             if qual == 'Pass':
                 ind = np.where(self.dr_proc['pol_V_pass'] == 'True')[0]
             if qual == 'Fail':
@@ -585,11 +588,13 @@ class ProcCat(ObsCat):
         #quality = ['Pass','Fail']
         #colorlist = mpcolors[0:len(quality)]
         #set order so that good will overplot bad
-        quality = ['Fail','Pass']
-        colorlist = [mpcolors[1],mpcolors[0]]
+        quality = ['No data','Fail','Pass']
+        colorlist = ['gray',mpcolors[1],mpcolors[0]]
         ralist = []
         declist = []
         for qual in quality:
+            if qual == 'No data':
+                ind = np.where(self.dr_proc['pol_QU_pass'] == 'None')[0]
             if qual == 'Pass':
                 ind = np.where(self.dr_proc['pol_QU_pass'] == 'True')[0]
             if qual == 'Fail':
@@ -612,12 +617,14 @@ class ProcCat(ObsCat):
         #quality = ['Good','Bad','Okay']
         #colorlist = mpcolors[0:len(quality)]
         #set order so that good will overplot bad
-        quality = ['Bad','Okay','Good']
-        colorlist = [mpcolors[1], mpcolors[2], mpcolors[0]]
+        quality = ['No data','Bad','Okay','Good']
+        colorlist = ['gray',mpcolors[1], mpcolors[2], mpcolors[0]]
         for cube in cubes:
             ralist = []
             declist = []
             for qual in quality:
+                if qual == 'No data':
+                    ind = np.where(self.dr_proc[cube] == 'N')[0]
                 if qual == 'Good':
                     ind = np.where(self.dr_proc[cube] == 'G')[0]
                 if qual == 'Okay':

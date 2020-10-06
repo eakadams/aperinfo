@@ -1018,9 +1018,12 @@ def combine_pol():
                 #check for pass as True/Fail
                 if valid_QU['Q'][valid_ind_QU] == '.':
                     t['pass_QU'][ind] = True
-                elif ( (valid_QU['Q'][valid_ind_QU] == 'X') and
-                       (valid_QU['Q_bm_fg'][valid_ind_QU] == 1.0) ):
-                    t['pass_QU'][ind] = 'None'
+                #elif ( (valid_QU['Q'][valid_ind_QU] == 'X') and
+                #       (valid_QU['Q_bm_fg'][valid_ind_QU] == 1.0) and
+                #       (valid_QU['U_bm_fg'][valid_ind_QU] == 1.0) and
+                #       (valid_QU['Q_st_fg'][valid_ind_QU] == 1.0) and
+                #       (valid_QU['U_st_fg'][valid_ind_QU] == 1.0) ):
+                #    t['pass_QU'][ind] = 'None'
                 elif valid_QU['Q'][valid_ind_QU] == 'X':
                     t['pass_QU'][ind] = False
                 #fill in rest of columns
@@ -1080,16 +1083,19 @@ def do_pol_valid():
     #update to set 200309042 as nan
     #want to do this quickly, in bulk, but doesn't seem possible
     badtask = np.where(poltable['taskid'] == 200309042)[0]
-    print(poltable[badtask])
+    #print(poltable[badtask])
     cols = poltable.colnames
     poltable[cols[2]][badtask] = np.full(len(badtask),'None')
     poltable[cols[3]][badtask] = np.full(len(badtask),'None')
     for i in range(4,8):
-        poltable[cols[i]][badtask] = np.full(len(badtask),1.0)
+        #Bjoern uses 1.0 here, but I'm going to use nan
+        #I want him to change to nan and these are actually
+        #the only case in DR1
+        poltable[cols[i]][badtask] = np.full(len(badtask),np.nan)
     for c in cols[8:]:
         poltable[c][badtask] = np.full(len(badtask),np.nan)
 
-    print(poltable[badtask])
+    #print(poltable[badtask])
     
     ascii.write(poltable,
                 os.path.join(filedir,'pol_allbeams.csv'),
