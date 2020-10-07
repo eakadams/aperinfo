@@ -832,6 +832,9 @@ def compare_pol_cont_valid():
 def combine_continuum():
     """
     Use knowledge of structure
+    Retrieve to files/cont_valid using fancy rsync
+    Run in "--dry-run" mode first to be safe
+    rsync -arvt --include="*/" --include="dynamicRange.dat" --exclude="*" happili-05.astron.nl:/data/oosterloo/INSPECT/ . --dry-run
     """
     #cont valid directory
     contdir = os.path.join(filedir,"cont_valid")
@@ -913,6 +916,8 @@ def combine_pol():
     Use knowledge of structure
     Note that polarization informaiton is updated via:
     rsync -arvt happili-05.astron.nl:/tank/apertif/qa/polarisation/ pol_valid/
+    or:
+    rsync -arvt happili-05.astron.nl:/home/adebahr/apercal/ipython-notebooks/commissioning/polarisation/Polarisation_QA/polarisation/ . --dry-run
     """
     #pol valid directory
     poldir = os.path.join(filedir,"pol_valid")
