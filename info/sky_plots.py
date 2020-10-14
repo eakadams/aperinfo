@@ -210,11 +210,14 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     #iterate through arrays and add to plot
     for ra,dec,cname,labname in zip(ra_array_lists,
                                     dec_array_lists,color_list,label_list):
-        #get pixel coordinates:
-        xp,yp=annim.topixel(ra,dec)
-        annim.Marker(x=xp,y=yp,
-                     marker='o',mode='pixel',markersize=ms, color=cname,
-                     label = labname)
+
+        #check that list has length and only add in that csase
+        if len(ra) >0:
+            #get pixel coordinates:
+            xp,yp=annim.topixel(ra,dec)
+            annim.Marker(x=xp,y=yp,
+                         marker='o',mode='pixel',markersize=ms, color=cname,
+                         label = labname)
 
     
 

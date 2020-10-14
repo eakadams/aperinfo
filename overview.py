@@ -95,6 +95,69 @@ class ObsCat(object):
         self.obsinfo['pol_last'][ind_obs] = self.happili['polcal_lasttaskid'][ind_happili]
         self.obsinfo['apercal_version'][ind_obs] = self.happili['apercal_version'][ind_happili]
 
+        #need to manually update a few taskids
+        #those with polcal issues will also lack fluxcal info
+        #200309042 and 200505057; also 190806345, but that wasn't properly processed so not so worried
+        #what about 200429042 - ah, but that didn't process so also fine.
+        #but should update for completeness / association
+        #should maybe also do same for 190711125 (not a real obs), 190728041, 190731125
+        ind = np.where(self.obsinfo['taskID'] == 200309042)[0]
+        self.obsinfo['fluxcal'][ind] = '3C147'
+        self.obsinfo['flux_first'][ind] = 200309002
+        self.obsinfo['flux_last'][ind] = 200309041
+        ind = np.where(self.obsinfo['taskID'] == 200505057)[0]
+        self.obsinfo['flux_first'][ind] = 200505017
+        self.obsinfo['flux_last'][ind] = 200505056
+        #should I add polcal even though it wasn't processed with it? yes
+        #update everything to have proper informaiton, even if not how processing was doen:
+        #none of these should have released data products, so it's okay
+        #don't have to worry about wrongly associating things
+        self.obsinfo['polcal'][ind] = '3C286'
+        self.obsinfo['pol_first'][ind] = 200504051
+        self.obsinfo['pol_last'][ind] = 200505015
+        #190728041
+        ind = np.where(self.obsinfo['taskID'] == 190728041)[0]
+        self.obsinfo['fluxcal'][ind] = '3C147'
+        self.obsinfo['flux_first'][ind] = 190727001
+        self.obsinfo['flux_last'][ind] = 190727040
+        self.obsinfo['polcal'][ind] = '3C286'
+        self.obsinfo['pol_first'][ind] = 190728001
+        self.obsinfo['pol_last'][ind] = 190728040
+        #190731125
+        ind = np.where(self.obsinfo['taskID'] == 190731125)[0]
+        self.obsinfo['fluxcal'][ind] = '3C147'
+        self.obsinfo['flux_first'][ind] = 190801001
+        self.obsinfo['flux_last'][ind] = 190801040
+        self.obsinfo['polcal'][ind] = '3C286'
+        self.obsinfo['pol_first'][ind] = 190731085
+        self.obsinfo['pol_last'][ind] = 190731124
+        #190806345
+        ind = np.where(self.obsinfo['taskID'] == 190806345)[0]
+        self.obsinfo['fluxcal'][ind] = '3C147'
+        self.obsinfo['flux_first'][ind] = 190807001
+        self.obsinfo['flux_last'][ind] = 190807040
+        self.obsinfo['polcal'][ind] = '3C286'
+        self.obsinfo['pol_first'][ind] = 190808001
+        self.obsinfo['pol_last'][ind] = 190808040
+        #200429042
+        ind = np.where(self.obsinfo['taskID'] == 200429042)[0]
+        self.obsinfo['fluxcal'][ind] = '3C147'
+        self.obsinfo['flux_first'][ind] = 200429002
+        self.obsinfo['flux_last'][ind] = 200429041
+        self.obsinfo['polcal'][ind] = '3C138'
+        self.obsinfo['pol_first'][ind] = 200428001 
+        self.obsinfo['pol_last'][ind] = 200428040
+        #Also observations where weird scheduling issues cause autocal issues
+        #finding start of calibrators
+        #191207034
+        ind = np.where(self.obsinfo['taskID'] == 191207034)[0]
+        self.obsinfo['flux_first'][ind] = 191208001
+        self.obsinfo['pol_first'][ind] = 191206155
+        #191207035
+        ind = np.where(self.obsinfo['taskID'] == 191207035)[0]
+        self.obsinfo['flux_first'][ind] = 191208001
+        self.obsinfo['pol_first'][ind] = 191206155
+
         #update for apercal name; need mapping
         self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
         for i,version in enumerate(self.obsinfo['apercal_version']):
@@ -102,6 +165,7 @@ class ObsCat(object):
             if version == "v0.0-???-githash-":
                 self.obsinfo['apercal_name'][i] = "Not processed"
             elif version != "None":
+                #print(version)
                 name = get_apercal_name(version, process = True)
                 self.obsinfo['apercal_name'][i] = name
             else:
@@ -930,6 +994,12 @@ class ProcCat(ObsCat):
         #get best noise values
         outer_5 = np.nanpercentile(self.dr_proc['pol_s_out'][goodind],5)
         print('The best achievable continuum noise (5th percentile) is {}'.format(outer_5))
+
+        #print something about how many pass validation
+        ntot = len(self.dr_proc['pol_V_pass'])
+        ngood = len(goodind)
+        print(('There are {0} good observations '
+               'out of {1} total').format(ngood,ntot))
 
 
     def get_qual_cont(self):
