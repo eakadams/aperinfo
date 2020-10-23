@@ -409,19 +409,24 @@ class ObsCat(object):
 
         #setup figure
         #fig, ax = plt.subplots(figsize=[6,4])
-        fig = plt.figure(figsize=[6,4])
+        fig = plt.figure(figsize=[8,6])
         ax = fig.add_axes([0.2, 0.15, .75, .75 ])
 
         #have coordinates for al fields, now have to iterate over Apercal name for colors
         #skip last one, placeholder for AMES
         for color,name in zip(colorlist[0:-1],apercal_names[0:-1]):
             plotind = np.where(repeated_ames['apercal_tex_name'] == name)[0]
-            ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name)
+            ax.scatter(plot_x[plotind],plot_y[plotind],c=color,label=name,s=80)
 
         ax.set_yticks(list(range(1,len(field_name)+1)))
-        ax.set_yticklabels(list(field_name))
-        ax.set_title('Medium-deep fields')
-        ax.set_xlabel('Number of observations')
+        ax.set_yticklabels(list(field_name),fontsize=15)
+        ax.set_title('Medium-deep fields',fontsize=15)
+        ax.set_xlabel('Number of observations',fontsize=15)
+        #make x-axis labels bigger
+        ax.tick_params(axis="x", labelsize=15)
+        #try to make strings - better font?
+        ax.set_xticks(list(range(2,11,2)))
+        ax.set_xticklabels(['2','4','6','8','10'])
 
         plotname = os.path.join(figdir,self.dr_name+'_apercal_processing_ames.pdf')
         plt.savefig(plotname)
