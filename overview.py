@@ -325,6 +325,20 @@ class ObsCat(object):
                     )
     
 
+    def plot_all_obs(self):
+        """
+        Plot all observations
+        Color by processed/not processed
+        """
+        names = ["processed", "not processed"]
+        colorlist = mpcolors[0:len(names)]
+        ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                       if 'Apercal' in apname]
+        ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                         if 'No' in apname]
+        print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
+        
+        
     def plot_apercal_dr_obs(self):
         """
         Sky plot of DR obs,
@@ -433,7 +447,7 @@ class ObsCat(object):
         plt.close()
 
         
-    def plot_all_obs(self):
+    def plot_all_obs_proc(self):
         """
         Make a sky plot of all observations
         Won't worry about MDS at this time, 
@@ -444,7 +458,7 @@ class ObsCat(object):
         """
         #have to get separate lists for each Apercal processing
         #get unique names
-        apercal_names = np.unique(self.obsinfo['apercal_name'])
+        apercal_names = np.unique(self.obsinfo['apercal_tex_name'])
         #get colors
         prop_cycle = plt.rcParams['axes.prop_cycle']
         mpcolors = prop_cycle.by_key()['color']
@@ -454,7 +468,7 @@ class ObsCat(object):
         ralist = []
         declist = []
         for name in apercal_names:
-            ind = np.where(self.obsinfo['apercal_name'] == name)[0]
+            ind = np.where(self.obsinfo['apercal_tex_name'] == name)[0]
             ra = self.obsinfo['field_ra'][ind]
             dec = self.obsinfo['field_dec'][ind]
             ralist.append(ra)
