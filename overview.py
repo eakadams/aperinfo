@@ -732,6 +732,41 @@ class ProcCat(ObsCat):
             #added N as default status 
 
             print(len(self.valid),len(self.dr_proc))
+
+    #summary of obs
+    def get_summary_dr(self):
+        """
+        Print out relevant information that I often care about
+        This is processed data version
+        """
+        #get number of beams released, and total possible
+        n_release = len(self.dr_proc)
+        n_obs_proc = len(self.dr_obs)
+        n_possible = 40.*n_obs_proc
+
+        #get number of released beams from wide and medium-deep
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.dr_proc['Field']) if 'M' in s]
+        ames = self.dr_proc[ind_ames]
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.dr_proc['Field']) if 'S' in s]
+        awes = self.dr_proc[ind_awes]
+
+        #start printing things I care about
+
+        print(("There are {0} released beams of "
+               "{1} total possible, or {2:4.1f}%").format(n_release,n_possible,
+                                                          (100*n_release/n_possible)))
+                                            
+        print(("There are {0} beams released from "
+               "medium-deep fields").format(len(ames)))
+
+        print(("There are {0} beams released from "
+               "wide fields").format(len(awes)))
+              
+
+
     
     def plot_dr_cont(self):
         """
