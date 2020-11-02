@@ -96,6 +96,50 @@ class ObsCat(object):
         self.obsinfo['apercal_version'][ind_obs] = self.happili['apercal_version'][ind_happili]
 
         #need to manually update a few taskids
+        #separate this out to keep things clean
+        self.update_cals()
+        
+        
+
+        #update for apercal name; need mapping
+        self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
+        for i,version in enumerate(self.obsinfo['apercal_version']):
+            #print(version)
+            if version == "v0.0-???-githash-":
+                self.obsinfo['apercal_name'][i] = "Not processed"
+            elif version != "None":
+                #print(version)
+                name = get_apercal_name(version, process = True)
+                self.obsinfo['apercal_name'][i] = name
+            else:
+                self.obsinfo['apercal_name'][i] = "None"
+
+        #add tex name for later
+        self.obsinfo['apercal_tex_name'] = self.obsinfo['apercal_name']
+        for i,name in enumerate(self.obsinfo['apercal_tex_name']):
+            self.obsinfo['apercal_tex_name'][i] = name.replace("_","\_")
+            
+
+        #add observational notes
+        self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
+        self.obsinfo['reobserve'] = np.full(len(self.obsinfo),'N')
+        self.obsinfo['reprocess'] = np.full(len(self.obsinfo),'N')
+        #object for arbitrary string length
+        self.obsinfo['note'] = np.empty(len(self.obsinfo),dtype='object')
+        (taskids, ind_obs,
+         ind_note) = np.intersect1d(self.obsinfo['taskID'],self.obs_notes['taskid'],
+                                       return_indices=True)
+        self.obsinfo['reobserve'][ind_obs] = self.obs_notes['reobserve'][ind_note]
+        self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
+        self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
+
+
+    #update calibrators for those that need it
+    def update_cals(self):
+        """
+        Update calibrator information for cases where autocal failed
+        Complete through DR1
+        """
         #those with polcal issues will also lack fluxcal info
         #200309042 and 200505057; also 190806345, but that wasn't properly processed so not so worried
         #what about 200429042 - ah, but that didn't process so also fine.
@@ -157,40 +201,7 @@ class ObsCat(object):
         ind = np.where(self.obsinfo['taskID'] == 191207035)[0]
         self.obsinfo['flux_first'][ind] = 191208001
         self.obsinfo['pol_first'][ind] = 191206155
-
-        #update for apercal name; need mapping
-        self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
-        for i,version in enumerate(self.obsinfo['apercal_version']):
-            #print(version)
-            if version == "v0.0-???-githash-":
-                self.obsinfo['apercal_name'][i] = "Not processed"
-            elif version != "None":
-                #print(version)
-                name = get_apercal_name(version, process = True)
-                self.obsinfo['apercal_name'][i] = name
-            else:
-                self.obsinfo['apercal_name'][i] = "None"
-
-        #add tex name for later
-        self.obsinfo['apercal_tex_name'] = self.obsinfo['apercal_name']
-        for i,name in enumerate(self.obsinfo['apercal_tex_name']):
-            self.obsinfo['apercal_tex_name'][i] = name.replace("_","\_")
-            
-
-        #add observational notes
-        self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
-        self.obsinfo['reobserve'] = np.full(len(self.obsinfo),'N')
-        self.obsinfo['reprocess'] = np.full(len(self.obsinfo),'N')
-        #object for arbitrary string length
-        self.obsinfo['note'] = np.empty(len(self.obsinfo),dtype='object')
-        (taskids, ind_obs,
-         ind_note) = np.intersect1d(self.obsinfo['taskID'],self.obs_notes['taskid'],
-                                       return_indices=True)
-        self.obsinfo['reobserve'][ind_obs] = self.obs_notes['reobserve'][ind_note]
-        self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
-        self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
-
-
+        
     #get obs for data release
     def get_dr_obs(self,firstind=0,lastind=221,name='dr_year1'):
         """
