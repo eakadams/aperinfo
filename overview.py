@@ -181,7 +181,7 @@ class ObsCat(object):
 
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.dr_obs['name']) if 'S' in s]
-        awes = self.obsinfo[ind_awes]
+        awes = self.dr_obs[ind_awes]
         #get number unique
         n_awes_fields = len(np.unique(awes['name']))
 
