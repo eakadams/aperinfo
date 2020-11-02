@@ -151,7 +151,7 @@ class ObsCat(object):
 
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
-        ames = self.obsinfo[ind_awes]
+        awes = self.obsinfo[ind_awes]
         #get number unique
         n_awes_fields = len(np.unique(awes['name']))
 
@@ -165,8 +165,35 @@ class ObsCat(object):
                "{1} independent wide/shallow fields").format(len(awes),
                                                              n_awes_fields))
         
-              
+
         
+    #summary of obs
+    def get_summary_dr(self):
+        """
+        Print out relevant information that I often care about
+        This is the "DR" version
+        """
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.dr_obs['name']) if 'M' in s]
+        ames = self.dr_obs[ind_ames]
+        #get number unique
+        n_ames_fields = len(np.unique(ames['name']))
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.dr_obs['name']) if 'S' in s]
+        awes = self.obsinfo[ind_awes]
+        #get number unique
+        n_awes_fields = len(np.unique(awes['name']))
+
+        #start printing things I care about
+
+        print(("There are {0} observations of "
+               "{1} independent medium-deep fields").format(len(ames),
+                                                            n_ames_fields))
+
+        print(("There are {0} observations of "
+               "{1} independent wide/shallow fields").format(len(awes),
+                                                             n_awes_fields))    
 
     #update calibrators for those that need it
     def update_cals(self):
