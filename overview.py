@@ -148,12 +148,20 @@ class ObsCat(object):
         ames = self.obsinfo[ind_ames]
         #get number unique
         n_ames_fields = len(np.unique(ames['name']))
+        #get number w/ repeats
+        s = pd.Series(ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
 
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
         awes = self.obsinfo[ind_awes]
         #get number unique
         n_awes_fields = len(np.unique(awes['name']))
+        #get number w/ repeats
+        s = pd.Series(awes['name'])
+        dup = s[s.duplicated()]
+        repeated_wide = np.unique(dup)
 
         #start printing things I care about
 
@@ -161,10 +169,14 @@ class ObsCat(object):
                "{1} independent medium-deep fields").format(len(ames),
                                                             n_ames_fields))
 
+        print(("There are {0} medium-deep fields "
+               "with repeat observations").format(len(repeated_fields)))
+
         print(("There are {0} observations of "
                "{1} independent wide/shallow fields").format(len(awes),
                                                              n_awes_fields))
-        
+        print(("There are {0} wide fields "
+               "with repeat observations").format(len(repeated_wide)))
 
         
     #summary of obs
@@ -178,6 +190,10 @@ class ObsCat(object):
         ames = self.dr_obs[ind_ames]
         #get number unique
         n_ames_fields = len(np.unique(ames['name']))
+        #get number w/ repeats
+        s = pd.Series(ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
 
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.dr_obs['name']) if 'S' in s]
@@ -190,10 +206,13 @@ class ObsCat(object):
         print(("There are {0} observations of "
                "{1} independent medium-deep fields").format(len(ames),
                                                             n_ames_fields))
+        print(("There are {0} medium-deep fields "
+               "with repeat observations").format(len(repeated_fields)))
 
         print(("There are {0} observations of "
                "{1} independent wide/shallow fields").format(len(awes),
-                                                             n_awes_fields))    
+                                                             n_awes_fields))
+
 
     #update calibrators for those that need it
     def update_cals(self):
