@@ -62,7 +62,8 @@ plt.rcParams.update({
 class ObsCat(object):
     def __init__(self,
                  obsfile = os.path.join(filedir,'obsatdb.csv'),
-                 happilifile = os.path.join(filedir,'happili.csv')):
+                 happilifile = os.path.join(filedir,'happili.csv'),
+                 badfile = os.path.join(filedir,'badatdb.csv')):
         """
         Initalize ObsCat object
         This has information about observaitons
@@ -72,6 +73,7 @@ class ObsCat(object):
         #obsinfo as supplementary information
         self.obsinfo = ascii.read(obsfile)
         self.happili = ascii.read(happilifile)
+        self.badobs = ascii.read(badfile)
         #merge happili info into obsinfo
         #get indices
         (taskids, ind_obs,
