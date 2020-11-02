@@ -136,6 +136,38 @@ class ObsCat(object):
         self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
 
 
+    #summary of obs
+    def get_summary_obs(self):
+        """
+        Print out relevant information that I often care about
+        Think about adapting/making DR version
+        Note there is a random "L" field that was probably test; not set to good so not in DR
+        """
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+        ames = self.obsinfo[ind_ames]
+        #get number unique
+        n_ames_fields = len(np.unique(ames['name']))
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
+        ames = self.obsinfo[ind_awes]
+        #get number unique
+        n_awes_fields = len(np.unique(awes['name']))
+
+        #start printing things I care about
+
+        print(("There are {0} observations of "
+               "{1} independent medium-deep fields").format(len(ames),
+                                                            n_ames_fields))
+
+        print(("There are {0} observations of "
+               "{1} independent wide/shallow fields").format(len(awes),
+                                                             n_awes_fields))
+        
+              
+        
+
     #update calibrators for those that need it
     def update_cals(self):
         """
@@ -343,13 +375,30 @@ class ObsCat(object):
         Plot all observations
         Color by processed/not processed
         """
-        names = ["processed", "not processed"]
+        names = ["not processed", "processed","bad"]
         colorlist = mpcolors[0:len(names)]
         ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
                        if 'Apercal' in apname]
         ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
                          if 'No' in apname]
         print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
+
+        ra_np = self.obsinfo['field_ra'][ind_noprocess]
+        dec_np = self.obsinfo['field_dec'][ind_noprocess]
+        ra_p = self.obsinfo['field_ra'][ind_process]
+        dec_p = self.obsinfo['field_dec'][ind_process]
+        ra_bad = self.badobs['field_ra']
+        dec_bad = self.badobs['field_dec']
+
+        ralist = [ra_np,ra_p,ra_bad]
+        declist = [dec_np,dec_p,dec_bad]
+        #do the plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            names,
+                            os.path.join(figdir,'skyview_all_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
         
         
     def plot_apercal_dr_obs(self):
