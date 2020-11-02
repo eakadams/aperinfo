@@ -103,6 +103,9 @@ def get_obstable(write=True):
     earlyobs = earlysciencefields['taskID','name','field_ra','field_dec',
                                    'telescopes','duration','quality',
                                    'beamPattern']
+    otherobs = otherfields['taskID','name','field_ra','field_dec',
+                             'telescopes','duration','quality',
+                             'beamPattern']
     #if indicated, write tables out to a record
     #use the current date, to keep a record
     #also write to one w/ no date for regular observations (most up to date)
@@ -115,6 +118,12 @@ def get_obstable(write=True):
                     format='csv')
         ascii.write(obstable,
                     os.path.join(filedir,'obsatdb.csv'),
+                    format='csv')
+        ascii.write(otherobs,
+                    os.path.join(filedir,'otheratdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(otherobs,
+                    os.path.join(filedir,'otheratdb.csv'),
                     format='csv')
         ascii.write(argoobs,
                     os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
