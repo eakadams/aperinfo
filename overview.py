@@ -153,6 +153,14 @@ class ObsCat(object):
         dup = s[s.duplicated()]
         repeated_fields = np.unique(dup)
 
+        #get repeated field info
+        n_obs_repeat = 0
+        for field in repeated_fields:
+            n_field = len( np.where(self.obsinfo['name'] == field)[0])
+            print( ("There are {0} observations of "
+                    "field {1}").format(n_field,field) )
+            n_obs_repeat = n_obs_repeat + n_field
+
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
         awes = self.obsinfo[ind_awes]
@@ -170,7 +178,8 @@ class ObsCat(object):
                                                             n_ames_fields))
 
         print(("There are {0} medium-deep fields "
-               "with repeat observations").format(len(repeated_fields)))
+               "with {1} repeat observations").format(len(repeated_fields),
+                                                          n_obs_repeat))
 
         print(("There are {0} observations of "
                "{1} independent wide/shallow fields").format(len(awes),
@@ -421,7 +430,7 @@ class ObsCat(object):
         Plot all observations
         Color by processed/not processed
         """
-        names = ["not processed", "processed","bad"]
+        names = ["not processed", "processed"]
         colorlist = mpcolors[0:len(names)]
         ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
                        if 'Apercal' in apname]
@@ -433,11 +442,10 @@ class ObsCat(object):
         dec_np = self.obsinfo['field_dec'][ind_noprocess]
         ra_p = self.obsinfo['field_ra'][ind_process]
         dec_p = self.obsinfo['field_dec'][ind_process]
-        ra_bad = self.badobs['field_ra']
-        dec_bad = self.badobs['field_dec']
 
-        ralist = [ra_np,ra_p,ra_bad]
-        declist = [dec_np,dec_p,dec_bad]
+
+        ralist = [ra_np,ra_p]
+        declist = [dec_np,dec_p]
         #do the plot
         sp.sky_plot_kapteyn(ralist,
                             declist,
