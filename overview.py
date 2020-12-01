@@ -62,7 +62,8 @@ plt.rcParams.update({
 class ObsCat(object):
     def __init__(self,
                  obsfile = os.path.join(filedir,'obsatdb.csv'),
-                 happilifile = os.path.join(filedir,'happili.csv')):
+                 happilifile = os.path.join(filedir,'happili.csv'),
+                 badfile = os.path.join(filedir,'badatdb.csv')):
         """
         Initalize ObsCat object
         This has information about observaitons
@@ -72,6 +73,7 @@ class ObsCat(object):
         #obsinfo as supplementary information
         self.obsinfo = ascii.read(obsfile)
         self.happili = ascii.read(happilifile)
+        self.badobs = ascii.read(badfile)
         #merge happili info into obsinfo
         #get indices
         (taskids, ind_obs,
@@ -96,6 +98,141 @@ class ObsCat(object):
         self.obsinfo['apercal_version'][ind_obs] = self.happili['apercal_version'][ind_happili]
 
         #need to manually update a few taskids
+        #separate this out to keep things clean
+        self.update_cals()
+        
+        
+
+        #update for apercal name; need mapping
+        self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
+        for i,version in enumerate(self.obsinfo['apercal_version']):
+            #print(version)
+            if version == "v0.0-???-githash-":
+                self.obsinfo['apercal_name'][i] = "Not processed"
+            elif version != "None":
+                #print(version)
+                name = get_apercal_name(version, process = True)
+                self.obsinfo['apercal_name'][i] = name
+            else:
+                self.obsinfo['apercal_name'][i] = "None"
+
+        #add tex name for later
+        self.obsinfo['apercal_tex_name'] = self.obsinfo['apercal_name']
+        for i,name in enumerate(self.obsinfo['apercal_tex_name']):
+            self.obsinfo['apercal_tex_name'][i] = name.replace("_","\_")
+            
+
+        #add observational notes
+        self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
+        self.obsinfo['reobserve'] = np.full(len(self.obsinfo),'N')
+        self.obsinfo['reprocess'] = np.full(len(self.obsinfo),'N')
+        #object for arbitrary string length
+        self.obsinfo['note'] = np.empty(len(self.obsinfo),dtype='object')
+        (taskids, ind_obs,
+         ind_note) = np.intersect1d(self.obsinfo['taskID'],self.obs_notes['taskid'],
+                                       return_indices=True)
+        self.obsinfo['reobserve'][ind_obs] = self.obs_notes['reobserve'][ind_note]
+        self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
+        self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
+
+
+    #summary of obs
+    def get_summary_obs(self):
+        """
+        Print out relevant information that I often care about
+        Think about adapting/making DR version
+        Note there is a random "L" field that was probably test; not set to good so not in DR
+        """
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+        ames = self.obsinfo[ind_ames]
+        #get number unique
+        n_ames_fields = len(np.unique(ames['name']))
+        #get number w/ repeats
+        s = pd.Series(ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
+
+        #get repeated field info
+        n_obs_repeat = 0
+        for field in repeated_fields:
+            n_field = len( np.where(self.obsinfo['name'] == field)[0])
+            print( ("There are {0} observations of "
+                    "field {1}").format(n_field,field) )
+            n_obs_repeat = n_obs_repeat + n_field
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
+        awes = self.obsinfo[ind_awes]
+        #get number unique
+        n_awes_fields = len(np.unique(awes['name']))
+        #get number w/ repeats
+        s = pd.Series(awes['name'])
+        dup = s[s.duplicated()]
+        repeated_wide = np.unique(dup)
+
+        #start printing things I care about
+
+        print(("There are {0} observations of "
+               "{1} independent medium-deep fields").format(len(ames),
+                                                            n_ames_fields))
+
+        print(("There are {0} medium-deep fields "
+               "with {1} repeat observations").format(len(repeated_fields),
+                                                          n_obs_repeat))
+
+        print(("There are {0} observations of "
+               "{1} independent wide/shallow fields").format(len(awes),
+                                                             n_awes_fields))
+        print(("There are {0} wide fields "
+               "with repeat observations").format(len(repeated_wide)))
+
+        print(("There are {0} observations in total").format(len(self.obsinfo)))
+
+        print(("There are {0} unique fields in total").format(len(np.unique(self.obsinfo['name']))))
+
+        
+    #summary of obs
+    def get_summary_dr(self):
+        """
+        Print out relevant information that I often care about
+        This is the "DR" version
+        """
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.dr_obs['name']) if 'M' in s]
+        ames = self.dr_obs[ind_ames]
+        #get number unique
+        n_ames_fields = len(np.unique(ames['name']))
+        #get number w/ repeats
+        s = pd.Series(ames['name'])
+        dup = s[s.duplicated()]
+        repeated_fields = np.unique(dup)
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.dr_obs['name']) if 'S' in s]
+        awes = self.dr_obs[ind_awes]
+        #get number unique
+        n_awes_fields = len(np.unique(awes['name']))
+
+        #start printing things I care about
+
+        print(("There are {0} observations of "
+               "{1} independent medium-deep fields").format(len(ames),
+                                                            n_ames_fields))
+        print(("There are {0} medium-deep fields "
+               "with repeat observations").format(len(repeated_fields)))
+
+        print(("There are {0} observations of "
+               "{1} independent wide/shallow fields").format(len(awes),
+                                                             n_awes_fields))
+
+
+    #update calibrators for those that need it
+    def update_cals(self):
+        """
+        Update calibrator information for cases where autocal failed
+        Complete through DR1
+        """
         #those with polcal issues will also lack fluxcal info
         #200309042 and 200505057; also 190806345, but that wasn't properly processed so not so worried
         #what about 200429042 - ah, but that didn't process so also fine.
@@ -157,40 +294,7 @@ class ObsCat(object):
         ind = np.where(self.obsinfo['taskID'] == 191207035)[0]
         self.obsinfo['flux_first'][ind] = 191208001
         self.obsinfo['pol_first'][ind] = 191206155
-
-        #update for apercal name; need mapping
-        self.obsinfo['apercal_name'] = np.empty(len(self.obsinfo),dtype='U30')
-        for i,version in enumerate(self.obsinfo['apercal_version']):
-            #print(version)
-            if version == "v0.0-???-githash-":
-                self.obsinfo['apercal_name'][i] = "Not processed"
-            elif version != "None":
-                #print(version)
-                name = get_apercal_name(version, process = True)
-                self.obsinfo['apercal_name'][i] = name
-            else:
-                self.obsinfo['apercal_name'][i] = "None"
-
-        #add tex name for later
-        self.obsinfo['apercal_tex_name'] = self.obsinfo['apercal_name']
-        for i,name in enumerate(self.obsinfo['apercal_tex_name']):
-            self.obsinfo['apercal_tex_name'][i] = name.replace("_","\_")
-            
-
-        #add observational notes
-        self.obs_notes = ascii.read(os.path.join(filedir,'obs_notes.csv'))
-        self.obsinfo['reobserve'] = np.full(len(self.obsinfo),'N')
-        self.obsinfo['reprocess'] = np.full(len(self.obsinfo),'N')
-        #object for arbitrary string length
-        self.obsinfo['note'] = np.empty(len(self.obsinfo),dtype='object')
-        (taskids, ind_obs,
-         ind_note) = np.intersect1d(self.obsinfo['taskID'],self.obs_notes['taskid'],
-                                       return_indices=True)
-        self.obsinfo['reobserve'][ind_obs] = self.obs_notes['reobserve'][ind_note]
-        self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
-        self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
-
-
+        
     #get obs for data release
     def get_dr_obs(self,firstind=0,lastind=221,name='dr_year1'):
         """
@@ -325,6 +429,38 @@ class ObsCat(object):
                     )
     
 
+    def plot_all_obs(self):
+        """
+        Plot all observations
+        Color by processed/not processed
+        """
+        names = ["not processed", "processed"]
+        colorlist = mpcolors[0:len(names)]
+        ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                       if 'Apercal' in apname]
+        ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                         if 'No' in apname]
+        print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
+
+        ra_np = self.obsinfo['field_ra'][ind_noprocess]
+        dec_np = self.obsinfo['field_dec'][ind_noprocess]
+        ra_p = self.obsinfo['field_ra'][ind_process]
+        dec_p = self.obsinfo['field_dec'][ind_process]
+
+
+        ralist = [ra_np,ra_p]
+        declist = [dec_np,dec_p]
+        #do the plot
+        sp.sky_plot_kapteyn(ralist,
+                            declist,
+                            colorlist,
+                            names,
+                            os.path.join(figdir,'skyview_all_obs.pdf'),
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+                            #schedule_pointings = os.path.join(filedir,
+                            #                                 'apertif_v11.28oct20.txt'))
+        
+        
     def plot_apercal_dr_obs(self):
         """
         Sky plot of DR obs,
@@ -433,7 +569,7 @@ class ObsCat(object):
         plt.close()
 
         
-    def plot_all_obs(self):
+    def plot_all_obs_proc(self):
         """
         Make a sky plot of all observations
         Won't worry about MDS at this time, 
@@ -444,7 +580,7 @@ class ObsCat(object):
         """
         #have to get separate lists for each Apercal processing
         #get unique names
-        apercal_names = np.unique(self.obsinfo['apercal_name'])
+        apercal_names = np.unique(self.obsinfo['apercal_tex_name'])
         #get colors
         prop_cycle = plt.rcParams['axes.prop_cycle']
         mpcolors = prop_cycle.by_key()['color']
@@ -454,7 +590,7 @@ class ObsCat(object):
         ralist = []
         declist = []
         for name in apercal_names:
-            ind = np.where(self.obsinfo['apercal_name'] == name)[0]
+            ind = np.where(self.obsinfo['apercal_tex_name'] == name)[0]
             ra = self.obsinfo['field_ra'][ind]
             dec = self.obsinfo['field_dec'][ind]
             ralist.append(ra)
@@ -610,6 +746,41 @@ class ProcCat(ObsCat):
             #added N as default status 
 
             print(len(self.valid),len(self.dr_proc))
+
+    #summary of obs
+    def get_summary_dr(self):
+        """
+        Print out relevant information that I often care about
+        This is processed data version
+        """
+        #get number of beams released, and total possible
+        n_release = len(self.dr_proc)
+        n_obs_proc = len(self.dr_obs)
+        n_possible = 40.*n_obs_proc
+
+        #get number of released beams from wide and medium-deep
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.dr_proc['Field']) if 'M' in s]
+        ames = self.dr_proc[ind_ames]
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.dr_proc['Field']) if 'S' in s]
+        awes = self.dr_proc[ind_awes]
+
+        #start printing things I care about
+
+        print(("There are {0} released beams of "
+               "{1} total possible, or {2:4.1f}%").format(n_release,n_possible,
+                                                          (100*n_release/n_possible)))
+                                            
+        print(("There are {0} beams released from "
+               "medium-deep fields").format(len(ames)))
+
+        print(("There are {0} beams released from "
+               "wide fields").format(len(awes)))
+              
+
+
     
     def plot_dr_cont(self):
         """
@@ -1258,7 +1429,11 @@ class ProcCat(ObsCat):
         #get best noise values
         outer_5 = 1000*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],5)
         print('The best achievable continuum noise (5th percentile) for cube 2 is {0:4.2f} mJy'.format(outer_5))
-
+        outer_5_c1 = 1000*np.nanpercentile(self.dr_proc['rms_c1'][goodind1],5)
+        print('The best achievable continuum noise (5th percentile) for cube 1 is {0:4.2f} mJy'.format(outer_5_c1))
+        outer_5_c0 = 1000*np.nanpercentile(self.dr_proc['rms_c0'][goodind2],5)
+        print('The best achievable continuum noise (5th percentile) for cube 0 is {0:4.2f} mJy'.format(outer_5_c0))
+        
 
 def get_apercal_name(version,process=True):
     """
