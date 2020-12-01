@@ -187,6 +187,10 @@ class ObsCat(object):
         print(("There are {0} wide fields "
                "with repeat observations").format(len(repeated_wide)))
 
+        print(("There are {0} observations in total").format(len(self.obsinfo)))
+
+        print(("There are {0} unique fields in total").format(len(np.unique(self.obsinfo['name']))))
+
         
     #summary of obs
     def get_summary_dr(self):
@@ -453,6 +457,8 @@ class ObsCat(object):
                             names,
                             os.path.join(figdir,'skyview_all_obs.pdf'),
                             survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+                            #schedule_pointings = os.path.join(filedir,
+                            #                                 'apertif_v11.28oct20.txt'))
         
         
     def plot_apercal_dr_obs(self):
@@ -1423,7 +1429,11 @@ class ProcCat(ObsCat):
         #get best noise values
         outer_5 = 1000*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],5)
         print('The best achievable continuum noise (5th percentile) for cube 2 is {0:4.2f} mJy'.format(outer_5))
-
+        outer_5_c1 = 1000*np.nanpercentile(self.dr_proc['rms_c1'][goodind1],5)
+        print('The best achievable continuum noise (5th percentile) for cube 1 is {0:4.2f} mJy'.format(outer_5_c1))
+        outer_5_c0 = 1000*np.nanpercentile(self.dr_proc['rms_c0'][goodind2],5)
+        print('The best achievable continuum noise (5th percentile) for cube 0 is {0:4.2f} mJy'.format(outer_5_c0))
+        
 
 def get_apercal_name(version,process=True):
     """

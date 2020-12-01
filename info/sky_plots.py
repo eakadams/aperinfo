@@ -98,7 +98,8 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
                      survey_pointings = None,
                      mode = None,
                      obs = None,
-                     sky = 'all'):
+                     sky = 'all',
+                     schedule_pointings = None):
     """
     Make sky plots, using Kapteyn python package
     Inputs:
@@ -111,6 +112,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     mode: 'beam' or 'obs' for plotting beams or whole observation. If None, default to obs
     obs: table w/ tid, ra, dec for obs to go with beams (for ref plotting). If None, do nothing
     sky: "all", "fall" or "spring"
+    schedule_pointings: File with pointings for scheduling. If None, do nothing
     """
     #start the figure
     #first define a header
@@ -225,9 +227,22 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     if survey_pointings is not None:
         sra, sdec = get_survey_ra_dec(survey_pointings)
         xs,ys = annim.topixel(sra,sdec)
-        annim.Marker(x=xs,y=ys,
-                     marker='o',mode='pixel',markersize=8,
-                     color='black',fillstyle='none')
+        #check if doing schedulable also; assume this is linked
+        #affects how I will plot
+        if schedule_pointings is None:
+            annim.Marker(x=xs,y=ys,
+                         marker='o',mode='pixel',markersize=8,
+                         color='black',fillstyle='none')
+        else:
+            ora, odec = get_schedule_ra_dec(schedule_pointings)
+            xo, yo = annim.topixel(ora,odec)
+            annim.Marker(x=xs,y=ys,
+                         marker='o',mode='pixel',markersize=8,
+                         color='gray',fillstyle='none',alpha=0.8)
+            annim.Marker(x=xo,y=yo,
+                         marker='o',mode='pixel',markersize=8,
+                         color='black',fillstyle='none')
+    
 
     #add all obs beams for context
     if mode == 'beam' and obs is not None:
@@ -279,6 +294,16 @@ def get_survey_ra_dec(survey_pointings):
     apertif_fields = fields[(fields['label'] == 'm') | (fields['label'] == 's') | (fields['label'] == 'l')]
     return apertif_fields['ra'],apertif_fields['dec']
 
+def get_schedule_ra_dec(survey_pointings):
+    """
+    Take pointing file for scheduling and return ra and dec array
+    Labels to consider are 'o' and 's'
+    """
+    #read  in file
+    fields = ascii.read(survey_pointings,format='fixed_width')
+    #find only survey pointings
+    apertif_fields = fields[(fields['label'] == 'o') | (fields['label'] == 's')]
+    return apertif_fields['ra'],apertif_fields['dec']
 
     
 #annim.plot()
