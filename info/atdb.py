@@ -66,6 +66,7 @@ def get_obstable(write=True):
     testinds = []
     earlyscienceinds = []
     argoinds = []
+    failedinds = []
     for i,(name,taskid,quality) in enumerate(targettable['name','taskID','quality']):
             #first grab specific fields that I know are tests
             if (taskid == '191030203' or 'test' in name):
@@ -80,13 +81,16 @@ def get_obstable(write=True):
             elif ((len(name) == 10) and (int(taskid) > 190702000)
                   and ((quality == 'good') or (quality=='unknown')) ):
                         surveyinds.append(i)
+            elif ((len(name) == 10) and (int(taskid) > 190702000)
+                  and ((quality == 'bad')) ):
+                        failedinds.append(i)
                             #dump everything else somewhere
             else:
                         otherinds.append(i)
 
     #get various table subsets
     surveyfields = targettable[surveyinds]
-    otherfields = targettable[otherinds]
+    failedfields = targettable[failedinds]
     earlysciencefields = targettable[earlyscienceinds]
     argofields = targettable[argoinds]
     testfields = targettable[testinds]
@@ -103,6 +107,9 @@ def get_obstable(write=True):
     earlyobs = earlysciencefields['taskID','name','field_ra','field_dec',
                                    'telescopes','duration','quality',
                                    'beamPattern']
+    failedobs = failedfields['taskID','name','field_ra','field_dec',
+                             'telescopes','duration','quality',
+                             'beamPattern']
     #if indicated, write tables out to a record
     #use the current date, to keep a record
     #also write to one w/ no date for regular observations (most up to date)
@@ -115,6 +122,12 @@ def get_obstable(write=True):
                     format='csv')
         ascii.write(obstable,
                     os.path.join(filedir,'obsatdb.csv'),
+                    format='csv')
+        ascii.write(failedobs,
+                    os.path.join(filedir,'badatdb_{}.csv'.format(date)),
+                    format='csv')
+        ascii.write(failedobs,
+                    os.path.join(filedir,'badatdb.csv'),
                     format='csv')
         ascii.write(argoobs,
                     os.path.join(filedir,'argoatdb_{}.csv'.format(date)),
