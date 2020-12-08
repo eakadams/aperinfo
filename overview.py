@@ -137,37 +137,61 @@ class ObsCat(object):
 
 
     #summary of obs
-    def get_summary_obs(self):
+    def get_summary_obs(self,startdate = None, enddate = None):
         """
         Print out relevant information that I often care about
         Think about adapting/making DR version
         Note there is a random "L" field that was probably test; not set to good so not in DR
+        Include optional start/end date for getting numbers over a limited field
+        Date format is YYMMDD
         """
+        #separate names out to make life easier
+        fields = self.obsinfo['name']
+        taskids = self.obsinfo['taskID']
+        #check for startdate
+        if startdate is not None:
+            startid_str = startdate + '000'
+            startid = np.int(startid_str)
+            ind = np.where(taskids > startid)[0]
+            print(len(ind),len(taskids))
+            fields = fields[ind]
+            taskids = taskids[ind]
+
+        #then do end date
+        if enddate is not None:
+            endid_str = enddate+'999'
+            endid = np.int(endid_str)
+            ind = np.where(taskids < endid)[0]
+            print(len(ind),len(taskids),len(self.obsinfo))
+            fields = fields[ind]
+            taskids = taskids[ind]
+
+        
         #get number of medium-deep fields
-        ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
-        ames = self.obsinfo[ind_ames]
+        ind_ames = [i for i, s in enumerate(fields) if 'M' in s]
+        ames = fields[ind_ames] #self.obsinfo[ind_ames]
         #get number unique
-        n_ames_fields = len(np.unique(ames['name']))
+        n_ames_fields = len(np.unique(ames))
         #get number w/ repeats
-        s = pd.Series(ames['name'])
+        s = pd.Series(ames)
         dup = s[s.duplicated()]
         repeated_fields = np.unique(dup)
 
         #get repeated field info
         n_obs_repeat = 0
         for field in repeated_fields:
-            n_field = len( np.where(self.obsinfo['name'] == field)[0])
+            n_field = len( np.where(fields == field)[0])
             print( ("There are {0} observations of "
                     "field {1}").format(n_field,field) )
             n_obs_repeat = n_obs_repeat + n_field
 
         #get number of shallow fields
-        ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
-        awes = self.obsinfo[ind_awes]
+        ind_awes = [i for i, s in enumerate(fields) if 'S' in s]
+        awes = fields[ind_awes]
         #get number unique
-        n_awes_fields = len(np.unique(awes['name']))
+        n_awes_fields = len(np.unique(awes))
         #get number w/ repeats
-        s = pd.Series(awes['name'])
+        s = pd.Series(awes)
         dup = s[s.duplicated()]
         repeated_wide = np.unique(dup)
 
@@ -187,9 +211,9 @@ class ObsCat(object):
         print(("There are {0} wide fields "
                "with repeat observations").format(len(repeated_wide)))
 
-        print(("There are {0} observations in total").format(len(self.obsinfo)))
+        print(("There are {0} observations in total").format(len(fields)))
 
-        print(("There are {0} unique fields in total").format(len(np.unique(self.obsinfo['name']))))
+        print(("There are {0} unique fields in total").format(len(np.unique(fields))))
 
         
     #summary of obs
