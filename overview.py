@@ -197,6 +197,7 @@ class ObsCat(object):
 
         #start printing things I care about
 
+
         print(("There are {0} observations of "
                "{1} independent medium-deep fields").format(len(ames),
                                                             n_ames_fields))
@@ -208,6 +209,7 @@ class ObsCat(object):
         print(("There are {0} observations of "
                "{1} independent wide/shallow fields").format(len(awes),
                                                              n_awes_fields))
+    
         print(("There are {0} wide fields "
                "with repeat observations").format(len(repeated_wide)))
 
