@@ -18,6 +18,7 @@ import numpy as np
 from astropy.io import ascii
 from datetime import datetime
 import os
+import casacore.tables as pt
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -26,6 +27,27 @@ aperinfodir = this_dir[:-4]
 filedir = os.path.join(aperinfodir,"files")
 #print(filedir)
 
+
+def check_cd(tid,Nbeams):
+    """
+    Take a taskid and number of beams to fail
+    Check how many beams are missing C&D
+    Return False if too many are missing
+    Inputs:
+    - tid: Taskid to check
+    - Nbeams: Number of beams that equals a failure
+    Outputs:
+    - True/False: True, observation is good.
+                  False, observation fails
+    """
+    #first set an array to hold output
+    #for each beam
+    #Set to be True, update to False if beam fails
+    beam_array = np.full(40,True)
+    #iterate through each beam
+    for bm in range(40):
+        #check that bandpass table exists
+    
 
 def get_dir_list():
     """

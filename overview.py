@@ -136,6 +136,51 @@ class ObsCat(object):
         self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
 
 
+    #find bad obs, important for re-observing
+    def find_bad_obs(self,Nbeams=10):
+        """
+        Find bad observations
+        Will call helper functions that do this
+        for different issues (potentially)
+        Want to record bad observations to a file
+        This file should also be read in before starting
+        So that entries are not repeated if they're already there
+        But also maybe I just want separate files for 
+        separate things?
+        Will start and see how this goes...
+
+        Set number of beams that mean something is failed
+        """
+        #first thing is find observations missing C & D
+        #Separate this out to a separate function
+        self.find_no_cd(Nbeams)
+
+
+    def find_no_cd(self,Nbeams):
+        """
+        Search calibration tables for all taskids
+        Find those that are missing C&D as a first
+        pass estimate of fields that need to be reobserved
+        Do this on a beam-by-beam basis, if more than 10? beams
+        are bad, mark whole obs as bad
+        In order to avoid requiring taql on local installation,
+        put parts of this code in happili.py
+        also makes clear has to run on happili
+        """
+        bad_tids = []
+        for tid in self.obsinfo['taskID']:
+            check = info.happili.check_cd(tid,Nbeams)
+            #return check value
+            #True is good, they're there
+            #False is bad, they're no there
+            if not check:
+                bad_tids.append(tid)
+
+        #lazy! need to return this properly
+        #but still in testing stage
+        print(bad_tids)
+            
+
     #summary of obs
     def get_summary_obs(self):
         """
