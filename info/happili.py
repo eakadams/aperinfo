@@ -44,7 +44,9 @@ def check_cd(tid,Nbeams):
     #for each beam
     #Set to be True, update to False if beam fails
     beam_array = np.full(40,True)
-    
+    #iterate through each beam
+    for bm in range(40):
+        #check that bandpass table exists
     
 
 def get_dir_list():
