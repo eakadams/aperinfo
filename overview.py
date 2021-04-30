@@ -1052,15 +1052,15 @@ class ProcCat(ObsCat):
         #set column names to be tex & user friendly
         col_names = ['ObsID','Name','Beam','Status','V status','QU status',
                      '$\sigma_{in}$',
-                     '$\sigma_{out}$', '$R$', 'N2', 'Ex-2',
-                     '$FT_{max}$','$p_{in}$','P2','$b_{min}$',
+                     '$\sigma_{out}$',
+                     '$FT_{max}$','$p_{in}$','$b_{min}$',
                      '$Q_{beam}$','$U_{beam}$','$Q_{noise}$','$U_{noise}$']
         
         ascii.write(self.dr_proc['taskid','Field','beam',
                                  'pol_pass','pol_V_pass','pol_QU_pass',
                                  'pol_s_in','pol_s_out',
-                                 'pol_rat','pol_N2','pol_Ex-2','pol_ftmax',
-                                 'pol_peak_in','pol_P2','pol_bmin','Q_bm_fg',
+                                 'pol_ftmax',
+                                 'pol_peak_in','pol_bmin','Q_bm_fg',
                                  'U_bm_fg', 'Q_st_fg','U_st_fg'][0:20],
                     os.path.join(tabledir,self.dr_name+'_pol.txt'),
                     format='latex',
