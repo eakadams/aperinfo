@@ -34,6 +34,7 @@ from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
 import info.sky_plots as sp
 import pandas as pd
 from cds import *
+import datetime as dt
 
 tablemaker = CDSTablesMaker()
 
@@ -198,6 +199,14 @@ class ObsCat(object):
         dup = s[s.duplicated()]
         repeated_fields = np.unique(dup)
 
+        #get repeated field info
+        n_obs_repeat = 0
+        for field in repeated_fields:
+            n_field = len( np.where(self.obsinfo['name'] == field)[0])
+            print( ("There are {0} observations of "
+                    "field {1}").format(n_field,field) )
+            n_obs_repeat = n_obs_repeat + n_field
+
         #get number of shallow fields
         ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
         awes = self.obsinfo[ind_awes]
@@ -215,13 +224,18 @@ class ObsCat(object):
                                                             n_ames_fields))
 
         print(("There are {0} medium-deep fields "
-               "with repeat observations").format(len(repeated_fields)))
+               "with {1} repeat observations").format(len(repeated_fields),
+                                                          n_obs_repeat))
 
         print(("There are {0} observations of "
                "{1} independent wide/shallow fields").format(len(awes),
                                                              n_awes_fields))
         print(("There are {0} wide fields "
                "with repeat observations").format(len(repeated_wide)))
+
+        print(("There are {0} observations in total").format(len(self.obsinfo)))
+
+        print(("There are {0} unique fields in total").format(len(np.unique(self.obsinfo['name']))))
 
         
     #summary of obs
@@ -421,6 +435,13 @@ class ObsCat(object):
          #set column names to be tex & user friendly
          col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux\_first','flux\_last',
                       'Polcal','pol\_first','pol\_last','Apercal\_name','Apercal\_version']
+
+         #replace "None" with "..." for A&A table formatting
+         #but maybe I don't need that here, as much as later
+         #for CDS version
+         #still good to figure out
+
+         
          ascii.write(self.dr_obs['taskID','name','field_ra','field_dec',
                                  'fluxcal','flux_first','flux_last',
                                  'polcal','pol_first','pol_last',
@@ -434,7 +455,8 @@ class ObsCat(object):
                                   'header_end': "\hline",
                                   'data_end': "\hline",
                                   'caption': "Summary of released survey observation",
-                                  'preamble': ["\centering","\label{tab:obs}"]}
+                                  'preamble': ["\centering","\label{tab:obs}"]},
+                    formats = {'RA': '10.6f', 'Dec':'9.6f'}
          )
 
 
@@ -466,7 +488,7 @@ class ObsCat(object):
         Plot all observations
         Color by processed/not processed
         """
-        names = ["not processed", "processed","bad"]
+        names = ["not processed", "processed"]
         colorlist = mpcolors[0:len(names)]
         ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
                        if 'Apercal' in apname]
@@ -478,11 +500,10 @@ class ObsCat(object):
         dec_np = self.obsinfo['field_dec'][ind_noprocess]
         ra_p = self.obsinfo['field_ra'][ind_process]
         dec_p = self.obsinfo['field_dec'][ind_process]
-        ra_bad = self.badobs['field_ra']
-        dec_bad = self.badobs['field_dec']
 
-        ralist = [ra_np,ra_p,ra_bad]
-        declist = [dec_np,dec_p,dec_bad]
+
+        ralist = [ra_np,ra_p]
+        declist = [dec_np,dec_p]
         #do the plot
         sp.sky_plot_kapteyn(ralist,
                             declist,
@@ -490,6 +511,8 @@ class ObsCat(object):
                             names,
                             os.path.join(figdir,'skyview_all_obs.pdf'),
                             survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+                            #schedule_pointings = os.path.join(filedir,
+                            #                                 'apertif_v11.28oct20.txt'))
         
         
     def plot_apercal_dr_obs(self):
@@ -809,8 +832,76 @@ class ProcCat(ObsCat):
 
         print(("There are {0} beams released from "
                "wide fields").format(len(awes)))
+
+        #want to get total number of unique field/beam combinations
+        #make a composite name and then do a unique?
+        beam_str = self.dr_proc['beam'].astype(str)
+        field_beam  = np.core.defchararray.add(self.dr_proc['Field'], beam_str)
+                                               
+                                            
+        print(("There are {0} unique field / beam combinations").format(len(np.unique(field_beam))))
               
 
+    def plot_cont_valid_time_proc(self):
+        """
+        Plot fraction passing valid as a function of time
+        Also color code by processing version, for extra info
+        Also plot as function of processing pipeline, color coded by time
+        """
+        #go through taskid to get number pass valid
+        #set up arrays to hold things I care about
+        tids = np.unique(self.dr_proc['taskid'])
+        n_obs = len(tids)
+        apercal_vers_name = np.empty(n_obs,dtype='U30')
+        n_pass = np.empty(n_obs)
+        date_obs = np.empty(n_obs,dtype='object')
+        
+        for i,tid in enumerate(tids):
+            valid_cont = np.where(self.dr_proc['taskid'] == tid)[0]
+            try:
+                n_pass[i] = len(valid_cont)
+            except:
+                print(valid_cont)
+            obs_ind = np.where(self.dr_obs['taskID'] == tid)[0][0]
+            apercal_vers_name[i] = self.dr_obs['apercal_name'][obs_ind]
+            year = int('20'+str(tid)[0:2])
+            month = int(str(tid)[2:4])
+            day = int(str(tid)[4:6])
+            date_obs[i] = dt.date(year,month,day)
+
+
+        #find ways to bin data by time
+        #do into major changes
+        #give values, 1,2,3 for plotting (manually adjust labels)
+        #default to "2" better LNA state
+        system_state = np.full(n_obs,2)
+        ind_orig = np.where(tids < 190923000)[0]
+        system_state[ind_orig] = 1
+        ind_pointing = np.where(tids > 191212000)[0]
+        system_state[ind_pointing] = 3
+
+        #find ways to bin / color by Apercal version
+        apercal_vers_int = np.full(n_obs,0)
+        ind_150_acf = np.where(apercal_vers_name == 'Apercal_150_ACF')
+        apercal_vers_int[ind_150_acf] = 1
+        ind_150_acf_cdf = np.where(apercal_vers_name == 'Apercal_150_ACF_CDF')
+        apercal_vers_int[ind_150_acf_cdf] = 2
+        ind_150_acf_cdf_bpf = np.where(apercal_vers_name == 'Apercal_150_ACF_CDF_BPF')
+        apercal_vers_int[ind_150_acf_cdf_bpf] = 3
+
+        #plan, separate time & processing version
+        #plot / colorize by one
+        # and get average/median values for each chunk (apercal vers or syst state)
+        #and overplot as a large bin point (with std dev errors?)
+        
+
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(8,8),
+                                       sharex=True, sharey=True)
+
+        ax1.scatter(date_obs,n_pass,c=apercal_vers_int)
+    
+        plt.savefig(os.path.join(figdir,self.dr_name+'_valid_time_proc.png'))
+        plt.close()
 
     
     def plot_dr_cont(self):
@@ -926,7 +1017,7 @@ class ProcCat(ObsCat):
                      '$\sigma_{out}$', '$R$', 'N2', 'Ex-2']
         
         ascii.write(self.dr_proc['taskid','Field','beam','s_in','s_out',
-                                 'rat','N2','Ex-2'][0:30],
+                                 'rat','N2','Ex-2'][0:20],
                     os.path.join(tabledir,self.dr_name+'_cont.txt'),
                     format='latex',
                     overwrite=True,
@@ -961,16 +1052,16 @@ class ProcCat(ObsCat):
         #set column names to be tex & user friendly
         col_names = ['ObsID','Name','Beam','Status','V status','QU status',
                      '$\sigma_{in}$',
-                     '$\sigma_{out}$', '$R$', 'N2', 'Ex-2',
-                     '$FT_{max}$','$p_{in}$','P2','$b_{min}$',
+                     '$\sigma_{out}$',
+                     '$FT_{max}$','$p_{in}$','$b_{min}$',
                      '$Q_{beam}$','$U_{beam}$','$Q_{noise}$','$U_{noise}$']
         
         ascii.write(self.dr_proc['taskid','Field','beam',
                                  'pol_pass','pol_V_pass','pol_QU_pass',
                                  'pol_s_in','pol_s_out',
-                                 'pol_rat','pol_N2','pol_Ex-2','pol_ftmax',
-                                 'pol_peak_in','pol_P2','pol_bmin','Q_bm_fg',
-                                 'U_bm_fg', 'Q_st_fg','U_st_fg'][0:30],
+                                 'pol_ftmax',
+                                 'pol_peak_in','pol_bmin','Q_bm_fg',
+                                 'U_bm_fg', 'Q_st_fg','U_st_fg'][0:20],
                     os.path.join(tabledir,self.dr_name+'_pol.txt'),
                     format='latex',
                     overwrite=True,
@@ -1024,7 +1115,7 @@ class ProcCat(ObsCat):
         ascii.write(self.dr_proc['taskid','Field','beam',
                                  'c2','c1','c0','rms_c2_mJy',
                                  'rms_c1_mJy','rms_c0_mJy','lgfrac_c2','lgfrac_c1',
-                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:30],
+                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:20],
                     os.path.join(tabledir,self.dr_name+'_line.txt'),
                     format='latex',
                     overwrite=True,
@@ -1033,7 +1124,7 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Line self.validation metrics for released data",
+                                 'caption': "Line validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:hi}"]},
                     formats = {'$\sigma_{c2}$': '4.2f', '$\sigma_{c1}$': '4.2f',
                                '$\sigma_{c0}$': '4.2f', '$f_{ex,c2}$': '5.2f',
@@ -1205,8 +1296,16 @@ class ProcCat(ObsCat):
         #print something about how many pass validation
         ntot = len(self.dr_proc['pol_V_pass'])
         ngood = len(goodind)
-        print(('There are {0} good observations '
+        print(('There are {0} observations with good Stokes V'
                'out of {1} total').format(ngood,ntot))
+
+        n_nopol = len(np.where(self.dr_proc['pol_V_pass'] == 'None')[0])
+        n_fail_V = len(np.where(self.dr_proc['pol_V_pass'] == 'False')[0])
+        n_fail_QU = len(np.where(self.dr_proc['pol_QU_pass'] == 'False')[0])
+        print(("There are {0} beams with no polarization information").format(n_nopol))
+        print(("There are {0} beams with bad Stokes V data").format(n_fail_V))
+        print(("There are {0} beams with bad Stokes QU data").format(n_fail_QU))
+                    
 
 
     def get_qual_cont(self):
@@ -1460,7 +1559,18 @@ class ProcCat(ObsCat):
         #get best noise values
         outer_5 = 1000*np.nanpercentile(self.dr_proc['rms_c2'][goodind2],5)
         print('The best achievable continuum noise (5th percentile) for cube 2 is {0:4.2f} mJy'.format(outer_5))
+        outer_5_c1 = 1000*np.nanpercentile(self.dr_proc['rms_c1'][goodind1],5)
+        print('The best achievable continuum noise (5th percentile) for cube 1 is {0:4.2f} mJy'.format(outer_5_c1))
+        outer_5_c0 = 1000*np.nanpercentile(self.dr_proc['rms_c0'][goodind2],5)
+        print('The best achievable continuum noise (5th percentile) for cube 0 is {0:4.2f} mJy'.format(outer_5_c0))
 
+        goodall = np.where( (self.dr_proc['c2'] == 'G') &
+                            (self.dr_proc['c1'] == 'G') &
+                            (self.dr_proc['c0'] == 'G') )[0]
+
+        print(("{0} of the beams released have all good cubes").format(len(goodall)))
+        print(("{0} of the beams released have good cube 2").format(len(goodind2)))
+        
 
 def get_apercal_name(version,process=True):
     """
