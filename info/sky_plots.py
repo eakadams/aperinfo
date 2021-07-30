@@ -99,7 +99,8 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
                      mode = None,
                      obs = None,
                      sky = 'all',
-                     schedule_pointings = None):
+                     schedule_pointings = None,
+                     alpha = 1.0):
     """
     Make sky plots, using Kapteyn python package
     Inputs:
@@ -219,7 +220,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
             xp,yp=annim.topixel(ra,dec)
             annim.Marker(x=xp,y=yp,
                          marker='o',mode='pixel',markersize=ms, color=cname,
-                         label = labname)
+                         label = labname, alpha=alpha)
 
     
 

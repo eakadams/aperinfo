@@ -483,34 +483,82 @@ class ObsCat(object):
                     )
     
 
-    def plot_all_obs(self):
+    def plot_all_obs(self,
+                     colormode = 'processed'):
         """
         Plot all observations
         Color by processed/not processed
+        Or color by "survey" coverage
         """
-        names = ["not processed", "processed"]
-        colorlist = mpcolors[0:len(names)]
-        ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
-                       if 'Apercal' in apname]
-        ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
-                         if 'No' in apname]
-        print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
+        if colormode == 'processed':
+            names = ["not processed", "processed"]
+            colorlist = mpcolors[0:len(names)]
+            ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                           if 'Apercal' in apname]
+            ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                             if 'No' in apname]
+            print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
 
-        ra_np = self.obsinfo['field_ra'][ind_noprocess]
-        dec_np = self.obsinfo['field_dec'][ind_noprocess]
-        ra_p = self.obsinfo['field_ra'][ind_process]
-        dec_p = self.obsinfo['field_dec'][ind_process]
+            ra_np = self.obsinfo['field_ra'][ind_noprocess]
+            dec_np = self.obsinfo['field_dec'][ind_noprocess]
+            ra_p = self.obsinfo['field_ra'][ind_process]
+            dec_p = self.obsinfo['field_dec'][ind_process]
 
 
-        ralist = [ra_np,ra_p]
-        declist = [dec_np,dec_p]
+            ralist = [ra_np,ra_p]
+            declist = [dec_np,dec_p]
+
+        if colormode == 'survey':
+            names = ['single wide','2x wide', 'medium-deep']
+            colorlist = mpcolors[0:len(names)]
+            ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+            ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
+
+            ra_wide =  self.obsinfo['field_ra'][ind_awes]
+            dec_wide =  self.obsinfo['field_dec'][ind_awes]
+            ra_mds =  self.obsinfo['field_ra'][ind_ames]
+            dec_mds =  self.obsinfo['field_dec'][ind_ames]
+
+           
+            #But want to add information about multiple visits
+            #Based on this stackoverflow:
+            #https://stackoverflow.com/questions/30003068/how-to-get-a-list-of-all-indices-of-repeated-elements-in-a-numpy-array
+
+            #get wide field names
+            wide_fields = self.obsinfo['name'][ind_awes]
+            #return unique vals, idx for first occurrence and number of occurences
+            unique_wide_fields, idx_start, count_fields = np.unique(wide_fields,
+                                                                    return_counts = True,
+                                                                    return_index = True)
+            #split by single coverage or more
+            #properly should account more than two visits - that has happened
+            #but won't worry about for now
+            loc_single = np.where(count_fields == 1)[0]
+            loc_double = np.where(count_fields > 1)[0]
+
+            idx_single_visit = idx_start[loc_single]
+            idx_second_visit = idx_start[loc_double]
+
+            single_visit_fields = wide_fields[idx_single_visit]
+            ra_single_visit = ra_wide[idx_single_visit]
+            dec_single_visit = dec_wide[idx_single_visit]
+
+            second_visit_fields = wide_fields[idx_second_visit]
+            ra_second_visit = ra_wide[idx_second_visit]
+            dec_second_visit = dec_wide[idx_second_visit]
+
+            
+            ralist = [ra_single_visit,ra_second_visit,ra_mds]
+            declist = [dec_single_visit,dec_second_visit,dec_mds]
+
         #do the plot
         sp.sky_plot_kapteyn(ralist,
                             declist,
                             colorlist,
                             names,
                             os.path.join(figdir,'skyview_all_obs.pdf'),
-                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'),
+                            alpha = 0.5)
                             #schedule_pointings = os.path.join(filedir,
                             #                                 'apertif_v11.28oct20.txt'))
         
