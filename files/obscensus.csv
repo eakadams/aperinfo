@@ -1,17 +1,17 @@
-#Census of all observations
-#manual assessment of number of good dishes
-#and number of good beams (i.e., missed cals, clear bw issue)
-#i am conservative with dishes - if there are sawtooth
-#residual delays, i mark that as bad,
-#presuming it might fail with reprocessing / ccal QA
-#
-#Extra notes
-#20111034-201115001 heavily imapcted by RFI (beamweights? radar?)
-#calibration / bandpass not super trustworthy
-#Also 201116016 (not cals, but data itself). And same for latter in Nob
-#Will do a separate RFI view (did some work on that before)
-#
-taskID,name,telescopes,processed
+# Census of all observations
+# manual assessment of number of good dishes
+# and number of good beams (i.e., missed cals, clear bw issue)
+# i am conservative with dishes - if there are sawtooth
+# residual delays, i mark that as bad,
+# presuming it might fail with reprocessing / ccal QA
+# 
+# Extra notes
+# 20111034-201115001 heavily imapcted by RFI (beamweights? radar?)
+# calibration / bandpass not super trustworthy
+# Also 201116016 (not cals, but data itself). And same for latter in Nob
+# Will do a separate RFI view (did some work on that before)
+# 
+taskID,name,goodtelescopes,n_goodbeams,processed
 190711169,S2152+4114,23456789ABD,39,False
 190712041,M1403+5324,23456789ABD,39,False
 190713001,M0155+3130,2345678ABCD,40,True
