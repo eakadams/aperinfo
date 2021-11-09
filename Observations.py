@@ -266,8 +266,8 @@ class Census(Observations):
                 self.field_census['Avg_CD_obs'] <= 0.5 ) )[0]
             ind_1 = np.where( np.logical_and(
                 self.field_census['Avg_CD_obs'] > 0.5,
-                self.field_census['Avg_CD_obs'] <=1 ) )[0]
-            ind_2 = np.where( self.field_census['Avg_CD_obs'] > 1)[0]
+                self.field_census['Avg_CD_obs'] <1 ) )[0]
+            ind_2 = np.where( self.field_census['Avg_CD_obs'] >= 1)[0]
             ralist = [self.field_census['RA'][ind_0],
                       self.field_census['RA'][ind_half],
                       self.field_census['RA'][ind_1],
@@ -277,7 +277,7 @@ class Census(Observations):
                        self.field_census['Dec'][ind_1],
                        self.field_census['Dec'][ind_2]]
             labellist = ['No C/D', "Avg lte 0.5 per obs",
-                         "Avg lte 1 per obs", "Avg gt 1 per obs" ]
+                         "Avg lt 1 per obs", "Avg gte 1 per obs" ]
 
         if view == "avg_dishes":
             ind_12 = np.where(self.field_census['AvgDishes'] == 12)[0]
@@ -316,6 +316,10 @@ class Census(Observations):
         ind_half =  np.where( np.logical_and(
             self.field_census['Avg_CD_obs'] > 0,
             self.field_census['Avg_CD_obs'] <= 0.5 ) )[0]
+        ind_one = np.where( np.logical_and(
+            self.field_census['Avg_CD_obs'] > 0.5,
+            self.field_census['Avg_CD_obs'] < 1
+            ))[0]
         print( ("There are {} observations with no C or D").
                format(len(ind_0)))
         for i in ind_0:
@@ -324,3 +328,7 @@ class Census(Observations):
         for i in ind_half:
             print("Field {} has <= 1/2 C/D on average".format(
                 self.field_census['Field'][i]))
+        for i in ind_one:
+            print(("Field {0} has {1} C/D on average").format(
+                self.field_census['Field'][i],
+                self.field_census['Avg_CD_obs'][i]))
