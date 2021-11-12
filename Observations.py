@@ -332,3 +332,35 @@ class Census(Observations):
             print(("Field {0} has {1} C/D on average").format(
                 self.field_census['Field'][i],
                 self.field_census['Avg_CD_obs'][i]))
+
+            
+    def get_fields_reobserve(self,outfile):
+        """
+        Get fields to reobserve
+
+        Parameters
+        ----------
+        outfile : str
+            Full path of file to write results to
+        """
+        #first find fields missing CD
+        ind_nocd = np.where(self.field_census['Avg_CD_obs'] == 0)[0]
+        fields_nocd = self.field_census[ind_nocd]
+        fields_nocd['NoCD'] = np.full(len(fields_nocd),'True')
+
+        #then find fields with one obs and <= 9 dishes
+        ind_lackdishes = np.where( np.logical_and(
+            self.field_census['Nobs'] ==1,
+            self.field_census['AvgDishes'] <=9
+            ))[0]
+        fields_lackdishes = self.field_census[ind_lackdishes]
+        fields_lackdishes['LackDishes'] = np.full(len(fields_lackdishes),
+                                                  'True')
+
+        #do an outer join of these tables
+        fields_reobserve =  join(fields_nocd, fields_lackdishes,
+                                 keys = 'Field', join_type='outer')
+
+        #and save to a file
+        fields_reobserve['Field','NoCD','LackDishes'].write(
+            outfile, format='ascii', overwrite=True)
