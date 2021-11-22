@@ -119,8 +119,69 @@ class Observations(object):
                     len(np.unique(self.obsinfo['name'])),
                     6.44*len(np.unique(self.obsinfo['name']))) )
 
- 
+class DR1(Observations):
+    """
+    Child class focused on DR1
 
+    Attributes
+    ----------
+
+    Methods
+    -------
+    """
+    def __init__(self,
+                 obsfile = os.path.join(filedir,'obsatdb.csv')):
+        """ """
+        #initialize Observations object
+        Observations.__init__(self,obsfile)
+
+        #limit to DR1 range
+        firstind = 0
+        lastind = 220
+        print('First taskid is {}'.format(self.obsinfo['taskID'][firstind]))
+        print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
+        self.obsinfo = self.obsinfo[firstind:(lastind+1)]
+        #check for bad data
+        goodind = np.where(self.obsinfo['quality'] == 'good')[0]
+        #print(len(self.dr1_obs),len(goodind))
+        #limit to good data (archived, not deleted)
+        self.obsinfo = self.obsinfo[goodind]
+
+    def plot_obs_survey(self,
+                        surveypointings = os.path.join(
+                            filedir,
+                            'all_pointings.v7.18jun20.txt') ):
+        """ Plot observations based on wide/medium-deep """
+        #get repeated medium-deep fields. Otherwise is wide
+        ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+
+        u, c = np.unique(self.obsinfo['name'][ind_ames], return_counts=True)
+        dup = u[c > 1]
+
+        ind_repeats = []
+        for name in dup:
+            ind = [i for i, s in enumerate(self.obsinfo['name']) if name in s]
+            ind_repeats.append(ind)
+
+        ind_repeated_ames = np.sort(np.hstack(ind_repeats))
+            
+        ind_awes = [i for i in range(len(self.obsinfo)) \
+                    if i not in ind_repeated_ames]
+
+        ra_ames = self.obsinfo['field_ra'][ind_repeated_ames]
+        ra_awes = self.obsinfo['field_ra'][ind_awes]
+        dec_ames = self.obsinfo['field_dec'][ind_repeated_ames]
+        dec_awes = self.obsinfo['field_dec'][ind_awes]
+
+        ralist = [ra_awes, ra_ames]
+        declist = [dec_awes, dec_ames]
+        labellist = ["Wide", "Repeated medium-deep"]
+        
+        plot_sky_view(ralist, declist, labellist,
+                      "dr1_surveys",
+                      surveypointings = surveypointings)
+        
+    
 class Census(Observations):
     """
     Child class focused on census of good/bad observations
@@ -302,7 +363,8 @@ class Census(Observations):
                          "Avg between 8-10", "Avg le 8"]
 
 
-        plot_sky_view(ralist, declist, labellist, view,
+        plot_sky_view(ralist, declist, labellist,
+                      "census_{}".format(view),
                       surveypointings = surveypointings)
 
         

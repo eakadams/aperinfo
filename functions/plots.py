@@ -28,7 +28,8 @@ mpcolors = prop_cycle.by_key()['color']
 
 def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
-                  surveypointings = None):
+                  surveypointings = None,
+                  alpha = 1.0):
     """
     Make a sky view plot
 
@@ -74,22 +75,28 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
               }
     """
   
-    X = np.arange(0,360.0,15.0)
-    Y = np.arange(0,90,15) #[20, 30,45, 60, 75]
-
 
     #figure instance
     fig = plt.figure(figsize=(12,12))
     frame = fig.add_axes((0.1,0.1,0.8,0.8))
     f = maputils.FITSimage(externalheader=header)
 
+    #zoom-in to relevant part of graph
+    f.set_limits(pxlim = (5,35), pylim=(5,35))
+    
+    X = np.arange(0,360.0,15.0)
+    Y = np.arange(15,90,15) #[20, 30,45, 60, 75]
+
+    
     lon_world = np.arange(0,360,30)
     lat_world = np.arange(0,90,15) #[20, 30, 60, 90]
-    lon_constval = None
-    lat_constval = 20
+    lon_constval = 9 * 15 #plo dec labels at 9hours
+    lat_constval = 22  #plot ra labels at 22deg
+
+    #set limits to zoom in on relevant areas
 
     annim = f.Annotatedimage(frame)
-    grat = annim.Graticule(axnum=(1,2),wylim=(0.0,90.0), wxlim=(0,360),
+    grat = annim.Graticule(axnum=(1,2),wylim=(15.0,90.0), wxlim=(0,360),
                        startx=X, starty=Y)
 
     grat.setp_gratline(color='0.75')
@@ -109,7 +116,7 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                       **lat_kwargs)
 
     #set marker size
-    ms = 8
+    ms = 10
 
     #add survey pointings (if provided)
     if surveypointings is not None:
@@ -125,14 +132,15 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         xp,yp = annim.topixel(ra,dec)
         annim.Marker(x=xp,y=yp,
                      marker='o',mode='pixel',markersize=ms,
-                     color = mpcolors[i], label = lab)
+                     color = mpcolors[i], label = lab,
+                     alpha = alpha)
 
     #make figure
     annim.plot()
     #add legend
     plt.legend()
     #save fig
-    figname = os.path.join(figdir,"census_{}.pdf".format(viewname))
+    figname = os.path.join(figdir,"{}.pdf".format(viewname))
     plt.savefig(figname)
     plt.close
 
