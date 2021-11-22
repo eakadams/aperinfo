@@ -1632,8 +1632,11 @@ def get_apercal_name(version,process=True):
     """
     #read in master file w/ information
     apercal_key = ascii.read(os.path.join(filedir,"apercal_naming.csv"))
-    vind = np.where(apercal_key['Version'] == version)[0][0]
-    name = apercal_key['Name'][vind]
+    try:
+        vind = np.where(apercal_key['Version'] == version)[0][0]
+        name = apercal_key['Name'][vind]
+    except:
+        name = 'None'
     #redo some naming on the fly, to focus on processing
     #if proces = True
     if process is True:
