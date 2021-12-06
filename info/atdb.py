@@ -69,7 +69,7 @@ def get_obstable(write=True):
     failedinds = []
     for i,(name,taskid,quality) in enumerate(targettable['name','taskID','quality']):
             #first grab specific fields that I know are tests
-            if (taskid == '191030203' or 'test' in name):
+            if (taskid == '191030203' or 'test' in name or 'L' in name):
                         testinds.append(i)
                             #find ARGO fields
             elif name[0:4] == 'ARGO':

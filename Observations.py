@@ -216,7 +216,7 @@ class Census(Observations):
         """
         Observations.__init__(self,obsfile)
         self.censusinfo = ascii.read(censusfile, format='csv',
-                                     comment="\s*#",)
+                                     comment="\s*#")
 
         #add frequency information to census
         #do this based on data
@@ -244,6 +244,7 @@ class Census(Observations):
         frac_before_11dec19 = np.empty(len(fields)) #fraction before 11dec19
         frac_cd = np.empty(len(fields)) #fraction of dishes that are CD per obs
         N_CD = np.empty(len(fields))
+        check_2_D = np.empty(len(fields),dtype=object)
 
         #iterate through each field
         for i,f in enumerate(fields):
@@ -260,6 +261,15 @@ class Census(Observations):
             N_D = telescopes[i].count('D')
             N_CD[i] = N_C + N_D
             frac_cd[i] = N_CD[i] / nobs[i]
+            N_2 = telescopes[i].count('2')
+            if (N_D >= 1) and (N_2 >= 1):
+                check_2_D[i] = "Both"
+            elif N_D >=1 :
+                check_2_D[i] = "RTD"
+            elif N_2 >= 1:
+                check_2_D[i] = "RT2"
+            else:
+                check_2_D[i] = "None"
 
         #make a table and add it as an attribute
         self.field_census = Table()
@@ -273,6 +283,7 @@ class Census(Observations):
         self.field_census['Mid_freq'] = mid_freq
         self.field_census['Avg_CD_obs'] = frac_cd
         self.field_census['N_CD'] = N_CD
+        self.field_census['check_2_D'] = check_2_D
 
         
 
@@ -291,35 +302,78 @@ class Census(Observations):
         ----------
         view : str
            The view to be plotted. Options are:
-           ["Nobs", "avg_cd_obs", "avg_dishes"]
+           ["Nobs", "avg_cd_obs", "avg_dishes", "check_2_D"]
         surveypointings : str
            Full path to file of survey pointings to be plotted for comparison
         """
-        if view not in ["Nobs", "avg_cd_obs", "avg_dishes"]:
+        if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
+                        "check_2_D", "N_CD"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
-        
+
+
+        if view == 'N_CD':
+            ind_le1 = np.where(self.field_census['N_CD'] <= 1)[0]
+            ind_2_4 = np.where( np.logical_and(
+                self.field_census['N_CD'] > 1,
+                self.field_census['N_CD'] <= 4))[0]
+            ind_4_10 = np.where( np.logical_and(
+                self.field_census['N_CD'] > 4,
+                self.field_census['N_CD'] < 10 ) )[0]
+            ind_ge10 = np.where( self.field_census['N_CD'] >= 10)[0]
+            ralist = [ self.field_census['RA'][ind_le1],
+                       self.field_census['RA'][ind_2_4],
+                       self.field_census['RA'][ind_4_10],
+                       self.field_census['RA'][ind_ge10]
+            ]
+            declist = [ self.field_census['Dec'][ind_le1],
+                        self.field_census['Dec'][ind_2_4],
+                        self.field_census['Dec'][ind_4_10],
+                        self.field_census['Dec'][ind_ge10]
+            ]
+            labellist = [ "N of CD le 1", "2 - 4",
+                          "5 - 9", "ge 10"
+            ]
+        if view == "check_2_D":
+            ind_both = np.where(self.field_census['check_2_D'] == "Both")[0]
+            ind_2 = np.where(self.field_census['check_2_D'] == "RT2")[0]
+            ind_d = np.where(self.field_census['check_2_D'] == "RTD")[0]
+            ind_none = np.where(self.field_census['check_2_D'] == "None")[0]
+            ralist = [self.field_census['RA'][ind_both],
+                      self.field_census['RA'][ind_2],
+                      self.field_census['RA'][ind_d],
+                      self.field_census['RA'][ind_none]
+            ]
+            declist = [self.field_census['Dec'][ind_both],
+                       self.field_census['Dec'][ind_2],
+                       self.field_census['Dec'][ind_d],
+                       self.field_census['Dec'][ind_none]
+            ]
+            labellist = ["Both", 'RT2', 'RTD', "None"]      
         if view == "Nobs":
             ind_1 = np.where(self.field_census['Nobs'] == 1)[0]
-            ind_2 = np.where(self.field_census['Nobs'] == 2)[0]
-            ind_3 = np.where(self.field_census['Nobs'] == 3)[0]
-            ind_10 = np.where(self.field_census['Nobs'] >= 10)[0]
-            ind_4_9 = np.where( np.logical_and(
-                self.field_census['Nobs'] >= 4,
-                self.field_census['Nobs'] <= 9) )[0]
+            ind_2 = np.where(np.logical_and(
+                self.field_census['Nobs'] >= 2,
+                self.field_census['Nobs'] <= 6))[0]
+            ind_7 = np.where(self.field_census['Nobs'] == 7)[0]
+            ind_8 = np.where(self.field_census['Nobs'] == 8)[0]
+            ind_9 = np.where(self.field_census['Nobs'] >= 9)[0]
+            #ind_4_9 = np.where( np.logical_and(
+            #    self.field_census['Nobs'] >= 4,
+            #    self.field_census['Nobs'] <= 9) )[0]
             ralist = [self.field_census['RA'][ind_1],
                       self.field_census['RA'][ind_2],
-                      self.field_census['RA'][ind_3],
-                      self.field_census['RA'][ind_4_9],
-                      self.field_census['RA'][ind_10]]
+                      self.field_census['RA'][ind_7],
+                      self.field_census['RA'][ind_8],
+                      self.field_census['RA'][ind_9]]
             declist = [self.field_census['Dec'][ind_1],
                        self.field_census['Dec'][ind_2],
-                       self.field_census['Dec'][ind_3],
-                       self.field_census['Dec'][ind_4_9],
-                       self.field_census['Dec'][ind_10] ]
-            labellist = ["1 visit", "2 visits", "3 visits",
-                         "4-9 visits", "10 or more visits"]
+                       self.field_census['Dec'][ind_7],
+                       self.field_census['Dec'][ind_8],
+                       self.field_census['Dec'][ind_9] ]
+            labellist = ["1 visit", "2-6 visits", "7 visits",
+                         "8 visits", "9 or more visits"]
         if view == "avg_cd_obs":
             ind_0 = np.where(self.field_census['Avg_CD_obs'] == 0)[0]
             ind_half =  np.where( np.logical_and(
