@@ -248,7 +248,7 @@ class Census(Observations):
         #iterate through each field
         for i,f in enumerate(fields):
             f_inds = np.where( self.censusinfo['name_1'] == f )[0]
-            telescope_list = [list(x) for x in
+            telescope_list = [list(x) for x in 
                               self.censusinfo['goodtelescopes'][f_inds] ]
             #add to telescopes array as a list
             telescopes[i] = [num for elem in telescope_list for num in elem]
