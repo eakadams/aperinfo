@@ -302,17 +302,43 @@ class Census(Observations):
         ----------
         view : str
            The view to be plotted. Options are:
-           ["Nobs", "avg_cd_obs", "avg_dishes", "check_2_D"]
+           ["Nobs", "avg_cd_obs", "avg_dishes", "check_2_D", "N_CD", "Ndish"]
         surveypointings : str
            Full path to file of survey pointings to be plotted for comparison
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
-                        "check_2_D", "N_CD"]:
+                        "check_2_D", "N_CD", "Ndish"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
 
 
+        if view == "Ndish":
+            ind_le9 = np.where(self.field_census['Ndishes'] <=9)[0]
+            ind_10_12 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >= 10,
+                self.field_census['Ndishes'] <= 12) )[0]
+            ind_13_36 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=13,
+                self.field_census['Ndishes']<=36))[0]
+            ind_37_89 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=37,
+                self.field_census['Ndishes']<=89))[0]
+            ind_ge90 = np.where(self.field_census['Ndishes'] >=90)[0]
+            ralist = [ self.field_census['RA'][ind_le9],
+                       self.field_census['RA'][ind_10_12],
+                       self.field_census['RA'][ind_13_36],
+                       self.field_census['RA'][ind_37_89],
+                       self.field_census['RA'][ind_ge90]
+            ]
+            declist = [ self.field_census['Dec'][ind_le9],
+                        self.field_census['Dec'][ind_10_12],
+                        self.field_census['Dec'][ind_13_36],
+                        self.field_census['Dec'][ind_37_89],
+                        self.field_census['Dec'][ind_ge90]
+            ]
+            labellist = [ 'Ndishes le 9', '10-12', '13-36', '37-89',
+                          'ge 90' ]
         if view == 'N_CD':
             ind_le1 = np.where(self.field_census['N_CD'] <= 1)[0]
             ind_2_4 = np.where( np.logical_and(
