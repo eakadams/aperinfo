@@ -229,6 +229,20 @@ class Census(Observations):
         self.censusinfo = join(self.obsinfo,self.censusinfo,
                                keys = 'taskID', join_type='outer')
 
+        #handle the radar fields by removing them
+        #so they're not accounted for in census (may have already been reobserved)
+        radar_obs = [201107041, 201108033, 201108034, 201113001,
+                     201113002]
+        ind_radar = []
+        for obs in radar_obs:
+            ind_obs = np.where(obs == self.censusinfo['taskID'])[0][0]
+            ind_radar.append(ind_obs)
+
+        #print(ind_radar)
+        #print(len(self.censusinfo))
+        self.censusinfo.remove_rows(ind_radar)
+        #print(len(self.censusinfo))
+        
         #get field-based census
         #get unique fields
         fields, field_inds = np.unique( self.censusinfo['name_1'],
@@ -475,34 +489,91 @@ class Census(Observations):
                 self.field_census['Field'][i],
                 self.field_census['Avg_CD_obs'][i]))
 
-            
-    def get_fields_reobserve(self,outfile):
+    def get_fields_reobserve(self):
         """
-        Get fields to reobserve
+        Get fields to reobserve based on current criteria
+
+        Record the criteria for which a field is reobserved
+        For now, manually edit code to toggle criteria on/off
+
+        Go in order of importance
+
+        Save reobserve table as a new attribute of Census object
+        """
+
+        #first fields w/ no CD coverage:
+        ind_nocd = np.where(self.field_census['Avg_CD_obs'] == 0)[0]
+        fields_nocd = self.field_census[ind_nocd]
+        fields_nocd['NoCD'] = np.full(len(fields_nocd),'True')
+        #only keep relevant columns
+        fields_nocd.keep_columns(['Field','NoCD'])
+        #fields_nocd.add_column(np.full(len(fields_nocd),'True'), name='NoCD')
+
+        #then fields with 9 dishes or less in total
+        ind_lackdishes = np.where(self.field_census['Ndishes'] <= 9)[0]
+        fields_lackdishes = self.field_census[ind_lackdishes]
+        fields_lackdishes['LackDishes'] = np.full(len(fields_lackdishes),
+                                                  'True')
+        fields_lackdishes.keep_columns(['Field','LackDishes'])
+        
+        #start joining and continue as I go along
+        fields_reobserve = join(fields_nocd, fields_lackdishes,
+                                join_type='outer', keys = 'Field')
+        
+        #then only one of C + D, plus >45deg
+        ind_1cd = np.where( np.logical_and(
+            self.field_census['N_CD'] == 1,
+            self.field_census['Dec'] >= 45. ) )[0]
+        fields_1cd = self.field_census[ind_1cd]
+        fields_1cd['CD=1'] = np.full(len(fields_1cd), 'True')
+        fields_1cd.keep_columns(['Field','CD=1'])
+
+        fields_reobserve = join(fields_reobserve, fields_1cd,
+                                keys = 'Field', join_type='outer')
+
+        #then RT2 + RTD missing
+        ind_no2d = np.where( self.field_census['check_2_D'] == 'None')[0]
+        fields_no2d = self.field_census[ind_no2d]
+        fields_no2d['No_2D'] = np.full(len(fields_no2d), 'True')
+        fields_no2d.keep_columns(['Field','No_2D'])
+
+        fields_reobserve = join(fields_reobserve, fields_no2d,
+                                join_type='outer')
+
+
+        #then RT2 or RTD missing, >45deg
+        ind_2d = np.where( np.logical_and(
+            np.logical_or( self.field_census['check_2_D'] == 'RTD',
+                           self.field_census['check_2_D'] == 'RT2'),
+            self.field_census['Dec'] >= 45. ) )[0]
+        fields_2d = self.field_census[ind_2d]
+        fields_2d['One_2D'] = np.full(len(fields_2d), 'True')
+        fields_2d.keep_columns(['Field','One_2D'])
+
+        fields_reobserve = join(fields_reobserve, fields_2d,
+                                join_type='outer')
+
+        #add as attribute to object:
+        self.fields_reobserve = fields_reobserve
+        
+        
+
+    def print_fields_reobserve(self,outfile):
+        """
+        Print fields to reobserve
 
         Parameters
         ----------
         outfile : str
             Full path of file to write results to
         """
-        #first find fields missing CD
-        ind_nocd = np.where(self.field_census['Avg_CD_obs'] == 0)[0]
-        fields_nocd = self.field_census[ind_nocd]
-        fields_nocd['NoCD'] = np.full(len(fields_nocd),'True')
-
-        #then find fields with one obs and <= 9 dishes
-        ind_lackdishes = np.where( np.logical_and(
-            self.field_census['Nobs'] ==1,
-            self.field_census['AvgDishes'] <=9
-            ))[0]
-        fields_lackdishes = self.field_census[ind_lackdishes]
-        fields_lackdishes['LackDishes'] = np.full(len(fields_lackdishes),
-                                                  'True')
-
-        #do an outer join of these tables
-        fields_reobserve =  join(fields_nocd, fields_lackdishes,
-                                 keys = 'Field', join_type='outer')
+        #need to update this code to just print to file
+        #otherwise get fields separately - try / except for that attribute
+        try:
+            self.fields_reobserve
+        except:
+            self.get_fields_reobserve()
 
         #and save to a file
-        fields_reobserve['Field','NoCD','LackDishes'].write(
+        self.fields_reobserve.write(
             outfile, format='ascii', overwrite=True)
