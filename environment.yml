@@ -1,0 +1,13 @@
+name: aperinfo
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.6
+  - numpy
+  - matplotlib
+  - jupyterlab
+  - astropy
+  - kapteyn
+
+
