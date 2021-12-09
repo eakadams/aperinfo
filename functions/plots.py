@@ -29,7 +29,7 @@ mpcolors = prop_cycle.by_key()['color']
 def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
                   surveypointings = None,
-                  alpha = 1.0):
+                  alphalist = None, colorlist = None):
     """
     Make a sky view plot
 
@@ -43,6 +43,10 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         List of string labels
     viewname : str
         Name of view, used in labeling/output
+    alphalist : list-like
+        List of alpha values (floats) to use in plotting
+    colorlist : list-lik
+        Optional list of colors to use in plotting
     """
 
     #start the figure
@@ -127,13 +131,18 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                      color='black',fillstyle='none')
 
     #add data
-    for i,(ra,dec,lab) in enumerate(zip(ra_array_lists, dec_array_lists,
-                                        label_list)):
+    #check for optional lists
+    if alphalist is None:
+        alphalist = np.full(len(ra_array_lists),1.0)
+    if colorlist is None:
+        colorlist = mpcolors[ 0 : len(ra_array_lists)]
+    for (ra,dec,lab, alph, color) in zip(ra_array_lists, dec_array_lists,
+                                         label_list, alphalist, colorlist):
         xp,yp = annim.topixel(ra,dec)
         annim.Marker(x=xp,y=yp,
                      marker='o',mode='pixel',markersize=ms,
-                     color = mpcolors[i], label = lab,
-                     alpha = alpha)
+                     color = color, label = lab,
+                     alpha = alph)
 
     #make figure
     annim.plot()

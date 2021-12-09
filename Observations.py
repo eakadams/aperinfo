@@ -140,46 +140,56 @@ class DR1(Observations):
         lastind = 220
         print('First taskid is {}'.format(self.obsinfo['taskID'][firstind]))
         print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
-        self.obsinfo = self.obsinfo[firstind:(lastind+1)]
+        self.dr1obs = self.obsinfo[firstind:(lastind+1)]
         #check for bad data
-        goodind = np.where(self.obsinfo['quality'] == 'good')[0]
+        goodind = np.where(self.dr1obs['quality'] == 'good')[0]
         #print(len(self.dr1_obs),len(goodind))
         #limit to good data (archived, not deleted)
-        self.obsinfo = self.obsinfo[goodind]
+        self.dr1obs = self.dr1obs[goodind]
 
-    def plot_obs_survey(self,
-                        surveypointings = os.path.join(
-                            filedir,
-                            'all_pointings.v7.18jun20.txt') ):
+    def plot_dr1_obs(self,
+                     surveypointings = os.path.join(
+                         filedir,
+                         'all_pointings.v7.18jun20.txt') ):
         """ Plot observations based on wide/medium-deep """
         #get repeated medium-deep fields. Otherwise is wide
-        ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+        ind_ames = [i for i, s in enumerate(self.dr1obs['name']) if 'M' in s]
 
-        u, c = np.unique(self.obsinfo['name'][ind_ames], return_counts=True)
+        u, c = np.unique(self.dr1obs['name'][ind_ames], return_counts=True)
         dup = u[c > 1]
 
         ind_repeats = []
         for name in dup:
-            ind = [i for i, s in enumerate(self.obsinfo['name']) if name in s]
+            ind = [i for i, s in enumerate(self.dr1obs['name']) if name in s]
             ind_repeats.append(ind)
 
         ind_repeated_ames = np.sort(np.hstack(ind_repeats))
             
-        ind_awes = [i for i in range(len(self.obsinfo)) \
+        ind_awes = [i for i in range(len(self.dr1obs)) \
                     if i not in ind_repeated_ames]
 
-        ra_ames = self.obsinfo['field_ra'][ind_repeated_ames]
-        ra_awes = self.obsinfo['field_ra'][ind_awes]
-        dec_ames = self.obsinfo['field_dec'][ind_repeated_ames]
-        dec_awes = self.obsinfo['field_dec'][ind_awes]
+        ra_ames = self.dr1obs['field_ra'][ind_repeated_ames]
+        ra_awes = self.dr1obs['field_ra'][ind_awes]
+        dec_ames = self.dr1obs['field_dec'][ind_repeated_ames]
+        dec_awes = self.dr1obs['field_dec'][ind_awes]
 
-        ralist = [ra_awes, ra_ames]
-        declist = [dec_awes, dec_ames]
-        labellist = ["Wide", "Repeated medium-deep"]
+        #get unique all obs for reference plotting
+        uniq_fields, ind_uniq = np.unique(self.obsinfo['name'], 
+                                         return_index = True)
+
+        ra_survey = self.obsinfo['field_ra'][ind_uniq]
+        dec_survey = self.obsinfo['field_dec'][ind_uniq]
+
+        ralist = [ra_survey, ra_awes, ra_ames]
+        declist = [dec_survey, dec_awes, dec_ames]
+        labellist = ["Full survey","Wide", "Repeated medium-deep"]
+        alphalist = [1.0, 1.0, 1.0]
+        colorlist = ['#bbbbbb','#4477aa', '#ee6677']
         
         plot_sky_view(ralist, declist, labellist,
                       "dr1_surveys",
-                      surveypointings = surveypointings)
+                      surveypointings = surveypointings,
+                      alphalist = alphalist, colorlist = colorlist)
         
     
 class Census(Observations):
