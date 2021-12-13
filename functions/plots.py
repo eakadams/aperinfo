@@ -14,6 +14,7 @@ from kapteyn import maputils
 from functions.utilities import get_survey_ra_dec
 import os
 import numpy as np
+import tol_colors as tc
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -22,7 +23,10 @@ aperinfodir = this_dir[:-9]
 filedir = os.path.join(aperinfodir,"files")
 figdir = os.path.join(aperinfodir,"figures")
 
-#get mpl colors
+#set up colors - use Paul Tol's  color blind
+plt.rc('axes', prop_cycle=plt.cycler('color', list(tc.tol_cset('bright'))))
+plt.cm.register_cmap('YlOrBr', tc.tol_cmap('YlOrBr'))
+plt.rc('image', cmap='YlOrBr')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 mpcolors = prop_cycle.by_key()['color']
 
