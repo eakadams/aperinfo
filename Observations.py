@@ -190,6 +190,15 @@ class DR1(Observations):
                       "dr1_surveys",
                       surveypointings = surveypointings,
                       alphalist = alphalist, colorlist = colorlist)
+
+    def print_dr1_obs(self):
+        """ 
+        Print a list of the dr1 obs
+        """
+        obsfile = os.path.join(tabledir,'dr1_taskids.csv')
+
+        ascii.write(self.dr1obs['taskID','name'], obsfile, format='csv',
+                    overwrite = True)
         
     
 class Census(Observations):
@@ -469,7 +478,8 @@ class Census(Observations):
 
         plot_sky_view(ralist, declist, labellist,
                       "census_{}".format(view),
-                      surveypointings = surveypointings)
+                      surveypointings = surveypointings,
+                      show_mds = True)
 
         
 

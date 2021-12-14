@@ -33,7 +33,8 @@ mpcolors = prop_cycle.by_key()['color']
 def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
                   surveypointings = None,
-                  alphalist = None, colorlist = None):
+                  alphalist = None, colorlist = None,
+                  show_mds = False):
     """
     Make a sky view plot
 
@@ -51,6 +52,8 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         List of alpha values (floats) to use in plotting
     colorlist : list-lik
         Optional list of colors to use in plotting
+    show_mds : Booelean
+        Toggle for whether to outline MDS regions
     """
 
     #start the figure
@@ -147,6 +150,20 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                      marker='o',mode='pixel',markersize=ms,
                      color = color, label = lab,
                      alpha = alph)
+
+    #add mds footprints, if specified
+    if show_mds is True:
+        mds_points = os.path.join(filedir,'mds_pointings.txt')
+        mra, mdec = get_survey_ra_dec(mds_points)
+        xm, ym = annim.topixel(mra, mdec)
+        annim.Marker(x=xm,y=ym,
+                     marker='o',mode='pixel',markersize=ms+1,
+                     color=mpcolors[len(ra_array_lists)],fillstyle='none',
+                     label = 'Medium-deep',
+                     markeredgewidth=2)
+
+
+
 
     #make figure
     annim.plot()
