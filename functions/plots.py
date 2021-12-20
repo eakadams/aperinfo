@@ -34,7 +34,9 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
                   surveypointings = None,
                   alphalist = None, colorlist = None,
-                  show_mds = False):
+                  show_mds = False, mds_color = None,
+                  reobs_ra = None, reobs_dec = None,
+                  reobs_color = None):
     """
     Make a sky view plot
 
@@ -157,11 +159,24 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         mds_points = os.path.join(filedir,'mds_pointings.txt')
         mra, mdec = get_survey_ra_dec(mds_points)
         xm, ym = annim.topixel(mra, mdec)
+        if mds_color is None:
+            mds_color = mpcolors[len(ra_array_lists)]
         annim.Marker(x=xm,y=ym,
                      marker='o',mode='pixel',markersize=ms+1,
-                     color=mpcolors[5],fillstyle='none',
+                     color=mds_color,fillstyle='none',
                      label = 'Medium-deep',
                      markeredgewidth=2.5)
+
+    #add fields to reobserve, if specified
+    if (reobs_ra is not None) and (reobs_dec is not None):
+        xr, yr = annim.topixel(reobs_ra, reobs_dec)
+        if reobs_color is None:
+            reobs_color = mpcolors[len(ra_array_lists)+1]
+        annim.Marker(x = xr, y = yr,
+                     marker = 'o', mode='pixel', markersize = ms+1,
+                     colord = reobs_color,fillstyle = 'none',
+                     label = 'To reobserve', markeredgewidth = 2.5)
+
 
 
 

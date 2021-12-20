@@ -282,7 +282,11 @@ class Census(Observations):
 
         #iterate through each field
         for i,f in enumerate(fields):
-            f_inds = np.where( self.censusinfo['name_1'] == f )[0]
+            try:
+                f_inds = np.where( self.censusinfo['name_1'] == f )[0]
+            except:
+                print("Check: ")
+                print(self.censusinfo[field_inds][i])
             telescope_list = [list(x) for x in 
                               self.censusinfo['goodtelescopes'][f_inds] ]
             #add to telescopes array as a list
@@ -476,11 +480,26 @@ class Census(Observations):
             labellist = ["Avg 12 dishes", "Avg between 10 and 12",
                          "Avg between 8-10", "Avg le 8"]
 
+        #get reobserved fields to add to view
+        try:
+            ind_reobs = [i for i, \
+                         s in enumerate(self.field_census['Field']) \
+                         if s in self.fields_reobserve['Field'] ]
+        except:
+            self.get_fields_reobserve()
+            ind_reobs = [i for i, \
+                         s in enumerate(self.field_census['Field']) \
+                         if s in self.fields_reobserve['Field'] ]
+        print(ind_reobs)
+        ra_reobs = self.field_census['RA'][ind_reobs]
+        dec_reobs = self.field_census['Dec'][ind_reobs]
 
         plot_sky_view(ralist, declist, labellist,
                       "census_{}".format(view),
                       surveypointings = surveypointings,
-                      show_mds = True)
+                      show_mds = True,
+                      reobs_ra = ra_reobs,
+                      reobs_dec = dec_reobs)
 
         
 
