@@ -129,14 +129,7 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
     #set marker size
     ms = 10
 
-    #add survey pointings (if provided)
-    if surveypointings is not None:
-        sra, sdec = get_survey_ra_dec(surveypointings)
-        xs,ys = annim.topixel(sra,sdec)
-        annim.Marker(x=xs,y=ys,
-                     marker='o',mode='pixel',markersize=ms,
-                     color='black',fillstyle='none')
-
+    
     #add data
     #check for optional lists
     if alphalist is None:
@@ -151,6 +144,14 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                      color = color, label = lab,
                      alpha = alph)
 
+    #add survey pointings (if provided)
+    if surveypointings is not None:
+        sra, sdec = get_survey_ra_dec(surveypointings)
+        xs,ys = annim.topixel(sra,sdec)
+        annim.Marker(x=xs,y=ys,
+                     marker='o',mode='pixel',markersize=ms+1,
+                     color='black',fillstyle='none')
+
     #add mds footprints, if specified
     if show_mds is True:
         mds_points = os.path.join(filedir,'mds_pointings.txt')
@@ -158,9 +159,9 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         xm, ym = annim.topixel(mra, mdec)
         annim.Marker(x=xm,y=ym,
                      marker='o',mode='pixel',markersize=ms+1,
-                     color=mpcolors[len(ra_array_lists)],fillstyle='none',
+                     color=mpcolors[5],fillstyle='none',
                      label = 'Medium-deep',
-                     markeredgewidth=2)
+                     markeredgewidth=2.5)
 
 
 
@@ -172,6 +173,6 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
     #save fig
     figname = os.path.join(figdir,"{}.pdf".format(viewname))
     plt.savefig(figname)
-    plt.close
+    plt.close()
 
      

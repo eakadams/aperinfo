@@ -189,7 +189,8 @@ class DR1(Observations):
         plot_sky_view(ralist, declist, labellist,
                       "dr1_surveys",
                       surveypointings = surveypointings,
-                      alphalist = alphalist, colorlist = colorlist)
+                      alphalist = alphalist, colorlist = colorlist,
+                      show_mds = True)
 
     def print_dr1_obs(self):
         """ 
