@@ -345,38 +345,64 @@ class Census(Observations):
            Full path to file of survey pointings to be plotted for comparison
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
-                        "check_2_D", "N_CD", "Ndish"]:
+                        "check_2_D", "N_CD", "Ndish", "Ndish_mds"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
 
+        if view == "Ndish_mds":
+            ind_le70 = np.where(self.field_census['Ndishes'] <=70)[0]
+            ind_70_90 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >= 70,
+                self.field_census['Ndishes'] < 90) )[0]
+            ind_90_100 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=90,
+                self.field_census['Ndishes']< 100))[0]
+            ind_100_120 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=100,
+                self.field_census['Ndishes']< 120))[0]
+            ind_ge120 = np.where(self.field_census['Ndishes'] >=120)[0]
+            ralist = [ self.field_census['RA'][ind_le70],
+                       self.field_census['RA'][ind_70_90],
+                       self.field_census['RA'][ind_90_100],
+                       self.field_census['RA'][ind_100_120],
+                       self.field_census['RA'][ind_ge120]
+            ]
+            declist = [ self.field_census['Dec'][ind_le70],
+                        self.field_census['Dec'][ind_70_90],
+                        self.field_census['Dec'][ind_90_100],
+                        self.field_census['Dec'][ind_100_120],
+                        self.field_census['Dec'][ind_ge120]
+            ]
+            labellist = [ 'Ndishes le 70', '70-90', '90-100', '100-120',
+                          'ge 120' ]
 
         if view == "Ndish":
             ind_le9 = np.where(self.field_census['Ndishes'] <=9)[0]
             ind_10_12 = np.where(np.logical_and(
                 self.field_census['Ndishes'] >= 10,
                 self.field_census['Ndishes'] <= 12) )[0]
-            ind_13_36 = np.where(np.logical_and(
+            ind_13_20 = np.where(np.logical_and(
                 self.field_census['Ndishes'] >=13,
-                self.field_census['Ndishes']<=36))[0]
-            ind_37_89 = np.where(np.logical_and(
-                self.field_census['Ndishes'] >=37,
-                self.field_census['Ndishes']<=89))[0]
-            ind_ge90 = np.where(self.field_census['Ndishes'] >=90)[0]
+                self.field_census['Ndishes']<=19))[0]
+            ind_20_24 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=20,
+                self.field_census['Ndishes']<=24))[0]
+            ind_ge25 = np.where(self.field_census['Ndishes'] >=25)[0]
             ralist = [ self.field_census['RA'][ind_le9],
                        self.field_census['RA'][ind_10_12],
-                       self.field_census['RA'][ind_13_36],
-                       self.field_census['RA'][ind_37_89],
-                       self.field_census['RA'][ind_ge90]
+                       self.field_census['RA'][ind_13_20],
+                       self.field_census['RA'][ind_20_24],
+                       self.field_census['RA'][ind_ge25]
             ]
             declist = [ self.field_census['Dec'][ind_le9],
                         self.field_census['Dec'][ind_10_12],
-                        self.field_census['Dec'][ind_13_36],
-                        self.field_census['Dec'][ind_37_89],
-                        self.field_census['Dec'][ind_ge90]
+                        self.field_census['Dec'][ind_13_20],
+                        self.field_census['Dec'][ind_20_24],
+                        self.field_census['Dec'][ind_ge25]
             ]
-            labellist = [ 'Ndishes le 9', '10-12', '13-36', '37-89',
-                          'ge 90' ]
+            labellist = [ 'Ndishes le 9', '10-12', '13-19', '20-24',
+                          'ge 25' ]
         if view == 'N_CD':
             ind_le1 = np.where(self.field_census['N_CD'] <= 1)[0]
             ind_2_4 = np.where( np.logical_and(
@@ -490,7 +516,7 @@ class Census(Observations):
             ind_reobs = [i for i, \
                          s in enumerate(self.field_census['Field']) \
                          if s in self.fields_reobserve['Field'] ]
-        print(ind_reobs)
+
         ra_reobs = self.field_census['RA'][ind_reobs]
         dec_reobs = self.field_census['Dec'][ind_reobs]
 

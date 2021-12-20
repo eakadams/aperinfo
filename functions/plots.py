@@ -174,7 +174,7 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
             reobs_color = mpcolors[len(ra_array_lists)+1]
         annim.Marker(x = xr, y = yr,
                      marker = 'o', mode='pixel', markersize = ms+1,
-                     colord = reobs_color,fillstyle = 'none',
+                     color = reobs_color,fillstyle = 'none',
                      label = 'To reobserve', markeredgewidth = 2.5)
 
 
