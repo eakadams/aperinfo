@@ -287,8 +287,12 @@ class Census(Observations):
             except:
                 print("Check: ")
                 print(self.censusinfo[field_inds][i])
-            telescope_list = [list(x) for x in 
-                              self.censusinfo['goodtelescopes'][f_inds] ]
+            try:
+                telescope_list = [list(x) for x in 
+                                  self.censusinfo['goodtelescopes'][f_inds] ]
+            except:
+                print("Check: ")
+                print(self.censusinfo[field_inds][i])
             #add to telescopes array as a list
             telescopes[i] = [num for elem in telescope_list for num in elem]
             ndishes[i] = len(telescopes[i])
