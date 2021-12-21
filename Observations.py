@@ -623,6 +623,34 @@ class Census(Observations):
         fields_reobserve = join(fields_reobserve, fields_2d,
                                 join_type='outer')
 
+        #then MDS fields that need further coverage
+        #start w/ more than 70 but less than 80 dishes)
+        ind_mds = np.where( np.logical_and(
+            self.field_census['Ndishes'] >=70,
+            self.field_census['Ndishes'] < 80 ))[0]
+        fields_mds = self.field_census[ind_mds]
+        fields_mds['MDS_depth'] = np.full(len(fields_mds), 'True')
+        fields_mds.keep_columns(['Field','MDS_depth'])
+
+        fields_reobserve = join(fields_reobserve, fields_mds,
+                                join_type = 'outer')
+
+        #then second visit wide coverage
+        #Ndishes < 20
+        #and limit to "LH"ish area
+        ind_wide_depth = np.where( np.logical_and(
+            self.field_census['Ndishes'] < 20,
+            np.logical_and(
+                np.abs( self.field_census['RA'] - 160.25) < 6.,
+                np.abs( self.field_census['Dec'] - 58.25) < 6. ) ) )[0]
+        fields_wide_depth = self.field_census[ind_wide_depth]
+        fields_wide_depth['Wide_depth'] = np.full(len(fields_wide_depth), 'True')
+        fields_wide_depth.keep_columns(['Field','Wide_depth'])
+
+        fields_reobserve = join(fields_reobserve, fields_wide_depth,
+                                join_type = 'outer')
+
+
         #add as attribute to object:
         self.fields_reobserve = fields_reobserve
         
