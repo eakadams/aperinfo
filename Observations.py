@@ -639,8 +639,8 @@ class Census(Observations):
                 np.abs( self.field_census['RA'] - 160.25) < 6.,
                 np.abs( self.field_census['Dec'] - 58.25) < 4. ) ) )[0]
         fields_wide_depth = self.field_census[ind_wide_depth]
-        fields_wide_depth['Wide_depth'] = np.full(len(fields_wide_depth), 'True')
-        fields_wide_depth.keep_columns(['Field','Wide_depth'])
+        fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
+        fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
 
         fields_reobserve = join(fields_reobserve, fields_wide_depth,
                                 join_type = 'outer')

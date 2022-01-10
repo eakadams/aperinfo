@@ -5,6 +5,12 @@ __pycache__/
 
 #emacs autosave
 *~
+*#*
+
+#images
+*png
+*pdf
+*fits
 
 # C extensions
 *.so
