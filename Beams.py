@@ -84,15 +84,64 @@ class Beams(object):
         """
 
         self.obsinfo = ascii.read(obsfile)
+        self.continfo = ascii.read(contfile)
+        self.polinfo = ascii.read(polfile)
+        self.hiinfo = ascii.read(hifile)
 
         #setup beam info based on obsinfo
         beam_table_length = len(self.obsinfo) * 40
+        #col_info = [ ('ObsID', 'i4'), ('beam', 'i4'), ('BeamID', 'U12'),
+        #             ('cont_pass', "?"), ('cont_s_in', 'f8'),
+        #             ('cont_s_out', 'f8'), ('cont_rat','f8'),
+        #             ('cont_N2','f8'), ('cont_EX-2','f8')]
+        #self.beaminfo = Table(data = np.full(beam_table_length, np.nan,
+        #                                     dtype = col_info) )
+        #boolean column defaults to True. Change that to False (have to update to Tru)
+        #self.beaminfo['cont_pass'] = np.full(beam_table_length, False)
         self.beaminfo = Table()
         self.beaminfo['ObsID'] = np.empty(beam_table_length, dtype = int)
         self.beaminfo['beam'] = np.empty(beam_table_length, dtype = int)
-        for n,id in enumerate(self.obsinfo['taskID']):
+        for n,tid in enumerate(self.obsinfo['taskID']):
             ind = n*40
-            self.beaminfo['ObsID'][ind:ind+40] = np.full(40,id)
+            self.beaminfo['ObsID'][ind:ind+40] = np.full(40,tid)
             self.beaminfo['beam'][ind:ind+40] = np.arange(40)
+
+        #create a "beamid" for all tables that is ObsID_beam
+        #this is unique identifier for matching
+        self.continfo['BeamID'] = [ f"{tid}_{b:02d}" for tid,b in
+                                    self.continfo['taskid','beam'] ]
+        self.beaminfo['BeamID'] = [ f"{tid}_{b:02d}" for tid, b in
+                                    self.beaminfo['ObsID','beam'] ]
+        self.polinfo['BeamID'] = [ f"{tid}_{b:02d}" for tid,b in
+                                    self.polinfo['taskid','beam'] ]
+        self.hiinfo['BeamID'] = [ f"{tid}_{b:02d}" for tid,b in
+                                    self.hiinfo['Obsid','Beam'] ]
+        
+        #join continuum table to full beaminfo table
+        #first drop duplicate columns I don't want
+        self.continfo.remove_columns(['taskid','beam'])
+        self.beaminfo = join(self.beaminfo, self.continfo,
+                             keys = 'BeamID', join_type = 'outer',
+                             table_names = ['Beams', 'cont'] )
+
+        #now add pol table
+        #this is where specifying cont/pol will be important
+        #since metrics are the same
+        self.polinfo.remove_columns(['taskid','beam'])
+        self.beaminfo = join(self.beaminfo, self.polinfo,
+                             keys = 'BeamID', join_type = 'outer',
+                             table_names = ['cont', 'pol'])
+
+        #and finally line table
+        self.hiinfo.remove_columns(['Obsid','Beam'])
+        self.beaminfo = join(self.beaminfo, self.hiinfo,
+                             keys = 'BeamID', join_type = 'outer')
+
+        #note that names of columns might not alays be clearest
+        #but that's not the issue of this code
+        #although I may rename at some point. But it works!
+   
+
+
 
             
