@@ -30,6 +30,18 @@ plt.rc('image', cmap='YlOrBr')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 mpcolors = prop_cycle.by_key()['color']
 
+def plot_hist(*args):
+    """
+    Plot histograms for any number of provided arrays/lists
+
+    Parameters:
+    ----------
+    args : array-like  to be plotted in histograms
+    """
+
+    ax.hist(int_ratio_orig, bins = bins, orientation = 'horizontal',
+                  color = 'gray')
+
 def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
                   surveypointings = None,
