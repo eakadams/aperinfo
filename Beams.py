@@ -88,6 +88,16 @@ class Beams(object):
         self.polinfo = ascii.read(polfile)
         self.hiinfo = ascii.read(hifile)
 
+        """
+        #remove anything that is from before survey start
+        #this is code specifically for handling survey observations
+        ind_survey = np.where(self.continfo['taskid'] > 190702001)[0]
+        self.continfo = self.continfo[ind_survey]
+
+        ind_survey = np.where(self.polinfo['taskid'] > 190702001)[0]
+        self.polinfo = self.polinfo[ind_survey]
+        """
+        
         #setup beam info based on obsinfo
         beam_table_length = len(self.obsinfo) * 40
         #col_info = [ ('ObsID', 'i4'), ('beam', 'i4'), ('BeamID', 'U12'),
@@ -121,7 +131,7 @@ class Beams(object):
         #first drop duplicate columns I don't want
         self.continfo.remove_columns(['taskid','beam'])
         self.beaminfo = join(self.beaminfo, self.continfo,
-                             keys = 'BeamID', join_type = 'outer',
+                             keys = 'BeamID', join_type = 'left',
                              table_names = ['Beams', 'cont'] )
 
         #now add pol table
@@ -129,13 +139,13 @@ class Beams(object):
         #since metrics are the same
         self.polinfo.remove_columns(['taskid','beam'])
         self.beaminfo = join(self.beaminfo, self.polinfo,
-                             keys = 'BeamID', join_type = 'outer',
+                             keys = 'BeamID', join_type = 'left',
                              table_names = ['cont', 'pol'])
 
         #and finally line table
         self.hiinfo.remove_columns(['Obsid','Beam'])
         self.beaminfo = join(self.beaminfo, self.hiinfo,
-                             keys = 'BeamID', join_type = 'outer')
+                             keys = 'BeamID', join_type = 'left')
 
         #note that names of columns might not alays be clearest
         #but that's not the issue of this code
@@ -144,4 +154,74 @@ class Beams(object):
 
 
 
-            
+class DR1(Beams):
+    """
+    Child class focused on DR1
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
+    """
+    def __init__(self,
+                 obsfile = os.path.join(filedir,'obsatdb.csv'),
+                 happilifile = os.path.join(filedir,'happili.csv'),
+                 contfile = os.path.join(filedir,"cont_allbeams.csv"),
+                 hifile = os.path.join(filedir,"hi_allbeams.csv"),
+                 polfile = os.path.join(filedir,"pol_allbeams.csv")
+    ):
+        Beams.__init__(self,obsfile, happilifile, contfile, hifile, polfile)
+
+        #Limit to DR1 range
+        #Do this manually by taskid
+
+        #First exclude observations that are too late
+        ind_dr1 = np.where(self.beaminfo['ObsID'] <= 200701000)[0]
+        self.beaminfo = self.beaminfo[ind_dr1]
+
+        #Then observations that are too early
+        #These were not processed with 150 MHz version of pipeline
+        #So all processed data is considered failed
+        """
+        July 2019 - 300 MHz version of pipeline
+        190806345 - no processed data produced; probably due to missing set of cals at start
+        190731125 - never processed
+        190801041, 190801042 - never processed
+        200429042 - never processed due to issues w/ ants changing for cals
+        200430053-200505057 : RTC & RTD left out
+        """
+        ind_good_proc = np.where(
+            (self.beaminfo['ObsID'] >=190807001) &
+            (self.beaminfo['ObsID'] != 200429042) &
+            (self.beaminfo['ObsID'] != 200430053) &
+            (self.beaminfo['ObsID'] != 200501001) &
+            (self.beaminfo['ObsID'] != 200501042) &
+            (self.beaminfo['ObsID'] != 200502054) &
+            (self.beaminfo['ObsID'] != 200503001) &
+            (self.beaminfo['ObsID'] != 200503042) &
+            (self.beaminfo['ObsID'] != 200505016) &
+            (self.beaminfo['ObsID'] != 200505057) )[0]
+
+        #print(len(self.beaminfo),len(ind_good_proc))
+        self.beaminfo = self.beaminfo[ind_good_proc]
+
+        #Now get just the released beams
+        #Have this as a separate table because maybe I want to know
+        #information about all considered
+        ind_released = np.where(self.beaminfo['pass'] == 'True')[0]
+        print(len(self.beaminfo),len(ind_released))
+
+        self.released = self.beaminfo[ind_released]
+        
+        #Note that also need to account for skipping taskids at start w/ poor processing
+        #This means should add processing information (possibly), or set manually here
+        #Also want to limit to data that passed validation and hence is released.
+        #So that I can focus on paper plots, will write specific plotting methods for this child object
+        #But will try to call generalized functions (in plots.py) for making histograms
+
+    def plot_cont_noise(self):
+        """ 
+        Plot histograms of continuum noise
+        """
