@@ -30,6 +30,14 @@ plt.rc('image', cmap='YlOrBr')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 mpcolors = prop_cycle.by_key()['color']
 
+#set global font size
+plt.rc('font', size = 20)
+
+#set font params, include latex
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "sans-serif",
+    "font.sans-serif": ["Helvetica"]})
 
 def plot_hist(*args, **kwargs):
     """
@@ -44,6 +52,7 @@ def plot_hist(*args, **kwargs):
         binmin : float, minimum bin value
         binmax : float, maximum bin value
         binstep : float, bin step value
+        alpha : list-like; transparency to use; length should match number of args
     """
     #set colors for plotting
     #can use "get" method to set a default if there is no key
@@ -61,14 +70,18 @@ def plot_hist(*args, **kwargs):
                                     0.1*np.nanmax(args[0]) ) )
     binstep = kwargs.get("binstep", ( (binmax-binmin) / 100. ) )
     bins = np.arange(binmin, binmax, binstep)
+
+    #get transparency
+    alpha = kwargs.get("alpha", np.full(len(args),1.0) )
     
     #set up plot
     fig = plt.figure(figsize=(12,12))
     ax = fig.add_axes((0.1,0.1,0.85,0.85))
 
     #iterate through args / arrays to plot
-    for ar, c, l in zip(args, colors, labels):
-        ax.hist(ar, bins = bins, color = c, label = l)
+    for ar, c, l, a in zip(args, colors, labels, alpha):
+        ax.hist(ar, bins = bins, color = c, label = l, alpha = a,
+                histtype = 'stepfilled')
 
     #return fig and ax instance
     return fig, ax

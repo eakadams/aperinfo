@@ -17,6 +17,7 @@ import numpy as np
 from astropy.table import Table, join
 from functions.plots import plot_sky_view
 from functions.plots import plot_hist
+import tol_colors as tc
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -28,9 +29,13 @@ tabledir = os.path.join(aperinfodir,"tables")
 figdir = os.path.join(aperinfodir,"figures")
 
 
-#get mpl colors
+#set up colors - use Paul Tol's  color blind
+plt.rc('axes', prop_cycle=plt.cycler('color', list(tc.tol_cset('bright'))))
+plt.cm.register_cmap('YlOrBr', tc.tol_cmap('YlOrBr'))
+plt.rc('image', cmap='YlOrBr')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 mpcolors = prop_cycle.by_key()['color']
+
 
 
 #set fonts and latex
@@ -39,6 +44,7 @@ plt.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["Helvetica"]})
 
+plt.rc('font', size = 20)
 
 class Beams(object):
     """
@@ -226,13 +232,16 @@ class DR1(Beams):
         """ 
         Plot histograms of continuum noise
         """
-        fig, ax = plot_hist( self.released['s_in_cont'],
-                             self.released['s_out_cont'],
-                             colors = ['gray', 'black'],
-                             labels = ['Inner noise', 'Outer noise'] )
+        fig, ax = plot_hist( self.released['s_out_cont'],
+                             self.released['s_in_cont'],
+                             colors = ['black', 'gray'],
+                             labels = ['Outer noise', 'Inner noise'],
+                             alpha = [1.0, 0.85],
+                             binmin = 25, binmax = 60.1, binstep = 0.5)
         ax.legend()
         ax.set_xlabel("Noise [mJy beam$^{-1}$]")
         ax.set_ylabel("Count")
+        ax.set_title("Continuum noise")
         pathname = os.path.join(figdir, 'dr1_cont_noise.pdf')
         plt.savefig(pathname)
         plt.close('all')
