@@ -30,17 +30,49 @@ plt.rc('image', cmap='YlOrBr')
 prop_cycle = plt.rcParams['axes.prop_cycle']
 mpcolors = prop_cycle.by_key()['color']
 
-def plot_hist(*args):
+
+def plot_hist(*args, **kwargs):
     """
     Plot histograms for any number of provided arrays/lists
 
     Parameters:
     ----------
     args : array-like  to be plotted in histograms
+    kwargs : optional keyword arguments
+        colors : array-like colors values; length should match number of args
+        labels : list-like string of labels; length should match number of args
+        binmin : float, minimum bin value
+        binmax : float, maximum bin value
+        binstep : float, bin step value
     """
+    #set colors for plotting
+    #can use "get" method to set a default if there is no key
+    #default is mpcolors (which I have set to color blind defaults
+    colors = kwargs.get("colors", mpcolors[0:len(args)])
 
-    ax.hist(int_ratio_orig, bins = bins, orientation = 'horizontal',
-                  color = 'gray')
+    #set up default labels
+    labels = kwargs.get("labels", np.full(len(args), None))
+
+    #setup bins
+    #provide params in keyword args, or take based on first arg
+    binmin = kwargs.get("binmin", ( np.nanmin(args[0]) -
+                                    0.1*np.nanmin(args[0]) ) )
+    binmax = kwargs.get("binmax", ( np.nanmax(args[0]) +
+                                    0.1*np.nanmax(args[0]) ) )
+    binstep = kwargs.get("binstep", ( (binmax-binmin) / 100. ) )
+    bins = np.arange(binmin, binmax, binstep)
+    
+    #set up plot
+    fig = plt.figure(figsize=(12,12))
+    ax = fig.add_axes((0.1,0.1,0.85,0.85))
+
+    #iterate through args / arrays to plot
+    for ar, c, l in zip(args, colors, labels):
+        ax.hist(ar, bins = bins, color = c, label = l)
+
+    #return fig and ax instance
+    return fig, ax
+
 
 def plot_sky_view(ra_array_lists, dec_array_lists,
                   label_list, viewname,
