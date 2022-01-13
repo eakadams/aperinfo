@@ -16,6 +16,7 @@ from astropy.io import ascii
 import numpy as np
 from astropy.table import Table, join
 from functions.plots import plot_sky_view
+from functions.plots import plot_hist
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -225,3 +226,13 @@ class DR1(Beams):
         """ 
         Plot histograms of continuum noise
         """
+        fig, ax = plot_hist( self.released['s_in_cont'],
+                             self.released['s_out_cont'],
+                             colors = ['gray', 'black'],
+                             labels = ['Inner noise', 'Outer noise'] )
+        ax.legend()
+        ax.set_xlabel("Noise [mJy beam$^{-1}$]")
+        ax.set_ylabel("Count")
+        pathname = os.path.join(figdir, 'dr1_cont_noise.pdf')
+        plt.savefig(pathname)
+        plt.close('all')
