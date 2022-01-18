@@ -18,6 +18,9 @@ from astropy.table import Table, join
 from functions.plots import plot_sky_view
 from functions.plots import plot_hist
 import tol_colors as tc
+import astropy.units as u
+from functions.utilities import get_beam_ra_dec
+from astropy.coordinates import SkyCoord
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -118,10 +121,25 @@ class Beams(object):
         self.beaminfo = Table()
         self.beaminfo['ObsID'] = np.empty(beam_table_length, dtype = int)
         self.beaminfo['beam'] = np.empty(beam_table_length, dtype = int)
-        for n,tid in enumerate(self.obsinfo['taskID']):
+        self.beaminfo['Field'] = np.empty(beam_table_length, dtype = "S10")
+        self.beaminfo['Field_RA'] = np.empty(beam_table_length)
+        self.beaminfo['Field_Dec'] = np.empty(beam_table_length)
+        for n,(tid,f,ra,dec) in \
+            enumerate(self.obsinfo['taskID','name','field_ra','field_dec']):
             ind = n*40
             self.beaminfo['ObsID'][ind:ind+40] = np.full(40,tid)
             self.beaminfo['beam'][ind:ind+40] = np.arange(40)
+            self.beaminfo['Field'][ind:ind+40] = np.full(40, f)
+            self.beaminfo['Field_RA'][ind:ind+40] = np.full(40,ra)
+            self.beaminfo['Field_Dec'][ind:ind+40] = np.full(40,dec)
+
+        #add RA, Dec column to everything
+        #use a helper function to get values from Field RA,Dec plus beam number
+        ra, dec = get_beam_ra_dec(self.beaminfo['Field_RA'],
+                                  self.beaminfo['Field_Dec'],
+                                  self.beaminfo['beam'])
+        self.beaminfo['RA'] = ra
+        self.beaminfo['Dec'] = dec
 
         #create a "beamid" for all tables that is ObsID_beam
         #this is unique identifier for matching
@@ -157,9 +175,52 @@ class Beams(object):
         #note that names of columns might not alays be clearest
         #but that's not the issue of this code
         #although I may rename at some point. But it works!
-   
 
+        
+        
 
+    def find_beam(self, ra, dec, radius = 30*u.arcmin):
+        """ 
+        Find beams within radius of position
+
+        Parameters:
+        -----------
+        ra : float and/or Quantity
+            R.A. If a float, assumed in degrees
+        dec : float and/or Quantity
+            Decl. If a float, assumed in degrees
+        radius : float and/or Quantity
+            Radius to search for beam centers. If a float, assumed in arcmins
+            Default is 30'
+        """
+       
+        #check for units
+        if not isinstance(ra, u.Quantity):
+            ra = ra * u.deg
+        if not isinstance(dec, u.Quantity):
+            dec = dec * u.deg
+        if not isinstance(radius, u.Quantity):
+            radius = radius * u.arcmin
+
+        #set up coords
+        all_coords = SkyCoord(self.beaminfo['RA'], self.beaminfo['Dec'],
+                              frame='icrs',unit='deg')
+
+        target_coord = SkyCoord(ra, dec, frame='icrs')
+
+        separation = all_coords.separation(target_coord)
+
+        idx_beams = np.where(separation < radius)[0]
+
+        if len(idx_beams) > 0:
+            beams = self.beaminfo['BeamID'][idx_beams]
+            print(f"Beams within a radius of {radius} are {beams}")
+        else:
+            beams = None
+
+        return beams, idx_beams
+
+    
 
 class DR1(Beams):
     """
