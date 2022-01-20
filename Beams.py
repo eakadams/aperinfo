@@ -21,6 +21,7 @@ import tol_colors as tc
 import astropy.units as u
 from functions.utilities import get_beam_ra_dec
 from astropy.coordinates import SkyCoord
+from functions.utilities import get_med_onesig
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -306,3 +307,89 @@ class DR1(Beams):
         pathname = os.path.join(figdir, 'dr1_cont_noise.pdf')
         plt.savefig(pathname)
         plt.close('all')
+
+    def get_noise_table(self):
+        """ 
+        Get a latex formatted table of noise values
+        """
+        #get median and one sigma ranges for different parameters
+        cont_inner = get_med_onesig(self.released['s_in_cont'])
+        cont_outer = get_med_onesig(self.released['s_out_cont'])
+        pol_inner = get_med_onesig(self.released['s_in_pol'])
+        pol_outer = get_med_onesig(self.released['s_out_pol'])
+        cube0 = get_med_onesig(self.released['rms_c0']) #in Jy
+        cube1 = get_med_onesig(self.released['rms_c1'])
+        cube2 = get_med_onesig(self.released['rms_c2'])
+
+        #for polarization and line, also fidn where passed own validation
+        idx_v = np.where(self.released['pass_V'] == 'True')[0]
+        idx_c0 = np.where(self.released['c0_good'] == 1)[0]
+        idx_c1 = np.where(self.released['c1_good'] == 1)[0]
+        idx_c2 = np.where(self.released['c2_good'] == 1)[0]
+        
+        pol_inner_pass = get_med_onesig(self.released['s_in_pol'][idx_v])
+        pol_outer_pass = get_med_onesig(self.released['s_out_pol'][idx_v])
+        cube0_good = get_med_onesig(self.released['rms_c0'][idx_c0])
+        cube1_good = get_med_onesig(self.released['rms_c1'][idx_c1])
+        cube2_good = get_med_onesig(self.released['rms_c2'][idx_c2])
+    
+        #now set up the table
+        #might be easiest to format this directly myself
+        tablepath = os.path.join(tabledir,'dr1_noise_vals.tex')
+        with open(tablepath, "w") as f:
+            #table preamble
+            f.write( ("\\begin{table} \n"
+                      "\\centering \n"
+                      "\\caption{Typical noise values} \n"
+                      "\\label{tab:noise} \n"
+                      "\\renewcommand{\\arraystretch}{1.2} \n"
+                      "\\begin{tabular}{lll} \n"
+                      "\\hline \\hline \n") )
+            #table columns
+            f.write( ("Data product & Released & Passed\\tablefootmark{a} \\\ \n"
+                      "\\hline \n") )
+            #continuum inner
+            f.write( ("Continuum, inner ($\\mu$Jy bm$^{-1}$) & "
+                      f"${cont_inner[0]:4.1f}^{{+{cont_inner[2]:3.1f}}}_"
+                      f"{{-{cont_inner[1]:3.1f}}}$  &"
+                      " -- \\\ \n ") )
+            f.write( ("Continuum, outer ($\\mu$Jy bm$^{-1}$) & "
+                      f"${cont_outer[0]:4.1f}^{{+{cont_outer[2]:3.1f}}}_"
+                      f"{{-{cont_outer[1]:3.1f}}}$ &"
+                      " -- \\\ \n ") )
+            f.write( ("Stokes V, inner ($\\mu$Jy bm$^{-1}$) & "
+                      f"${pol_inner[0]:4.1f}^{{+{pol_inner[2]:3.1f}}}_"
+                      f"{{-{pol_inner[1]:3.1f}}}$  &"
+                      f" ${pol_inner_pass[0]:4.1f}^"
+                      f"{{+{pol_inner_pass[2]:3.1f}}}_"
+                      f"{{-{pol_inner_pass[1]:3.1f}}}$  \\\ \n ") )
+            f.write( ("Stokes V, outer ($\\mu$Jy bm$^{-1}$) & "
+                      f"${pol_outer[0]:4.1f}^{{+{pol_outer[2]:3.1f}}}_"
+                      f"{{-{pol_outer[1]:3.1f}}}$  &"
+                      f" ${pol_outer_pass[0]:4.1f}^"
+                      f"{{+{pol_outer_pass[2]:3.1f}}}_"
+                      f"{{-{pol_outer_pass[1]:3.1f}}}$  \\\ \n ") )
+            #put cube balues in mJY from Jy
+            f.write( ("Cube0 (mJy bm$^{-1}$ ) & "
+                      f"${1e3*cube0[0]:4.2f}^{{+{1e3*cube0[2]:4.2f}}}_"
+                      f"{{-{1e3*cube0[1]:4.2f}}}$  &"
+                      f" ${1e3*cube0_good[0]:4.2f}^"
+                      f"{{+{1e3*cube0_good[2]:4.2f}}}_"
+                      f"{{-{1e3*cube0_good[1]:4.2f}}}$  \\\ \n ") )
+            f.write( ("Cube1 (mJy bm$^{-1}$ ) & "
+                      f"${1e3*cube1[0]:4.2f}^{{+{1e3*cube1[2]:4.2f}}}_"
+                      f"{{-{1e3*cube1[1]:4.2f}}}$ &"
+                      f" ${1e3*cube1_good[0]:4.2f}^"
+                      f"{{+{1e3*cube1_good[2]:4.2f}}}_"
+                      f"{{-{1e3*cube1_good[1]:4.2f}}}$ \\\ \n ") )
+            f.write( ("Cube2 (mJy bm$^{-1}$ )& "
+                      f"${1e3*cube2[0]:4.2f}^{{+{1e3*cube2[2]:4.2f}}}_"
+                      f"{{-{1e3*cube2[1]:4.2f}}}$ &"
+                      f" ${1e3*cube2_good[0]:4.2f}^"
+                      f"{{+{1e3*cube2_good[2]:4.2f}}}_"
+                      f"{{-{1e3*cube2_good[1]:4.2f}}}$  \\\ \n ") )
+            f.write( ("\\hline \n"
+                      "\\end{tabular}\n"
+                      "\\tablefoot{ \n"
+                      "\\tablefootmark{a}{Good quality for cubes} } \n"
+                      "\\end{table}\n" ) )

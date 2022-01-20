@@ -21,7 +21,27 @@ aperinfodir = this_dir[:-9]
 filedir = os.path.join(aperinfodir,"files")
 #print(filedir)
 
+def get_med_onesig(values):
+    """
+    Get median and one-sigma percentiles
 
+    Parameters:
+    - values : nparray
+    
+    Returns:
+    median : float
+    per16 : 16th percentile
+    per84 : 84th percentile
+    """
+    median = np.nanmedian(values)
+    per16 = np.nanpercentile(values, 16)
+    per84 = np.nanpercentile(values, 84)
+
+    lower_onesig = median - per16
+    upper_onesig = per84 - median
+    
+    return median, lower_onesig, upper_onesig
+    
 
 def get_beam_ra_dec(field_ra, field_dec, beams,
                     beampos =  os.path.join(filedir,'cb_offsets.txt')):

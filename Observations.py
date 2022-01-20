@@ -627,8 +627,8 @@ class Census(Observations):
         fields_mds['MDS_depth'] = np.full(len(fields_mds), 'True')
         fields_mds.keep_columns(['Field','MDS_depth'])
 
-        fields_reobserve = join(fields_reobserve, fields_mds,
-                                join_type = 'outer')
+        #fields_reobserve = join(fields_reobserve, fields_mds,
+        #                        join_type = 'outer')
 
         #then second visit wide coverage
         #Ndishes < 20

@@ -52,7 +52,7 @@ def plot_hist(*args, **kwargs):
         binmin : float, minimum bin value
         binmax : float, maximum bin value
         binstep : float, bin step value
-        alpha : list-like; transparency to use; length should match number of args
+        alpha : list-like; transparency to use; length should match number of argsx
     """
     #set colors for plotting
     #can use "get" method to set a default if there is no key
