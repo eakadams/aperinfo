@@ -628,7 +628,7 @@ class Census(Observations):
         #joing all the different subsets of re-observations
         #checking for len of tables first
         table_list = [fields_nocd, fields_lackdishes, fields_1cd,
-                      fields_no2d, fields_mds, fields_wide_depth]
+                      fields_no2d, fields_2d, fields_mds, fields_wide_depth]
         table_length = np.array([ len(x) for x in table_list ])
         ind_table = np.where(table_length > 0)[0]
         for count, idx in enumerate(ind_table):
