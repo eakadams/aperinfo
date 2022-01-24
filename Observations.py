@@ -572,7 +572,6 @@ class Census(Observations):
         fields_nocd['NoCD'] = np.full(len(fields_nocd),'True')
         #only keep relevant columns
         fields_nocd.keep_columns(['Field','NoCD'])
-        #fields_nocd.add_column(np.full(len(fields_nocd),'True'), name='NoCD')
 
         #then fields with 9 dishes or less in total
         ind_lackdishes = np.where(self.field_census['Ndishes'] <= 9)[0]
@@ -581,10 +580,6 @@ class Census(Observations):
                                                   'True')
         fields_lackdishes.keep_columns(['Field','LackDishes'])
         
-        #start joining and continue as I go along
-        fields_reobserve = join(fields_nocd, fields_lackdishes,
-                                join_type='outer', keys = 'Field')
-        
         #then only one of C + D, plus >45deg
         ind_1cd = np.where( np.logical_and(
             self.field_census['N_CD'] == 1,
@@ -592,19 +587,12 @@ class Census(Observations):
         fields_1cd = self.field_census[ind_1cd]
         fields_1cd['CD=1'] = np.full(len(fields_1cd), 'True')
         fields_1cd.keep_columns(['Field','CD=1'])
-
-        fields_reobserve = join(fields_reobserve, fields_1cd,
-                                keys = 'Field', join_type='outer')
-
+        
         #then RT2 + RTD missing
         ind_no2d = np.where( self.field_census['check_2_D'] == 'None')[0]
         fields_no2d = self.field_census[ind_no2d]
         fields_no2d['No_2D'] = np.full(len(fields_no2d), 'True')
         fields_no2d.keep_columns(['Field','No_2D'])
-
-        fields_reobserve = join(fields_reobserve, fields_no2d,
-                                join_type='outer')
-
 
         #then RT2 or RTD missing, >45deg
         ind_2d = np.where( np.logical_and(
@@ -615,9 +603,6 @@ class Census(Observations):
         fields_2d['One_2D'] = np.full(len(fields_2d), 'True')
         fields_2d.keep_columns(['Field','One_2D'])
 
-        fields_reobserve = join(fields_reobserve, fields_2d,
-                                join_type='outer')
-
         #then MDS fields that need further coverage
         #start w/ more than 70 but less than 80 dishes)
         ind_mds = np.where( np.logical_and(
@@ -626,10 +611,7 @@ class Census(Observations):
         fields_mds = self.field_census[ind_mds]
         fields_mds['MDS_depth'] = np.full(len(fields_mds), 'True')
         fields_mds.keep_columns(['Field','MDS_depth'])
-
-        #fields_reobserve = join(fields_reobserve, fields_mds,
-        #                        join_type = 'outer')
-
+      
         #then second visit wide coverage
         #Ndishes < 20
         #and limit to "LH"ish area
@@ -642,10 +624,20 @@ class Census(Observations):
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
 
-        fields_reobserve = join(fields_reobserve, fields_wide_depth,
-                                join_type = 'outer')
 
-
+        #joing all the different subsets of re-observations
+        #checking for len of tables first
+        table_list = [fields_nocd, fields_lackdishes, fields_1cd,
+                      fields_no2d, fields_mds, fields_wide_depth]
+        table_length = np.array([ len(x) for x in table_list ])
+        ind_table = np.where(table_length > 0)[0]
+        for count, idx in enumerate(ind_table):
+            if count == 0:
+                fields_reobserve = table_list[idx]
+            else:
+                fields_reobserve = join(fields_reobserve, table_list[idx],
+                                        join_type = 'outer', keys = 'Field')
+        
         #add as attribute to object:
         self.fields_reobserve = fields_reobserve
         
