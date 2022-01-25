@@ -177,6 +177,37 @@ class Beams(object):
         #but that's not the issue of this code
         #although I may rename at some point. But it works!
 
+    def find_radar(self, factor = 1.1):
+        """ 
+        Find taskids that are strongly impacted by military radar
+        Use HI validation to do this, testing noise in cube2 against cube0
+        Generally, cube2 should have lower noise than cube0 but 
+        the radar impacts cube2 more strongly.
+        use a factor to make clear things are worse.
+        """
+        #first fill values because masking causes me issues:
+        self.beaminfo['rms_c0'].fill_value = np.nan
+        self.beaminfo['rms_c2'].fill_value = np.nan
+
+        #for reference get a list of all TIDs that have HI valid info
+        ind_hi = np.where(self.beaminfo['rms_c0'].filled() > 0)[0]
+        hi_valid_tids = np.unique(self.beaminfo['ObsID'][ind_hi])
+
+        #find all beams where c2 rms greater than c0 rms
+        ind_highc2 = np.where( self.beaminfo['rms_c2'].filled() > factor * self.beaminfo['rms_c0'].filled() )[0]
+
+        print(len(ind_highc2), len(ind_hi))
+
+        #get tids and count
+        poss_radar_tids, count_bad = np.unique(
+            self.beaminfo['ObsID'][ind_highc2], return_counts = True)
+        
+        #check for more than 10 beams showing up, then keep/report tid
+        ind_radar = np.where( count_bad >= 30)[0]
+        radar_tids = poss_radar_tids[ind_radar]
+
+        return radar_tids
+
         
         
 
