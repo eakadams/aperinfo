@@ -251,18 +251,19 @@ class Census(Observations):
 
         #handle the radar fields by removing them
         #so they're not accounted for in census (may have already been reobserved)
+        #am adding july obs, extra radar obs, and pol cal issues
         radar_obs = [201107041, 201108033, 201108034, 201113001,
-                     201113002]
+                     201113002,
+                     190726041,
+                     201114041, 201112041,
+                     200309042
+        ]
         ind_radar = []
         for obs in radar_obs:
             ind_obs = np.where(obs == self.censusinfo['taskID'])[0][0]
             ind_radar.append(ind_obs)
-
-        #print(ind_radar)
-        #print(len(self.censusinfo))
         self.censusinfo.remove_rows(ind_radar)
-        #print(len(self.censusinfo))
-        
+
         #get field-based census
         #get unique fields
         fields, field_inds = np.unique( self.censusinfo['name_1'],
@@ -327,8 +328,19 @@ class Census(Observations):
         self.field_census['N_CD'] = N_CD
         self.field_census['check_2_D'] = check_2_D
 
-        
-
+        #find missing fields and add with zero dishes
+        list_check = ['S2319+3130','S1439+5324','S1536+5058','S1553+5058',
+                      'S1041+5324', 'S2048+3356',
+                      'S0005+3622', 'S0019+3622', 'S0033+3622', 'S0046+3622',
+                      'S0003+4114', 'S0002+4340']
+        list_add = [x for x in list_check if x not in self.field_census['Field']]
+        #have to get ra,dec also
+        #easiest to iterate over
+        for f in list_add:
+            ra = ( float(f[1:3]) + float(f[3:5]) / 60. )*15.
+            dec = ( float(f[6:8]) + float(f[8:10])/60. )
+            self.field_census.add_row([f, ra, dec, '', 0, 0, 0, None,
+                                       0, 0, 'None'] )
         
     def plot_obs_census(self, view,
                         surveypointings = os.path.join(
@@ -618,12 +630,11 @@ class Census(Observations):
         ind_wide_depth = np.where( np.logical_and(
             self.field_census['Ndishes'] < 20,
             np.logical_and(
-                np.abs( self.field_census['RA'] - 160.25) < 6.,
-                np.abs( self.field_census['Dec'] - 58.25) < 4. ) ) )[0]
+                np.abs( self.field_census['RA'] - 161.75) < 10.,
+                np.abs( self.field_census['Dec'] - 50.97) < 10. ) ) )[0]
         fields_wide_depth = self.field_census[ind_wide_depth]
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
-
 
         #joing all the different subsets of re-observations
         #checking for len of tables first
@@ -640,6 +651,7 @@ class Census(Observations):
         
         #add as attribute to object:
         self.fields_reobserve = fields_reobserve
+
         
         
 
