@@ -330,7 +330,7 @@ class Census(Observations):
 
         #find missing fields and add with zero dishes
         list_check = ['S2319+3130','S1439+5324','S1536+5058','S1553+5058',
-                      'S1041+5324', 'S2048+3356',
+                      'S1042+5324', 'S2048+3356',
                       'S0005+3622', 'S0019+3622', 'S0033+3622', 'S0046+3622',
                       'S0003+4114', 'S0002+4340']
         list_add = [x for x in list_check if x not in self.field_census['Field']]
