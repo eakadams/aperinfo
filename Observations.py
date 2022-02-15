@@ -279,6 +279,8 @@ class Census(Observations):
         frac_before_11dec19 = np.empty(len(fields)) #fraction before 11dec19
         frac_cd = np.empty(len(fields)) #fraction of dishes that are CD per obs
         N_CD = np.empty(len(fields))
+        N_D_arr = np.empty(len(fields))
+        N_2_arr = np.empty(len(fields))
         check_2_D = np.empty(len(fields),dtype=object)
 
         #iterate through each field
@@ -303,8 +305,10 @@ class Census(Observations):
             N_C = telescopes[i].count('C')
             N_D = telescopes[i].count('D')
             N_CD[i] = N_C + N_D
+            N_D_arr[i] = N_D
             frac_cd[i] = N_CD[i] / nobs[i]
             N_2 = telescopes[i].count('2')
+            N_2_arr[i] = N_2
             if (N_D >= 1) and (N_2 >= 1):
                 check_2_D[i] = "Both"
             elif N_D >=1 :
@@ -327,6 +331,8 @@ class Census(Observations):
         self.field_census['Avg_CD_obs'] = frac_cd
         self.field_census['N_CD'] = N_CD
         self.field_census['check_2_D'] = check_2_D
+        self.field_census['N_D'] = N_D_arr
+        self.field_census['N_2'] = N_2_arr
 
         #find missing fields and add with zero dishes
         list_check = ['S2319+3130','S1439+5324','S1536+5058','S1553+5058',
@@ -340,7 +346,7 @@ class Census(Observations):
             ra = ( float(f[1:3]) + float(f[3:5]) / 60. )*15.
             dec = ( float(f[6:8]) + float(f[8:10])/60. )
             self.field_census.add_row([f, ra, dec, '', 0, 0, 0, None,
-                                       0, 0, 'None'] )
+                                       0, 0, 'None', np.nan] )
         
     def plot_obs_census(self, view,
                         surveypointings = os.path.join(
@@ -361,11 +367,20 @@ class Census(Observations):
            Full path to file of survey pointings to be plotted for comparison
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
-                        "check_2_D", "N_CD", "Ndish", "Ndish_mds"]:
+                        "check_2_D", "N_CD", "Ndish", "Ndish_mds",
+                        "N_D"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
 
+        if view == 'N_D':
+            ind_0d = np.where(self.field_census['N_D'] == 0)[0]
+            ind_d = np.where(self.field_census['N_D'] >= 1)[0]
+            ralist = [self.field_census['RA'][ind_0d],
+                      self.field_census['RA'][ind_d] ]
+            declist = [self.field_census['Dec'][ind_0d],
+                       self.field_census['Dec'][ind_d] ]
+            labellist = [ 'No RTD', 'RTD']
         if view == "Ndish_mds":
             ind_le70 = np.where(self.field_census['Ndishes'] <=70)[0]
             ind_70_90 = np.where(np.logical_and(
@@ -636,10 +651,17 @@ class Census(Observations):
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
 
+        #then no RTD
+        ind_nod = np.where( self.field_census['N_D'] == 0)[0]
+        fields_nod = self.field_census[ind_nod]
+        fields_nod['No_RTD'] = np.full(len(fields_nod), 'True')
+        fields_nod.keep_columns(['Field','No_RTD'])
+
         #joing all the different subsets of re-observations
         #checking for len of tables first
         table_list = [fields_nocd, fields_lackdishes, fields_1cd,
-                      fields_no2d, fields_2d, fields_mds, fields_wide_depth]
+                      fields_no2d, fields_2d, fields_mds, fields_wide_depth,
+                      fields_nod]
         table_length = np.array([ len(x) for x in table_list ])
         ind_table = np.where(table_length > 0)[0]
         for count, idx in enumerate(ind_table):
