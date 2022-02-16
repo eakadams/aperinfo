@@ -387,7 +387,7 @@ class Census(Observations):
                        self.field_census['RA'][ind_somegood] ]
             declist = [ self.field_census['Dec'][ind_0good],
                         self.field_census['Dec'][ind_somegood] ]
-            labellist = [ 'Only early obs', 'At least 1 later obs (post 1 Oct 2019)'  ]
+            labellist = [ 'Only early obs', 'ge 1 obs post 1 Oct 2019'  ]
         if view == 'N_2':
             ind_02 = np.where(self.field_census['N_2'] == 0)[0]
             ind_2 = np.where(self.field_census['N_2'] >= 1)[0]
@@ -686,12 +686,19 @@ class Census(Observations):
         fields_nod['No_RTD'] = np.full(len(fields_nod), 'True')
         fields_nod.keep_columns(['Field','No_RTD'])
 
+        #and observations only before 1 Oct 2019
+        n_goodobs = self.field_census['Nobs'] - self.field_census['early_obs']
+        ind_0good = np.where(n_goodobs == 0)[0]
+        fields_earlyonly = self.field_census[ind_0good]
+        fields_earlyonly['EarlyOnly'] = np.full(len(fields_earlyonly), 'True')
+        fields_earlyonly.keep_columns(['Field','EarlyOnly'])
+
         #joing all the different subsets of re-observations
         #checking for len of tables first
         #skipping no RTD for now
         table_list = [fields_nocd, fields_lackdishes, fields_1cd,
                       fields_no2d, fields_2d, fields_mds, fields_wide_depth,
-                      fields_no2]
+                      fields_no2, fields_earlyonly]
         table_length = np.array([ len(x) for x in table_list ])
         ind_table = np.where(table_length > 0)[0]
         for count, idx in enumerate(ind_table):
