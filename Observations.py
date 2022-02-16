@@ -664,6 +664,12 @@ class Census(Observations):
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
 
+        #then no RT2
+        ind_no2 = np.where( self.field_census['N_2'] == 0)[0]
+        fields_no2 = self.field_census[ind_no2]
+        fields_no2['No_RT2'] = np.full(len(fields_no2), 'True')
+        fields_no2.keep_columns(['Field','No_RT2'])
+        
         #then no RTD
         ind_nod = np.where( self.field_census['N_D'] == 0)[0]
         fields_nod = self.field_census[ind_nod]
@@ -672,9 +678,10 @@ class Census(Observations):
 
         #joing all the different subsets of re-observations
         #checking for len of tables first
+        #skipping no RTD for now
         table_list = [fields_nocd, fields_lackdishes, fields_1cd,
                       fields_no2d, fields_2d, fields_mds, fields_wide_depth,
-                      fields_nod]
+                      fields_no2]
         table_length = np.array([ len(x) for x in table_list ])
         ind_table = np.where(table_length > 0)[0]
         for count, idx in enumerate(ind_table):
