@@ -406,30 +406,30 @@ class Census(Observations):
                        self.field_census['Dec'][ind_d] ]
             labellist = [ 'No RTD', 'RTD']
         if view == "Ndish_mds":
-            ind_le70 = np.where(self.field_census['Ndishes'] <=70)[0]
-            ind_70_90 = np.where(np.logical_and(
-                self.field_census['Ndishes'] >= 70,
-                self.field_census['Ndishes'] < 90) )[0]
-            ind_90_100 = np.where(np.logical_and(
-                self.field_census['Ndishes'] >=90,
+            ind_lt80 = np.where(self.field_census['Ndishes'] < 80)[0]
+            ind_80_85 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >= 80,
+                self.field_census['Ndishes'] < 85) )[0]
+            ind_85_100 = np.where(np.logical_and(
+                self.field_census['Ndishes'] >=85,
                 self.field_census['Ndishes']< 100))[0]
             ind_100_120 = np.where(np.logical_and(
                 self.field_census['Ndishes'] >=100,
                 self.field_census['Ndishes']< 120))[0]
             ind_ge120 = np.where(self.field_census['Ndishes'] >=120)[0]
-            ralist = [ self.field_census['RA'][ind_le70],
-                       self.field_census['RA'][ind_70_90],
-                       self.field_census['RA'][ind_90_100],
+            ralist = [ self.field_census['RA'][ind_lt80],
+                       self.field_census['RA'][ind_80_85],
+                       self.field_census['RA'][ind_85_100],
                        self.field_census['RA'][ind_100_120],
                        self.field_census['RA'][ind_ge120]
             ]
-            declist = [ self.field_census['Dec'][ind_le70],
-                        self.field_census['Dec'][ind_70_90],
-                        self.field_census['Dec'][ind_90_100],
+            declist = [ self.field_census['Dec'][ind_lt80],
+                        self.field_census['Dec'][ind_80_85],
+                        self.field_census['Dec'][ind_85_100],
                         self.field_census['Dec'][ind_100_120],
                         self.field_census['Dec'][ind_ge120]
             ]
-            labellist = [ 'Ndishes le 70', '70-90', '90-100', '100-120',
+            labellist = [ 'Ndishes lt 80', '80-85', '85-100', '100-120',
                           'ge 120' ]
 
         if view == "Ndish":
