@@ -350,7 +350,7 @@ class Census(Observations):
         for f in list_add:
             ra = ( float(f[1:3]) + float(f[3:5]) / 60. )*15.
             dec = ( float(f[6:8]) + float(f[8:10])/60. )
-            self.field_census.add_row([f, ra, dec, '', 0, 0, 0, None,
+            self.field_census.add_row([f, ra, dec, '', 0, np.nan, 0, None,
                                        0, 0, 'None', np.nan, np.nan, 0] )
         
     def plot_obs_census(self, view,
@@ -373,11 +373,21 @@ class Census(Observations):
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
                         "check_2_D", "N_CD", "Ndish", "Ndish_mds",
-                        "N_D", "N_2"]:
+                        "N_D", "N_2", "early_obs"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
 
+        if view == 'early_obs':
+            #check for early obs only
+            n_goodobs = self.field_census['Nobs'] - self.field_census['early_obs']
+            ind_0good = np.where(n_goodobs == 0)[0]
+            ind_somegood = np.where(n_goodobs >= 1)[0]
+            ralist = [ self.field_census['RA'][ind_0good],
+                       self.field_census['RA'][ind_somegood] ]
+            declist = [ self.field_census['Dec'][ind_0good],
+                        self.field_census['Dec'][ind_somegood] ]
+            labellist = [ 'Only early obs', 'At least 1 later obs (post 1 Oct 2019)'  ]
         if view == 'N_2':
             ind_02 = np.where(self.field_census['N_2'] == 0)[0]
             ind_2 = np.where(self.field_census['N_2'] >= 1)[0]
