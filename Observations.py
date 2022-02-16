@@ -282,6 +282,7 @@ class Census(Observations):
         N_D_arr = np.empty(len(fields))
         N_2_arr = np.empty(len(fields))
         check_2_D = np.empty(len(fields),dtype=object)
+        early_obs = np.empty(len(fields))
 
         #iterate through each field
         for i,f in enumerate(fields):
@@ -318,6 +319,9 @@ class Census(Observations):
             else:
                 check_2_D[i] = "None"
 
+            #add a check for early obs, before 1 oct 2019
+            early_obs[i] = len(np.where(self.censusinfo['taskID'][f_inds] < 191001000)[0])
+
         #make a table and add it as an attribute
         self.field_census = Table()
         self.field_census['Field'] = fields
@@ -333,6 +337,7 @@ class Census(Observations):
         self.field_census['check_2_D'] = check_2_D
         self.field_census['N_D'] = N_D_arr
         self.field_census['N_2'] = N_2_arr
+        self.field_census['early_obs'] = early_obs
 
         #find missing fields and add with zero dishes
         list_check = ['S2319+3130','S1439+5324','S1536+5058','S1553+5058',
@@ -346,7 +351,7 @@ class Census(Observations):
             ra = ( float(f[1:3]) + float(f[3:5]) / 60. )*15.
             dec = ( float(f[6:8]) + float(f[8:10])/60. )
             self.field_census.add_row([f, ra, dec, '', 0, 0, 0, None,
-                                       0, 0, 'None', np.nan] )
+                                       0, 0, 'None', np.nan, np.nan, 0] )
         
     def plot_obs_census(self, view,
                         surveypointings = os.path.join(
