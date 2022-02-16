@@ -17,6 +17,7 @@ from astropy.io import ascii
 import numpy as np
 from astropy.table import Table, join
 from functions.plots import plot_sky_view
+from astropy.coordinates import SkyCoord 
 
 
 #global definition (hacky) of filedir
@@ -657,7 +658,7 @@ class Census(Observations):
         #start w/ more than 70 but less than 80 dishes)
         ind_mds = np.where( np.logical_and(
             self.field_census['Ndishes'] >=70,
-            self.field_census['Ndishes'] < 80 ))[0]
+            self.field_census['Ndishes'] < 85 ))[0]
         fields_mds = self.field_census[ind_mds]
         fields_mds['MDS_depth'] = np.full(len(fields_mds), 'True')
         fields_mds.keep_columns(['Field','MDS_depth'])
@@ -665,11 +666,31 @@ class Census(Observations):
         #then second visit wide coverage
         #Ndishes < 20
         #and limit to "LH"ish area
+        #expand the coverage (set dist)
+        #but also check for 3C sources
+        dist = 60.
         ind_wide_depth = np.where( np.logical_and(
-            self.field_census['Ndishes'] < 20,
+            #self.field_census['Ndishes'] < 20,
+            self.field_census['Nobs'] < 2,
             np.logical_and(
-                np.abs( self.field_census['RA'] - 161.75) < 10.,
-                np.abs( self.field_census['Dec'] - 50.97) < 10. ) ) )[0]
+                np.abs( self.field_census['RA'] - 161.75) < dist,
+                self.field_census['Dec'] > 45.  ) ) )[0]
+        #now want to check for distance from 3C source
+        #feeling lazy so do this as a for loop
+        #could be smarter but expediency matters now
+        #first get 3C source info
+        cat_3c = ascii.read( os.path.join(filedir,'cat_3cr_1962.tsv') )
+        coords_3c = SkyCoord(cat_3c['_RAJ2000'],cat_3c['_DEJ2000'], unit='deg')
+        ind_depth = []
+        for ind in ind_wide_depth:
+            c = SkyCoord(self.field_census['RA'][ind], self.field_census['Dec'][ind],
+                         unit = 'deg')
+            closest_3c = np.amin(c.separation(coords_3c))
+            print(f'Closest 3C source is {closest_3c.value:5.1f} degrees away')
+            if closest_3c.value > 1.5:
+                #far enough away from 3C to consider observing
+                ind_depth.append(ind)
+            
         fields_wide_depth = self.field_census[ind_wide_depth]
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
