@@ -254,7 +254,7 @@ class Census(Observations):
         #am adding july obs, extra radar obs, and pol cal issues
         radar_obs = [201107041, 201108033, 201108034, 201113001,
                      201113002,
-                     190726041,
+                     #190726041, #handling early obs separately
                      201114041, 201112041,
                      200309042
         ]
@@ -373,11 +373,19 @@ class Census(Observations):
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
                         "check_2_D", "N_CD", "Ndish", "Ndish_mds",
-                        "N_D"]:
+                        "N_D", "N_2"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
 
+        if view == 'N_2':
+            ind_02 = np.where(self.field_census['N_2'] == 0)[0]
+            ind_2 = np.where(self.field_census['N_2'] >= 1)[0]
+            ralist = [self.field_census['RA'][ind_02],
+                      self.field_census['RA'][ind_2] ]
+            declist = [self.field_census['Dec'][ind_02],
+                       self.field_census['Dec'][ind_2] ]
+            labellist = [ 'No RT2', 'RT2']
         if view == 'N_D':
             ind_0d = np.where(self.field_census['N_D'] == 0)[0]
             ind_d = np.where(self.field_census['N_D'] >= 1)[0]
