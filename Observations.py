@@ -686,12 +686,13 @@ class Census(Observations):
             c = SkyCoord(self.field_census['RA'][ind], self.field_census['Dec'][ind],
                          unit = 'deg')
             closest_3c = np.amin(c.separation(coords_3c))
-            print(f'Closest 3C source is {closest_3c.value:5.1f} degrees away')
-            if closest_3c.value > 1.5:
+            if closest_3c.value > 3.0:
                 #far enough away from 3C to consider observing
+                print(f'Closest 3C source is {closest_3c.value:5.1f} degrees away')
                 ind_depth.append(ind)
-            
-        fields_wide_depth = self.field_census[ind_wide_depth]
+
+        print(ind_depth, ind_wide_depth)
+        fields_wide_depth = self.field_census[ind_depth]
         fields_wide_depth['LH_Wide_depth'] = np.full(len(fields_wide_depth), 'True')
         fields_wide_depth.keep_columns(['Field','LH_Wide_depth'])
 
@@ -720,6 +721,9 @@ class Census(Observations):
         table_list = [fields_nocd, fields_lackdishes, fields_1cd,
                       fields_no2d, fields_2d, fields_mds, fields_wide_depth,
                       fields_no2, fields_earlyonly]
+        table_list = [fields_nocd, fields_lackdishes, fields_1cd,
+                      fields_no2d, fields_2d, fields_wide_depth,
+                      fields_earlyonly]
         table_length = np.array([ len(x) for x in table_list ])
         ind_table = np.where(table_length > 0)[0]
         for count, idx in enumerate(ind_table):
