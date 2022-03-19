@@ -201,6 +201,55 @@ class DR1(Observations):
 
         ascii.write(self.dr1obs['taskID','name'], obsfile, format='csv',
                     overwrite = True)
+
+    def dr1_summary(self):
+        """
+        Print a summary of observations
+        """
+        #get number of medium-deep fields
+        ind_ames = [i for i, s in enumerate(self.dr1obs['name']) if 'M' in s]
+        ames = self.dr1obs[ind_ames]
+        #get unique & count
+        unique_ames, count_ames = np.unique(ames['name'], return_counts = True)
+        #limit to those with more than two fields
+        n_rep_ames = 0
+        n_mult_obs_ames = 0
+        for field, count in zip(unique_ames, count_ames):
+            if count > 2:
+                print( ("There are {0} observations of "
+                        "field {1}").format(count,field) )
+                n_rep_ames = n_rep_ames + 1
+                n_mult_obs_ames = n_mult_obs_ames + count
+
+        #get number of shallow fields
+        ind_awes = [i for i, s in enumerate(self.dr1obs['name']) if 'S' in s]
+        awes = self.dr1obs[ind_awes]
+        #get number unique
+        unique_awes, count_awes = np.unique(awes['name'], return_counts = True)
+        #get number w/ repeats
+        n_mult_visit = len(np.where(count_awes > 1)[0])
+
+        print(("There are {0} observations of "
+               "{1} independent medium-deep fields").format(len(ames),
+                                                            len(unique_ames)))
+
+        print(("There are {0} medium-deep fields "
+               "with repeated coverage, over a total of "
+               "{1}  observations").format(n_rep_ames,
+                                           n_mult_obs_ames))
+
+        print(("There are {0} observations of "
+               "{1} independent wide/shallow fields").format(len(awes),
+                                                             len(unique_awes)))
+        print(("There are {0} wide fields "
+               "with repeat observations").format(n_mult_visit))
+
+        print(("There are {0} observations in total").format(len(self.dr1obs)))
+
+        print( ("There are {0} unique fields in total, "
+                "for a sky coverage of {1:4.0f} square degrees").format(
+                    len(np.unique(self.dr1obs['name'])),
+                    6.44*len(np.unique(self.dr1obs['name']))) )
         
     
 class Census(Observations):
