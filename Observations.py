@@ -131,7 +131,8 @@ class DR1(Observations):
     -------
     """
     def __init__(self,
-                 obsfile = os.path.join(filedir,'obsatdb.csv')):
+                 obsfile = os.path.join(filedir,'obsatdb.csv'),
+                 happilifile = os.path.join(filedir,'happili.csv')):
         """ """
         #initialize Observations object
         Observations.__init__(self,obsfile)
@@ -147,6 +148,31 @@ class DR1(Observations):
         #print(len(self.dr1_obs),len(goodind))
         #limit to good data (archived, not deleted)
         self.dr1obs = self.dr1obs[goodind]
+
+        #get happili info so I can add calibrator info for obs
+        self.happili = ascii.read(happilifile)
+        (taskids, ind_obs, ind_happili) = np.intersect1d(
+            self.dr1obs['taskID'], self.happili['taskid'], return_indices=True)
+        #setup new columns I want
+        self.dr1obs['fluxcal'] = np.full(len(self.dr1obs),'3C???')
+        self.dr1obs['flux_first'] = np.full(len(self.dr1obs),'YYMMDDNNN')
+        self.dr1obs['flux_last'] = np.full(len(self.dr1obs),'YYMMDDNNN')
+        self.dr1obs['polcal'] = np.full(len(self.dr1obs),'3C???')
+        self.dr1obs['pol_first'] = np.full(len(self.dr1obs),'YYMMDDNNN')
+        self.dr1obs['pol_last'] = np.full(len(self.dr1obs),'YYMMDDNNN')
+        #and fill them
+        self.dr1obs['fluxcal'][ind_obs] = self.happili['fluxcal'][ind_happili]
+        self.dr1obs['flux_first'][ind_obs] = self.happili['fluxcal_firsttaskid'][ind_happili]
+        self.dr1obs['flux_last'][ind_obs] = self.happili['fluxcal_lasttaskid'][ind_happili]
+        self.dr1obs['polcal'][ind_obs] = self.happili['polcal'][ind_happili]
+        self.dr1obs['pol_first'][ind_obs] = self.happili['polcal_firsttaskid'][ind_happili]
+        self.dr1obs['pol_last'][ind_obs] = self.happili['polcal_lasttaskid'][ind_happili]
+
+        #need to manually fill entries where there isn't flux/pol cal info
+        ind_190728041 = np.where(self.dr1_obs['taskid'] == 190728041)[0]
+        
+
+        
 
     def plot_dr1_obs(self,
                      surveypointings = os.path.join(
@@ -183,7 +209,7 @@ class DR1(Observations):
 
         ralist = [ra_survey, ra_awes, ra_ames]
         declist = [dec_survey, dec_awes, dec_ames]
-        labellist = ["Full survey","Wide", "Repeated medium-deep"]
+        labellist = ["Full survey","DR1 wide", "DR1 repeated medium-deep"]
         alphalist = [1.0, 1.0, 1.0]
         colorlist = ['#bbbbbb','#4477aa', '#ee6677']
         
@@ -197,10 +223,35 @@ class DR1(Observations):
         """ 
         Print a list of the dr1 obs
         """
-        obsfile = os.path.join(tabledir,'dr1_taskids.csv')
+        obsfile = os.path.join(tabledir,'dr1_obs.csv')
 
-        ascii.write(self.dr1obs['taskID','name'], obsfile, format='csv',
+        ascii.write(self.dr1obs['taskID','name',
+                                 'fluxcal','flux_first','flux_last',
+                                 'polcal','pol_first','pol_last'],
+                    obsfile, format='csv',
                     overwrite = True)
+
+    def get_obs_table_latex(self):
+        """ 
+        Get a latex-formatted table w/ obs info for paper
+        """
+        col_names = ['ObsID','Name','Fluxcal','flux\_first','flux\_last',
+                      'Polcal','pol\_first','pol\_last']
+        ascii.write(self.dr1obs['taskID','name',#'field_ra','field_dec',
+                                 'fluxcal','flux_first','flux_last',
+                                 'polcal','pol_first','pol_last'][0:10],
+                     os.path.join(tabledir,'dr1_obs_table_paper.tex'),
+                     format='latex',
+                     overwrite=True,
+                     names=col_names,
+                     col_align=len(col_names)*'l',
+                     latexdict = {'header_start': "\hline \hline",
+                                  'header_end': "\hline",
+                                  'data_end': "\hline",
+                                  'caption': "Released survey observations",
+                                  'preamble': ["\centering","\label{tab:obs}"]}#,
+                    #formats = {'RA': '10.6f', 'Dec':'9.6f'}
+         )
 
     def dr1_summary(self):
         """
