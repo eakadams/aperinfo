@@ -168,11 +168,7 @@ class DR1(Observations):
         self.dr1obs['pol_first'][ind_obs] = self.happili['polcal_firsttaskid'][ind_happili]
         self.dr1obs['pol_last'][ind_obs] = self.happili['polcal_lasttaskid'][ind_happili]
 
-        #need to manually fill entries where there isn't flux/pol cal info
-        ind_190728041 = np.where(self.dr1_obs['taskid'] == 190728041)[0]
-        
 
-        
 
     def plot_dr1_obs(self,
                      surveypointings = os.path.join(
