@@ -321,6 +321,34 @@ class DR1(Beams):
         #So that I can focus on paper plots, will write specific plotting methods for this child object
         #But will try to call generalized functions (in plots.py) for making histograms
 
+    def get_cube_info(self):
+        """
+        Print information about released cubes
+        """
+        n_c2good = len(np.where(self.released['c2_good'] == 1)[0])
+        n_c2okay = len(np.where(self.released['c2_ok'] == 1)[0])
+        n_c1good = len(np.where(self.released['c1_good'] == 1)[0])
+        n_c1okay = len(np.where(self.released['c1_ok'] == 1)[0])
+        n_c0good = len(np.where(self.released['c0_good'] == 1)[0])
+        n_c0okay = len(np.where(self.released['c0_ok'] == 1)[0])
+
+        n_beams = len(self.released['c2_good'])
+        n_c2bad = n_beams - n_c2good - n_c2okay
+        n_c1bad = n_beams - n_c1good - n_c1okay
+        n_c0bad = n_beams - n_c0good - n_c0okay
+
+        n_good = 2*n_c2good + n_c1good + n_c0good #cube3 quality goes w/ 2
+        n_okay = 2*n_c2okay + n_c1okay + n_c0okay
+        n_bad = 2*n_c2bad + n_c1bad + n_c0bad
+        n_bad_v2 = 4*n_beams - n_good - n_okay
+
+        print(f"The number of good cubess is {n_good}")
+        print(f"The number of okay cubes is {n_okay}")
+        print(f"The number of bad cubes is {n_bad} ({n_bad_v2})")
+        print(f"The total number of cubes is {4*n_beams}")
+        
+
+
     def plot_cont_noise(self):
         """ 
         Plot histograms of continuum noise
