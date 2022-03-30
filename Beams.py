@@ -346,7 +346,31 @@ class DR1(Beams):
         print(f"The number of okay cubes is {n_okay}")
         print(f"The number of bad cubes is {n_bad} ({n_bad_v2})")
         print(f"The total number of cubes is {4*n_beams}")
-        
+
+    def get_hi_source_valid(self,
+                            apertif_cat_file = os.path.join(
+                                filedir, "apertif_2019_cat.v1.txt"),
+                            alfalfa_cat_file = ("/Users/adams/data/alfalfa/"
+                                                "a100.code12.table2.190808.csv")):
+        """ 
+        Validate HI source properties by undertaking a cross-matching to ALFALFA
+        """
+        #first specify task_ids for which comparison will be done
+        #this list comes from Helga, presume it identifies observations
+        #within the first source catalog that actually overlap w/ ALFALFA
+        task_ids = ['190914041', '190920041', '190922041', '191009039',
+                    '191013041', '191026001', '191027043', '191103033',
+                    '191115040', '191122035', '191123047', '191124035',
+                    '191209025', '191209026', '191219001', '191220017',
+                    '191222001', '191225014', '191225015', '191227013',
+                    '191228041']            
+
+        apertif_cat = ascii.read(apertif_cat_file)
+
+        #read in ALFALFA 100. Find this easier than constantly querying
+        alfalfa100 = ascii.read(alfalfa_cat_file)
+
+        #iterate through
 
 
     def plot_cont_noise(self):
