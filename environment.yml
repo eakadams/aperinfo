@@ -10,6 +10,7 @@ dependencies:
   - jupyterlab
   - astropy
   - kapteyn
+  - scipy
   - pip:
     - tol-colors
     - importlib_resources
