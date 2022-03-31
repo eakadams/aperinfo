@@ -358,19 +358,78 @@ class DR1(Beams):
         #first specify task_ids for which comparison will be done
         #this list comes from Helga, presume it identifies observations
         #within the first source catalog that actually overlap w/ ALFALFA
-        task_ids = ['190914041', '190920041', '190922041', '191009039',
-                    '191013041', '191026001', '191027043', '191103033',
-                    '191115040', '191122035', '191123047', '191124035',
-                    '191209025', '191209026', '191219001', '191220017',
-                    '191222001', '191225014', '191225015', '191227013',
-                    '191228041']            
+        task_ids = [190914041, 190920041, 190922041, 191009039,
+                    191013041, 191026001, 191027043, 191103033,
+                    191115040, 191122035, 191123047, 191124035,
+                    191209025, 191209026, 191219001, 191220017,
+                    191222001, 191225014, 191225015, 191227013,
+                    191228041]            
 
-        apertif_cat = ascii.read(apertif_cat_file)
+        apertif_cat = ascii.read(apertif_cat_file, header_start=1)
 
         #read in ALFALFA 100. Find this easier than constantly querying
         alfalfa100 = ascii.read(alfalfa_cat_file)
 
-        #iterate through
+        #create empty lists to hold the information I will want
+        w50_ap = []
+        w50_al = []
+        vhel_ap = []
+        vhel_al = []
+        sint_ap = []
+        sint_al = []
+        vali = []
+        flag = []
+        spat_sep = []
+
+        #set up skycoordinates for both catalogs
+        aper_coord = SkyCoord(apertif_cat['name'],unit=(u.hourangle,u.deg))
+        alfalfa_coord = SkyCoord(alfalfa100['RAdeg_OC'],
+                                 alfalfa100['DECdeg_OC'], unit=u.deg)
+        
+        #iterate through taskid list, finding sources from that taskid
+        #also want to require that they are released !
+        for tid in task_ids:
+            ind_sources = np.where(apertif_cat['taskid'] == tid)[0]
+            hi_sources = apertif_cat[ind_sources]
+            #then iterate through the sources to find ALFALFA match
+            for i, source in enumerate(hi_sources):
+                #first check if source is released:
+                beamid = f"{source['taskid']}_{source['beam']:02d}"
+                if beamid in self.released['BeamID']:
+                    #find the ALFALFA match
+                    #take the closest spatial match as right galaxy
+                    idx, sep, dist = aper_coord[
+                        ind_sources][i].match_to_catalog_sky(
+                            alfalfa_coord)
+                    #if sep less than 1', take as match
+                    if sep < 1*u.arcmin:
+                        #add values to lists
+                        w50_ap.append(source['w50'])
+                        w50_al.append(alfalfa100['W50'][idx])
+                        vhel_ap.append(source['v_sys'])
+                        vhel_al.append(alfalfa100['Vhelio'][idx])
+                        #need to convert flux to Jy km/s !!!
+                        #channel size is 36.6 kHz
+                        #this is roughly 8 km/s (but not exactly)
+                        #to do this properly, use units
+                        #ALFALFA is in optical, so use that
+                        d_freq = 36.6 #kHz
+                        d_vel = get_chan_vel(source['v_sys'], d_freq)
+                        sint_ap.append(source['SJyHz'] / d_freq * d_vel)
+                        print(source['v_sys'],d_vel)
+                        sint_al.append(alfalfa100['HIflux'][idx])
+                        spat_sep.append(sep.to(u.arcsec).value)
+                        #find valid code
+                        ind_release = np.where(self.released['BeamID']
+                                               == beamid)[0]
+                        #if source
+                        flag.append(source['flag'])
+
+        print(len(w50_ap),len(w50_al))
+                        
+                    
+
+                
 
 
     def plot_cont_noise(self):
@@ -476,3 +535,16 @@ class DR1(Beams):
                       "\\tablefoot{ \n"
                       "\\tablefootmark{a}{Good quality for cubes} } \n"
                       "\\end{table}\n" ) )
+
+#helper functions
+def get_chan_vel(vel, d_freq):
+    rest_freq = 1420.405752*u.MHz
+    hi_opt_equiv = u.doppler_optical(rest_freq)
+    hi_radio_equiv = u.doppler_radio(rest_freq)
+    vsys = vel*u.km/u.s
+    freq_sys = vsys.to(u.Hz, equivalencies = hi_opt_equiv)
+    offset_freq = freq_sys + d_freq*u.kHz
+    offset_vel = offset_freq.to(u.km/u.s, equivalencies = hi_opt_equiv)
+    delta_vel = offset_vel-vsys
+    return np.abs(delta_vel.value)
+    
