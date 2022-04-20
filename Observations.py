@@ -120,6 +120,7 @@ class Observations(object):
                     len(np.unique(self.obsinfo['name'])),
                     6.44*len(np.unique(self.obsinfo['name']))) )
 
+
 class DR1(Observations):
     """
     Child class focused on DR1
@@ -131,36 +132,35 @@ class DR1(Observations):
     -------
     """
     def __init__(self,
-                 obsfile = os.path.join(filedir,'obsatdb.csv'),
-                 happilifile = os.path.join(filedir,'happili.csv')):
+                 obsfile=os.path.join(filedir, 'obsatdb.csv'),
+                 happilifile=os.path.join(filedir, 'happili.csv')):
         """ """
-        #initialize Observations object
-        Observations.__init__(self,obsfile)
+        # initialize Observations object
+        Observations.__init__(self, obsfile)
 
-        #limit to DR1 range
+        # limit to DR1 range
         firstind = 0
         lastind = 220
         print('First taskid is {}'.format(self.obsinfo['taskID'][firstind]))
         print('Last taskid is {}'.format(self.obsinfo['taskID'][lastind]))
         self.dr1obs = self.obsinfo[firstind:(lastind+1)]
-        #check for bad data
+        # check for bad data
         goodind = np.where(self.dr1obs['quality'] == 'good')[0]
-        #print(len(self.dr1_obs),len(goodind))
-        #limit to good data (archived, not deleted)
+        # print(len(self.dr1_obs),len(goodind))
+        # limit to good data (archived, not deleted)
         self.dr1obs = self.dr1obs[goodind]
-
-        #get happili info so I can add calibrator info for obs
+        # get happili info so I can add calibrator info for obs
         self.happili = ascii.read(happilifile)
         (taskids, ind_obs, ind_happili) = np.intersect1d(
             self.dr1obs['taskID'], self.happili['taskid'], return_indices=True)
-        #setup new columns I want
-        self.dr1obs['fluxcal'] = np.full(len(self.dr1obs),'3C???')
-        self.dr1obs['flux_first'] = np.full(len(self.dr1obs),'YYMMDDNNN')
-        self.dr1obs['flux_last'] = np.full(len(self.dr1obs),'YYMMDDNNN')
-        self.dr1obs['polcal'] = np.full(len(self.dr1obs),'3C???')
-        self.dr1obs['pol_first'] = np.full(len(self.dr1obs),'YYMMDDNNN')
-        self.dr1obs['pol_last'] = np.full(len(self.dr1obs),'YYMMDDNNN')
-        #and fill them
+        # setup new columns I want
+        self.dr1obs['fluxcal'] = np.full(len(self.dr1obs), '3C???')
+        self.dr1obs['flux_first'] = np.full(len(self.dr1obs), 'YYMMDDNNN')
+        self.dr1obs['flux_last'] = np.full(len(self.dr1obs), 'YYMMDDNNN')
+        self.dr1obs['polcal'] = np.full(len(self.dr1obs), '3C???')
+        self.dr1obs['pol_first'] = np.full(len(self.dr1obs), 'YYMMDDNNN')
+        self.dr1obs['pol_last'] = np.full(len(self.dr1obs), 'YYMMDDNNN')
+        # and fill them
         self.dr1obs['fluxcal'][ind_obs] = self.happili['fluxcal'][ind_happili]
         self.dr1obs['flux_first'][ind_obs] = self.happili['fluxcal_firsttaskid'][ind_happili]
         self.dr1obs['flux_last'][ind_obs] = self.happili['fluxcal_lasttaskid'][ind_happili]
@@ -168,14 +168,12 @@ class DR1(Observations):
         self.dr1obs['pol_first'][ind_obs] = self.happili['polcal_firsttaskid'][ind_happili]
         self.dr1obs['pol_last'][ind_obs] = self.happili['polcal_lasttaskid'][ind_happili]
 
-
-
     def plot_dr1_obs(self,
-                     surveypointings = os.path.join(
+                     surveypointings=os.path.join(
                          filedir,
-                         'all_pointings.v7.18jun20.txt') ):
+                         'all_pointings.v7.18jun20.txt')):
         """ Plot observations based on wide/medium-deep """
-        #get repeated medium-deep fields. Otherwise is wide
+        # get repeated medium-deep fields. Otherwise is wide
         ind_ames = [i for i, s in enumerate(self.dr1obs['name']) if 'M' in s]
 
         u, c = np.unique(self.dr1obs['name'][ind_ames], return_counts=True)
@@ -196,24 +194,24 @@ class DR1(Observations):
         dec_ames = self.dr1obs['field_dec'][ind_repeated_ames]
         dec_awes = self.dr1obs['field_dec'][ind_awes]
 
-        #get unique all obs for reference plotting
+        # get unique all obs for reference plotting
         uniq_fields, ind_uniq = np.unique(self.obsinfo['name'], 
-                                         return_index = True)
+                                         return_index=True)
 
         ra_survey = self.obsinfo['field_ra'][ind_uniq]
         dec_survey = self.obsinfo['field_dec'][ind_uniq]
 
         ralist = [ra_survey, ra_awes, ra_ames]
         declist = [dec_survey, dec_awes, dec_ames]
-        labellist = ["Full survey","DR1 wide", "DR1 repeated medium-deep"]
+        labellist = ["Observed Survey Fields", "DR1 wide", "DR1 repeated medium-deep"]
         alphalist = [1.0, 1.0, 1.0]
-        colorlist = ['#bbbbbb','#4477aa', '#ee6677']
+        colorlist = ['#bbbbbb', '#4477aa', '#ee6677']
         
         plot_sky_view(ralist, declist, labellist,
                       "dr1_surveys",
-                      surveypointings = surveypointings,
-                      alphalist = alphalist, colorlist = colorlist,
-                      show_mds = True)
+                      surveypointings=surveypointings,
+                      alphalist=alphalist, colorlist=colorlist,
+                      show_mds=True)
 
     def print_dr1_obs(self):
         """ 
