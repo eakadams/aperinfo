@@ -445,7 +445,7 @@ class DR1(Beams):
         ax.legend()
         ax.set_xlabel("Noise [mJy beam$^{-1}$]")
         ax.set_ylabel("Count")
-        ax.set_title("Continuum noise")
+        ax.set_title("Continuum noise", size=24)
         pathname = os.path.join(figdir, 'dr1_cont_noise.pdf')
         plt.savefig(pathname)
         plt.close('all')

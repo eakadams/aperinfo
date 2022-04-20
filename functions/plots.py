@@ -76,8 +76,8 @@ def plot_hist(*args, **kwargs):
     alpha = kwargs.get("alpha", np.full(len(args),1.0) )
     
     #set up plot
-    fig = plt.figure(figsize=(12,12))
-    ax = fig.add_axes((0.1,0.1,0.85,0.85))
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_axes((0.11, 0.1, 0.85, 0.85))
 
     #iterate through args / arrays to plot
     for ar, c, l, a in zip(args, colors, labels, alpha):
