@@ -1,4 +1,4 @@
-#Observation object
+# Observation object
 
 from __future__ import print_function
 
@@ -20,14 +20,14 @@ from functions.plots import plot_sky_view
 from astropy.coordinates import SkyCoord 
 
 
-#global definition (hacky) of filedir
-#filedir = "../files/"
+# global definition (hacky) of filedir
+# filedir = "../files/"
 this_dir,this_filename = os.path.split(__file__)
-#at a differnt level this time, so actually in this dir
+# at a different level this time, so actually in this dir
 aperinfodir = this_dir
-filedir = os.path.join(aperinfodir,"files")
-tabledir = os.path.join(aperinfodir,"tables")
-figdir = os.path.join(aperinfodir,"figures")
+filedir = os.path.join(aperinfodir, "files")
+tabledir = os.path.join(aperinfodir, "tables")
+figdir = os.path.join(aperinfodir, "figures")
 
 
 #get mpl colors
