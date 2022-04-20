@@ -1125,3 +1125,86 @@ def move_cont_valid():
         if not os.path.exists(targetdir):
             os.makedirs(targetdir)
         shutil.copy(task,targetdir)
+
+
+def find_radar_rfi(factor=1.0, nbeam=30):
+    """
+    Use HI/line validation to identify taskids where 
+    military radar is especially problematic
+    Military radar is in cube 1 & 2, but not 0 
+    Generally cube0 would have highest noise
+    For each taskid, want to record how many beams have 
+    higher noise in cube 1 and cube 2 then cube0
+    Inputs:
+    - factor : factor that rms has to be higher by (default=1.0)
+    - nbeam : Number of beams that have to have higher rms (default=30)
+    """
+    #get data
+    hifile = os.path.join(filedir,"hi_allbeams.csv")
+    hi = ascii.read(hifile)
+
+    #get taskids
+    hi_taskids = np.unique(hi['Obsid'])
+
+    #setup arrays where I will store information
+    nbeam_c2_highrms = np.full(len(hi_taskids),np.nan)
+    nbeam_c1_highrms = np.full(len(hi_taskids),np.nan)
+    nbeam_total = np.full(len(hi_taskids),np.nan)
+
+    #then iterate through taskids, filling arrays
+    for i,tid in enumerate(hi_taskids):
+        #get inds in HI table for given taskid
+        ind_tid = np.where(hi['Obsid'] == tid)[0]
+        nbeam_total[i] = len(ind_tid)
+        #lazy, will iterate over these indices for comparison
+        #set counters for rms vals first
+        nc1 = 0
+        nc2 = 0
+        for ind in ind_tid:
+            if hi['rms_c2'][ind] > factor * hi['rms_c0'][ind]:
+                nc2 = nc2+1
+            if hi['rms_c1'][ind] > factor * hi['rms_c0'][ind]:
+                nc1 = nc1+1
+        nbeam_c2_highrms[i] = nc2
+        nbeam_c1_highrms[i] = nc1
+
+    #print out some useful information for myself
+    ind_30c2 = np.where(nbeam_c2_highrms >= nbeam)[0]
+    ind_30c1 = np.where(nbeam_c1_highrms >= nbeam)[0]
+
+    print(("There are {0} taskids with "
+           "more than {2} beams that have a "
+           "rms higher by {1} for cube2 than cube0").format(len(ind_30c2),
+                                                            factor,
+                                                            nbeam))
+
+    #print("They are {}".format(hi_taskids[ind_30c2]))
+
+    print(("There are {0} taskids with "
+           "more than {2} beams that have a "
+           "rms higher "
+           "by {1} for cube1 than cube0").format(len(ind_30c1),
+                                                 factor,
+                                                 nbeam))
+
+    ind_30c1_c2 = np.where( (nbeam_c2_highrms[ind_30c1] >= nbeam) )[0]
+
+    print(print(("There are {0} taskids with "
+           "more than {2} beams that have a "
+           "rms higher "
+           "by {1} for both cube1 and cube2 "
+                 "than cube0").format(len(ind_30c1_c2),
+                                      factor,
+                                      nbeam)))
+    ind_both = ind_30c1[ind_30c1_c2]
+    print("They are:")
+    print("ObsID Ntot Nc1 Nc2")
+    for ind in ind_both:
+        print(hi_taskids[ind],nbeam_total[ind],
+              nbeam_c1_highrms[ind],
+              nbeam_c2_highrms[ind])
+    
+    
+    #return arrays so I can play with them further
+    return hi_taskids, nbeam_c2_highrms, nbeam_c1_highrms
+    
