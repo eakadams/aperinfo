@@ -99,7 +99,8 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
                      mode = None,
                      obs = None,
                      sky = 'all',
-                     schedule_pointings = None):
+                     schedule_pointings = None,
+                     alpha = 1.0):
     """
     Make sky plots, using Kapteyn python package
     Inputs:
@@ -145,7 +146,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     """
   
     X = np.arange(0,360.0,15.0)
-    Y = np.arange(0,90,15) #[20, 30,45, 60, 75]
+    Y = np.arange(15,90,15) #[20, 30,45, 60, 75]
 
 
     #figure instance
@@ -154,9 +155,11 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
     f = maputils.FITSimage(externalheader=header)
 
     lon_world = np.arange(0,360,30)
-    lat_world = np.arange(0,90,15) #[20, 30, 60, 90]
-    lon_constval = None
-    lat_constval = 20
+    lat_world = np.arange(15,90,15) #[20, 30, 60, 90]
+    lon_constval = 9 * 15
+    lat_constval = 22
+
+    f.set_limits(pxlim = (5,35), pylim=(5,35))
     
     if sky == 'spring':
         f.set_limits(pxlim=(17,28),pylim=(22,32))
@@ -175,7 +178,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         lat_constval = None
         
     annim = f.Annotatedimage(frame)
-    grat = annim.Graticule(axnum=(1,2),wylim=(0.0,90.0), wxlim=(0,360),
+    grat = annim.Graticule(axnum=(1,2),wylim=(15,90.0), wxlim=(0,360),
                        startx=X, starty=Y)
     #grat = annim.Graticule(wylim=(0.0,90.0), wxlim=(0,360),
     #                       startx=X, starty=Y)
@@ -201,7 +204,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
 
     #set markersize
     if mode == 'obs' and sky == 'all':
-        ms = 8
+        ms = 10
     if mode == 'beam' and sky == 'all':
         ms = 0.7
     if mode == 'beam' and sky == 'spring':
@@ -219,7 +222,7 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
             xp,yp=annim.topixel(ra,dec)
             annim.Marker(x=xp,y=yp,
                          marker='o',mode='pixel',markersize=ms, color=cname,
-                         label = labname)
+                         label = labname, alpha=alpha)
 
     
 
@@ -231,16 +234,16 @@ def sky_plot_kapteyn(ra_array_lists,dec_array_lists,
         #affects how I will plot
         if schedule_pointings is None:
             annim.Marker(x=xs,y=ys,
-                         marker='o',mode='pixel',markersize=8,
+                         marker='o',mode='pixel',markersize=10,
                          color='black',fillstyle='none')
         else:
             ora, odec = get_schedule_ra_dec(schedule_pointings)
             xo, yo = annim.topixel(ora,odec)
             annim.Marker(x=xs,y=ys,
-                         marker='o',mode='pixel',markersize=8,
+                         marker='o',mode='pixel',markersize=10,
                          color='gray',fillstyle='none',alpha=0.8)
             annim.Marker(x=xo,y=yo,
-                         marker='o',mode='pixel',markersize=8,
+                         marker='o',mode='pixel',markersize=10,
                          color='black',fillstyle='none')
     
 

@@ -34,6 +34,7 @@ from kapteyn.wcs import galactic, equatorial, fk4_no_e, fk5
 import info.sky_plots as sp
 import pandas as pd
 from cds import *
+import datetime as dt
 
 tablemaker = CDSTablesMaker()
 
@@ -135,6 +136,51 @@ class ObsCat(object):
         self.obsinfo['reprocess'][ind_obs] = self.obs_notes['reprocess'][ind_note]
         self.obsinfo['note'][ind_obs] = self.obs_notes['note'][ind_note]
 
+
+    #find bad obs, important for re-observing
+    def find_bad_obs(self,Nbeams=10):
+        """
+        Find bad observations
+        Will call helper functions that do this
+        for different issues (potentially)
+        Want to record bad observations to a file
+        This file should also be read in before starting
+        So that entries are not repeated if they're already there
+        But also maybe I just want separate files for 
+        separate things?
+        Will start and see how this goes...
+
+        Set number of beams that mean something is failed
+        """
+        #first thing is find observations missing C & D
+        #Separate this out to a separate function
+        self.find_no_cd(Nbeams)
+
+
+    def find_no_cd(self,Nbeams):
+        """
+        Search calibration tables for all taskids
+        Find those that are missing C&D as a first
+        pass estimate of fields that need to be reobserved
+        Do this on a beam-by-beam basis, if more than 10? beams
+        are bad, mark whole obs as bad
+        In order to avoid requiring taql on local installation,
+        put parts of this code in happili.py
+        also makes clear has to run on happili
+        """
+        bad_tids = []
+        for tid in self.obsinfo['taskID']:
+            check = info.happili.check_cd(tid,Nbeams)
+            #return check value
+            #True is good, they're there
+            #False is bad, they're no there
+            if not check:
+                bad_tids.append(tid)
+
+        #lazy! need to return this properly
+        #but still in testing stage
+        print(bad_tids)
+            
 
     #summary of obs
     def get_summary_obs(self,startdate = None, enddate = None):
@@ -415,6 +461,13 @@ class ObsCat(object):
          #set column names to be tex & user friendly
          col_names = ['ObsID','Name','RA','Dec','Fluxcal','flux\_first','flux\_last',
                       'Polcal','pol\_first','pol\_last','Apercal\_name','Apercal\_version']
+
+         #replace "None" with "..." for A&A table formatting
+         #but maybe I don't need that here, as much as later
+         #for CDS version
+         #still good to figure out
+
+         
          ascii.write(self.dr_obs['taskID','name','field_ra','field_dec',
                                  'fluxcal','flux_first','flux_last',
                                  'polcal','pol_first','pol_last',
@@ -428,7 +481,8 @@ class ObsCat(object):
                                   'header_end': "\hline",
                                   'data_end': "\hline",
                                   'caption': "Summary of released survey observation",
-                                  'preamble': ["\centering","\label{tab:obs}"]}
+                                  'preamble': ["\centering","\label{tab:obs}"]},
+                    formats = {'RA': '10.6f', 'Dec':'9.6f'}
          )
 
 
@@ -455,34 +509,82 @@ class ObsCat(object):
                     )
     
 
-    def plot_all_obs(self):
+    def plot_all_obs(self,
+                     colormode = 'processed'):
         """
         Plot all observations
         Color by processed/not processed
+        Or color by "survey" coverage
         """
-        names = ["not processed", "processed"]
-        colorlist = mpcolors[0:len(names)]
-        ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
-                       if 'Apercal' in apname]
-        ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
-                         if 'No' in apname]
-        print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
+        if colormode == 'processed':
+            names = ["not processed", "processed"]
+            colorlist = mpcolors[0:len(names)]
+            ind_process = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                           if 'Apercal' in apname]
+            ind_noprocess = [i for i, apname in enumerate(self.obsinfo['apercal_name'])
+                             if 'No' in apname]
+            print(len(self.obsinfo),len(ind_process),len(ind_noprocess))
 
-        ra_np = self.obsinfo['field_ra'][ind_noprocess]
-        dec_np = self.obsinfo['field_dec'][ind_noprocess]
-        ra_p = self.obsinfo['field_ra'][ind_process]
-        dec_p = self.obsinfo['field_dec'][ind_process]
+            ra_np = self.obsinfo['field_ra'][ind_noprocess]
+            dec_np = self.obsinfo['field_dec'][ind_noprocess]
+            ra_p = self.obsinfo['field_ra'][ind_process]
+            dec_p = self.obsinfo['field_dec'][ind_process]
 
 
-        ralist = [ra_np,ra_p]
-        declist = [dec_np,dec_p]
+            ralist = [ra_np,ra_p]
+            declist = [dec_np,dec_p]
+
+        if colormode == 'survey':
+            names = ['single wide','2x wide', 'medium-deep']
+            colorlist = mpcolors[0:len(names)]
+            ind_ames = [i for i, s in enumerate(self.obsinfo['name']) if 'M' in s]
+            ind_awes = [i for i, s in enumerate(self.obsinfo['name']) if 'S' in s]
+
+            ra_wide =  self.obsinfo['field_ra'][ind_awes]
+            dec_wide =  self.obsinfo['field_dec'][ind_awes]
+            ra_mds =  self.obsinfo['field_ra'][ind_ames]
+            dec_mds =  self.obsinfo['field_dec'][ind_ames]
+
+           
+            #But want to add information about multiple visits
+            #Based on this stackoverflow:
+            #https://stackoverflow.com/questions/30003068/how-to-get-a-list-of-all-indices-of-repeated-elements-in-a-numpy-array
+
+            #get wide field names
+            wide_fields = self.obsinfo['name'][ind_awes]
+            #return unique vals, idx for first occurrence and number of occurences
+            unique_wide_fields, idx_start, count_fields = np.unique(wide_fields,
+                                                                    return_counts = True,
+                                                                    return_index = True)
+            #split by single coverage or more
+            #properly should account more than two visits - that has happened
+            #but won't worry about for now
+            loc_single = np.where(count_fields == 1)[0]
+            loc_double = np.where(count_fields > 1)[0]
+
+            idx_single_visit = idx_start[loc_single]
+            idx_second_visit = idx_start[loc_double]
+
+            single_visit_fields = wide_fields[idx_single_visit]
+            ra_single_visit = ra_wide[idx_single_visit]
+            dec_single_visit = dec_wide[idx_single_visit]
+
+            second_visit_fields = wide_fields[idx_second_visit]
+            ra_second_visit = ra_wide[idx_second_visit]
+            dec_second_visit = dec_wide[idx_second_visit]
+
+            
+            ralist = [ra_single_visit,ra_second_visit,ra_mds]
+            declist = [dec_single_visit,dec_second_visit,dec_mds]
+
         #do the plot
         sp.sky_plot_kapteyn(ralist,
                             declist,
                             colorlist,
                             names,
                             os.path.join(figdir,'skyview_all_obs.pdf'),
-                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'))
+                            survey_pointings = os.path.join(filedir,'all_pointings.v7.18jun20.txt'),
+                            alpha = 0.5)
                             #schedule_pointings = os.path.join(filedir,
                             #                                 'apertif_v11.28oct20.txt'))
         
@@ -804,8 +906,76 @@ class ProcCat(ObsCat):
 
         print(("There are {0} beams released from "
                "wide fields").format(len(awes)))
+
+        #want to get total number of unique field/beam combinations
+        #make a composite name and then do a unique?
+        beam_str = self.dr_proc['beam'].astype(str)
+        field_beam  = np.core.defchararray.add(self.dr_proc['Field'], beam_str)
+                                               
+                                            
+        print(("There are {0} unique field / beam combinations").format(len(np.unique(field_beam))))
               
 
+    def plot_cont_valid_time_proc(self):
+        """
+        Plot fraction passing valid as a function of time
+        Also color code by processing version, for extra info
+        Also plot as function of processing pipeline, color coded by time
+        """
+        #go through taskid to get number pass valid
+        #set up arrays to hold things I care about
+        tids = np.unique(self.dr_proc['taskid'])
+        n_obs = len(tids)
+        apercal_vers_name = np.empty(n_obs,dtype='U30')
+        n_pass = np.empty(n_obs)
+        date_obs = np.empty(n_obs,dtype='object')
+        
+        for i,tid in enumerate(tids):
+            valid_cont = np.where(self.dr_proc['taskid'] == tid)[0]
+            try:
+                n_pass[i] = len(valid_cont)
+            except:
+                print(valid_cont)
+            obs_ind = np.where(self.dr_obs['taskID'] == tid)[0][0]
+            apercal_vers_name[i] = self.dr_obs['apercal_name'][obs_ind]
+            year = int('20'+str(tid)[0:2])
+            month = int(str(tid)[2:4])
+            day = int(str(tid)[4:6])
+            date_obs[i] = dt.date(year,month,day)
+
+
+        #find ways to bin data by time
+        #do into major changes
+        #give values, 1,2,3 for plotting (manually adjust labels)
+        #default to "2" better LNA state
+        system_state = np.full(n_obs,2)
+        ind_orig = np.where(tids < 190923000)[0]
+        system_state[ind_orig] = 1
+        ind_pointing = np.where(tids > 191212000)[0]
+        system_state[ind_pointing] = 3
+
+        #find ways to bin / color by Apercal version
+        apercal_vers_int = np.full(n_obs,0)
+        ind_150_acf = np.where(apercal_vers_name == 'Apercal_150_ACF')
+        apercal_vers_int[ind_150_acf] = 1
+        ind_150_acf_cdf = np.where(apercal_vers_name == 'Apercal_150_ACF_CDF')
+        apercal_vers_int[ind_150_acf_cdf] = 2
+        ind_150_acf_cdf_bpf = np.where(apercal_vers_name == 'Apercal_150_ACF_CDF_BPF')
+        apercal_vers_int[ind_150_acf_cdf_bpf] = 3
+
+        #plan, separate time & processing version
+        #plot / colorize by one
+        # and get average/median values for each chunk (apercal vers or syst state)
+        #and overplot as a large bin point (with std dev errors?)
+        
+
+        fig, (ax1, ax2) = plt.subplots(1,2,figsize=(8,8),
+                                       sharex=True, sharey=True)
+
+        ax1.scatter(date_obs,n_pass,c=apercal_vers_int)
+    
+        plt.savefig(os.path.join(figdir,self.dr_name+'_valid_time_proc.png'))
+        plt.close()
 
     
     def plot_dr_cont(self):
@@ -921,7 +1091,7 @@ class ProcCat(ObsCat):
                      '$\sigma_{out}$', '$R$', 'N2', 'Ex-2']
         
         ascii.write(self.dr_proc['taskid','Field','beam','s_in','s_out',
-                                 'rat','N2','Ex-2'][0:30],
+                                 'rat','N2','Ex-2'][0:20],
                     os.path.join(tabledir,self.dr_name+'_cont.txt'),
                     format='latex',
                     overwrite=True,
@@ -956,16 +1126,16 @@ class ProcCat(ObsCat):
         #set column names to be tex & user friendly
         col_names = ['ObsID','Name','Beam','Status','V status','QU status',
                      '$\sigma_{in}$',
-                     '$\sigma_{out}$', '$R$', 'N2', 'Ex-2',
-                     '$FT_{max}$','$p_{in}$','P2','$b_{min}$',
+                     '$\sigma_{out}$',
+                     '$FT_{max}$','$p_{in}$','$b_{min}$',
                      '$Q_{beam}$','$U_{beam}$','$Q_{noise}$','$U_{noise}$']
         
         ascii.write(self.dr_proc['taskid','Field','beam',
                                  'pol_pass','pol_V_pass','pol_QU_pass',
                                  'pol_s_in','pol_s_out',
-                                 'pol_rat','pol_N2','pol_Ex-2','pol_ftmax',
-                                 'pol_peak_in','pol_P2','pol_bmin','Q_bm_fg',
-                                 'U_bm_fg', 'Q_st_fg','U_st_fg'][0:30],
+                                 'pol_ftmax',
+                                 'pol_peak_in','pol_bmin','Q_bm_fg',
+                                 'U_bm_fg', 'Q_st_fg','U_st_fg'][0:20],
                     os.path.join(tabledir,self.dr_name+'_pol.txt'),
                     format='latex',
                     overwrite=True,
@@ -1019,7 +1189,7 @@ class ProcCat(ObsCat):
         ascii.write(self.dr_proc['taskid','Field','beam',
                                  'c2','c1','c0','rms_c2_mJy',
                                  'rms_c1_mJy','rms_c0_mJy','lgfrac_c2','lgfrac_c1',
-                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:30],
+                                 'lgfrac_c0','prom_c2','prom_c1','prom_c0'][0:20],
                     os.path.join(tabledir,self.dr_name+'_line.txt'),
                     format='latex',
                     overwrite=True,
@@ -1028,7 +1198,7 @@ class ProcCat(ObsCat):
                     latexdict = {'header_start': "\hline \hline",
                                  'header_end': "\hline",
                                  'data_end': "\hline",
-                                 'caption': "Line self.validation metrics for released data",
+                                 'caption': "Line validation metrics for released data",
                                  'preamble': ["\centering","\label{tab:hi}"]},
                     formats = {'$\sigma_{c2}$': '4.2f', '$\sigma_{c1}$': '4.2f',
                                '$\sigma_{c0}$': '4.2f', '$f_{ex,c2}$': '5.2f',
@@ -1200,8 +1370,16 @@ class ProcCat(ObsCat):
         #print something about how many pass validation
         ntot = len(self.dr_proc['pol_V_pass'])
         ngood = len(goodind)
-        print(('There are {0} good observations '
+        print(('There are {0} observations with good Stokes V'
                'out of {1} total').format(ngood,ntot))
+
+        n_nopol = len(np.where(self.dr_proc['pol_V_pass'] == 'None')[0])
+        n_fail_V = len(np.where(self.dr_proc['pol_V_pass'] == 'False')[0])
+        n_fail_QU = len(np.where(self.dr_proc['pol_QU_pass'] == 'False')[0])
+        print(("There are {0} beams with no polarization information").format(n_nopol))
+        print(("There are {0} beams with bad Stokes V data").format(n_fail_V))
+        print(("There are {0} beams with bad Stokes QU data").format(n_fail_QU))
+                    
 
 
     def get_qual_cont(self):
@@ -1459,6 +1637,13 @@ class ProcCat(ObsCat):
         print('The best achievable continuum noise (5th percentile) for cube 1 is {0:4.2f} mJy'.format(outer_5_c1))
         outer_5_c0 = 1000*np.nanpercentile(self.dr_proc['rms_c0'][goodind2],5)
         print('The best achievable continuum noise (5th percentile) for cube 0 is {0:4.2f} mJy'.format(outer_5_c0))
+
+        goodall = np.where( (self.dr_proc['c2'] == 'G') &
+                            (self.dr_proc['c1'] == 'G') &
+                            (self.dr_proc['c0'] == 'G') )[0]
+
+        print(("{0} of the beams released have all good cubes").format(len(goodall)))
+        print(("{0} of the beams released have good cube 2").format(len(goodind2)))
         
 
 def get_apercal_name(version,process=True):
@@ -1473,8 +1658,11 @@ def get_apercal_name(version,process=True):
     """
     #read in master file w/ information
     apercal_key = ascii.read(os.path.join(filedir,"apercal_naming.csv"))
-    vind = np.where(apercal_key['Version'] == version)[0][0]
-    name = apercal_key['Name'][vind]
+    try:
+        vind = np.where(apercal_key['Version'] == version)[0][0]
+        name = apercal_key['Name'][vind]
+    except:
+        name = 'None'
     #redo some naming on the fly, to focus on processing
     #if proces = True
     if process is True:

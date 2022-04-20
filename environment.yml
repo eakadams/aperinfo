@@ -1,0 +1,18 @@
+name: aperinfo
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.6
+ #  - pip>=20
+  - numpy
+  - matplotlib
+  - jupyterlab
+  - astropy
+  - kapteyn
+  - scipy
+  - pip:
+    - tol-colors
+    - importlib_resources
+
+

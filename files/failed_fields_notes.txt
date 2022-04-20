@@ -1,0 +1,8 @@
+#Fields that are basically fully failed
+#And so removed from census
+#But still maybe usable data so in ALTA
+201107041 : S2117+2904	(only one observation)
+201108033 : S1215+6041  (has a second observation, doesn't show up in redo list)
+201108034 : S0149+3848  (only one observation)
+201113001 : S1041+5815  (only one observation)
+201113002 : S2332+4340  (only one observation)

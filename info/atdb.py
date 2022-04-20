@@ -69,24 +69,30 @@ def get_obstable(write=True):
     failedinds = []
     for i,(name,taskid,quality) in enumerate(targettable['name','taskID','quality']):
             #first grab specific fields that I know are tests
-            if (taskid == '191030203' or 'test' in name):
-                        testinds.append(i)
-                            #find ARGO fields
+            if ( (taskid == '191030203') or ('test' in name) or
+                 (name == 'L1035+5720') or (taskid == '191216159') ):
+                #known test observations
+                testinds.append(i)
             elif name[0:4] == 'ARGO':
-                        argoinds.append(i)
-                            #find early science fields based on date
+                #find ARGO fields
+                argoinds.append(i)
             elif (int(taskid) < 190702000) and (int(taskid) > 190409000):
-                        earlyscienceinds.append(i)
-                            #find survey fields based on name length and date
+                #find early science fields based on date
+                earlyscienceinds.append(i)
+            elif ( taskid == '210718041' ):
+                #observation that accidentally deleted
+                failedinds.append(i)
             elif ((len(name) == 10) and (int(taskid) > 190702000)
                   and ((quality == 'good') or (quality=='unknown')) ):
-                        surveyinds.append(i)
+                #find survey fields based on length and date
+                surveyinds.append(i)
             elif ((len(name) == 10) and (int(taskid) > 190702000)
                   and ((quality == 'bad')) ):
-                        failedinds.append(i)
-                            #dump everything else somewhere
+                #those that are marked bad
+                failedinds.append(i)
             else:
-                        otherinds.append(i)
+                #dump everything else somewhere
+                otherinds.append(i)
 
     #get various table subsets
     surveyfields = targettable[surveyinds]

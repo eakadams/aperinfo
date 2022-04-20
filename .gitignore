@@ -5,9 +5,21 @@ __pycache__/
 
 #emacs autosave
 *~
+*#*
+
+#images
+*png
+*pdf
+*fits
 
 # C extensions
 *.so
+
+#text files (manual add imporant)
+*csv
+*txt
+*dat
+*cds
 
 # Distribution / packaging
 .Python

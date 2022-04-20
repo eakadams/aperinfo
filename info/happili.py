@@ -18,6 +18,8 @@ import numpy as np
 from astropy.io import ascii
 from datetime import datetime
 import os
+import casacore.tables as pt
+import glob
 
 #global definition (hacky) of filedir
 #filedir = "../files/"
@@ -26,6 +28,62 @@ aperinfodir = this_dir[:-4]
 filedir = os.path.join(aperinfodir,"files")
 #print(filedir)
 
+
+def check_cd(tid,Nbeams):
+    """
+    Take a taskid and number of beams to fail
+    Check how many beams are missing C&D
+    Return False if too many are missing
+    Inputs:
+    - tid: Taskid to check
+    - Nbeams: Number of beams that equals a failure
+    Outputs:
+    - True/False: True, observation is good.
+                  False, observation fails
+    """
+    #first set an array to hold output
+    #for each beam
+    #Set to be True, update to False if beam fails
+    beam_array = np.full(40,True)
+    #iterate through each beam
+    for bm in range(40):
+        #check that bandpass table exists
+        #first get right happili data path
+        datapath = get_data_path(bm)
+        #then the raw directory path
+        rawbeamdir = os.path.join(datapath,tid,
+                                  '{0:02d}/raw'.format(bm))
+        #and find bandpass, if it exists
+        bptest = glob.glob(os.path.join(rawbeamdir,"*Bscan"))
+        if len(bptest) == 1:
+            bppath = bptest[0]
+        if len(bpest) == 0:
+            print('No bandpass file; marking as failed')
+            beam_array[bm] = False
+        else:
+            print('Help! Found {} bandpass files'.format(len(bptest)))
+        
+        
+
+def get_data_path(bm):
+    """
+    Given a beam number, return correct
+    /data?/apertif, presuming on happili-01
+    """
+    #just in case passed as a string
+    bm = int(bm)
+    if bm < 10:
+        datapath = '/data/apertif/'
+    elif bm < 20:
+        datapath = '/data2/apertif/'
+    elif bm < 30:
+        datapath = '/data3/apertif/'
+    else:
+        datapath = '/data4/apertif/'
+        
+    #return the path
+    return datapath
+    
 
 def get_dir_list():
     """
