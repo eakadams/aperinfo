@@ -149,7 +149,8 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
 
     # figure instance
     fig = plt.figure(figsize=(12,12))
-    frame = fig.add_axes((0.1,0.1,0.8,0.8))
+    frame = fig.add_axes((0.1, 0.1, 0.8, 0.8))
+    frame = fig.add_axes((0.,0.,1.0,1.0)) #get rid of labels/boxes by using full figure space
     f = maputils.FITSimage(externalheader=header)
 
     # zoom-in to relevant part of graph
@@ -160,7 +161,7 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
     
     lon_world = np.arange(0,360,30)
     lat_world = np.arange(0,90,15) #[20, 30, 60, 90]
-    lon_constval = 9 * 15 #plo dec labels at 9hours
+    lon_constval = 19 * 15 #plo dec labels at 19hours
     lat_constval = 22  #plot ra labels at 22deg
 
     # set limits to zoom in on relevant areas
@@ -174,8 +175,8 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
     grat.setp_plotaxis(wcsgrat.left, fontsize=18)
 
     # Plot labels inside the plot
-    lon_kwargs = {'color':'k', 'fontsize':15}
-    lat_kwargs = {'color':'k', 'fontsize':15}
+    lon_kwargs = {'color':'k', 'fontsize':18}
+    lat_kwargs = {'color':'k', 'fontsize':18}
     grat.Insidelabels(wcsaxis=0,
                       world=lon_world, constval=lat_constval,
                       fmt="Hms",
@@ -204,11 +205,11 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         xm, ym = annim.topixel(mra, mdec)
         if mds_color is None:
             mds_color = mpcolors[len(ra_array_lists)]
+        print(mds_color)
         annim.Marker(x=xm, y=ym,
-                     marker='o', mode='pixel', markersize=ms + 2,
+                     marker='o', mode='pixel', markersize=ms+1,
                      color=mds_color, fillstyle='none',
-                     label='Medium-deep',
-                     markeredgewidth=3)
+                     label='Medium-deep', markeredgewidth=2)
 
     # add data
     # check for optional lists
@@ -218,6 +219,7 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         colorlist = mpcolors[ 0 : len(ra_array_lists)]
     for (ra,dec,lab, alph, color) in zip(ra_array_lists, dec_array_lists,
                                          label_list, alphalist, colorlist):
+        print(color)
         xp,yp = annim.topixel(ra,dec)
         annim.Marker(x=xp, y=yp,
                      marker='o', mode='pixel', markersize=ms,
@@ -233,6 +235,17 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
                      marker='o', mode='pixel', markersize=ms+1,
                      color=reobs_color, fillstyle='none',
                      label='To reobserve', markeredgewidth=2.5)
+
+    # add mds again, to overplot, but no label (right order)
+    if show_mds is True:
+        mds_points = os.path.join(filedir, 'mds_pointings.txt')
+        mra, mdec = get_survey_ra_dec(mds_points)
+        xm, ym = annim.topixel(mra, mdec)
+        if mds_color is None:
+            mds_color = mpcolors[len(ra_array_lists)]
+        annim.Marker(x=xm, y=ym,
+                     marker='o', mode='pixel', markersize=ms+1,
+                     color=mds_color, fillstyle='none', markeredgewidth=2)
 
     # make figure
     annim.plot()
