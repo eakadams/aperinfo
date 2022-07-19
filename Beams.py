@@ -307,6 +307,21 @@ class DR1(Beams):
         #print(len(self.beaminfo),len(ind_good_proc))
         self.beaminfo = self.beaminfo[ind_good_proc]
 
+        # Tom changed validation criteria slightly
+        # Biggest difference is no requirement on s_in
+        # Add this back here manually, so that I can match DR1
+        ind_sin_fail = np.where(self.beaminfo['s_in_cont'] >= 60.)[0]
+        self.beaminfo['pass'][ind_sin_fail] = 'False'
+        # manually overwrite three beam ids to make things match
+        ind_3 = np.where(self.beaminfo['BeamID'] == '200306072_22')[0]
+        ind_2 = np.where(self.beaminfo['BeamID'] == '191004041_20')[0]
+        ind_1 = np.where(self.beaminfo['BeamID'] == '190823042_11')[0]
+        # 1 and 2 have sigma_in = 60 and originally passed
+        self.beaminfo['pass'][ind_1] = 'True'
+        self.beaminfo['pass'][ind_2] = 'True'
+        # ind_3 is weird statistics, failed originally
+        self.beaminfo['pass'][ind_3] = 'False'
+
         #Now get just the released beams
         #Have this as a separate table because maybe I want to know
         #information about all considered
@@ -346,6 +361,22 @@ class DR1(Beams):
         print(f"The number of okay cubes is {n_okay}")
         print(f"The number of bad cubes is {n_bad} ({n_bad_v2})")
         print(f"The total number of cubes is {4*n_beams}")
+
+    def get_cont_csv(self):
+        """
+        Get csv file of DR1 released continuum beams
+        """
+        col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'sigma_in',
+                     'sigma_out', 'bmin', 'R', 'Ex-2', 'Neg10']
+        ascii.write(self.dr_proc['taskid', 'Field', 'beam', 'ra', 'dec', 's_in', 's_out',
+                                 'bmin_cont',
+                                 'rat', 'Ex-2', 'rusc-'],
+                    os.path.join(tabledir, 'dr_year1_cont.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats={'RA': '10.6f', 'Dec': '9.6f'}
+                    )
 
     def get_hi_source_valid(self,
                             apertif_cat_file = os.path.join(
@@ -426,11 +457,6 @@ class DR1(Beams):
                         flag.append(source['flag'])
 
         print(len(w50_ap),len(w50_al))
-                        
-                    
-
-                
-
 
     def plot_cont_noise(self):
         """ 
