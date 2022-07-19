@@ -368,7 +368,7 @@ class DR1(Beams):
         """
         col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'sigma_in',
                      'sigma_out', 'bmin', 'R', 'Ex-2', 'Neg10']
-        ascii.write(self.released['taskid', 'Field', 'beam', 'ra', 'dec', 's_in', 's_out',
+        ascii.write(self.released['ObsID', 'Field', 'beam', 'ra', 'dec', 's_in', 's_out',
                                   'bmin_cont', 'rat', 'Ex-2', 'rusc-'],
                     os.path.join(tabledir, 'dr_year1_cont.csv'),
                     format='csv',
