@@ -177,6 +177,10 @@ class Beams(object):
         #but that's not the issue of this code
         #although I may rename at some point. But it works!
 
+        # There are comments coming in with the HI table that annoy me later.
+        # So get rid of them (from beam table) here:
+        self.beaminfo.meta = None
+
     def find_radar(self, factor = 1.1):
         """ 
         Find taskids that are strongly impacted by military radar
@@ -368,13 +372,14 @@ class DR1(Beams):
         """
         col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'sigma_in',
                      'sigma_out', 'bmin', 'R', 'Ex-2', 'Neg10']
-        ascii.write(self.released['ObsID', 'Field', 'beam', 'ra', 'dec', 's_in', 's_out',
-                                  'bmin_cont', 'rat', 'Ex-2', 'rusc-'],
+        ascii.write(self.released['ObsID', 'Field', 'beam', 'RA', 'Dec', 's_in_cont', 's_out_cont',
+                                  'bmin_cont', 'rat_cont', 'Ex-2_cont', 'rusc-'],
                     os.path.join(tabledir, 'dr_year1_cont.csv'),
                     format='csv',
                     overwrite=True,
                     names=col_names,
-                    formats={'RA': '10.6f', 'Dec': '9.6f'}
+                    formats={'RA': '10.6f', 'Dec': '9.6f'}#,
+                    #comment = '#'
                     )
 
     def get_hi_source_valid(self,
