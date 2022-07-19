@@ -834,7 +834,7 @@ def combine_continuum():
     Use knowledge of structure
     Retrieve to files/cont_valid using fancy rsync
     Run in "--dry-run" mode first to be safe
-    rsync -arvt --include="*/" --include="dynamicRange.dat" --exclude="*" happili-05.astron.nl:/data/oosterloo/INSPECT/ . --dry-run
+    rsync -arvt --include="*/" --include="validation.dat" --exclude="*" happili-05.astron.nl:/data/oosterloo/INSPECT/ . --dry-run
     """
     #cont valid directory
     contdir = os.path.join(filedir,"cont_valid")
@@ -863,12 +863,15 @@ def combine_continuum():
     t['N2'] = np.full(table_length,np.nan) 
     t['P2'] = np.full(table_length,np.nan) 
     t['Ex-2'] = np.full(table_length,np.nan) 
-    t['Ex+2'] = np.full(table_length,np.nan) 
+    t['Ex+2'] = np.full(table_length,np.nan)
+    t['bmaj'] = np.full(table_length, np.nan)
+    t['bmin'] = np.full(table_length, np.nan)
+    t['bpa'] = np.full(table_length, np.nan)
 
     #now iterate through taskids
     for i,taskdir in enumerate(taskdirlist):
         #read file in
-        valid_file = os.path.join(taskdir,"dynamicRange.dat")
+        valid_file = os.path.join(taskdir,"validation.dat")
         valid = ascii.read(valid_file)
         #now i need to fill everything
         #but have to worry about missing beams
@@ -899,6 +902,9 @@ def combine_continuum():
                 t['P2'][ind] = valid['col12'][valid_ind]
                 t['Ex-2'][ind] = valid['col13'][valid_ind]
                 t['Ex+2'][ind] = valid['col14'][valid_ind]
+                t['bmaj'][ind] = valid['col15'][valid_ind]
+                t['bmin'][ind] = valid['col16'][valid_ind]
+                t['bpa'][ind] = valid['col17'][valid_ind]
             else:
                 #make sure pass is false if beam doesn't exist
                 t['pass'][ind] = False
