@@ -79,8 +79,9 @@ def get_obstable(write=True):
             elif (int(taskid) < 190702000) and (int(taskid) > 190409000):
                 #find early science fields based on date
                 earlyscienceinds.append(i)
-            elif ( taskid == '210718041' ):
+            elif ( taskid == '210718041' ) or ( taskid == '210414001'):
                 #observation that accidentally deleted
+                # and observation that was marked good but actually empty
                 failedinds.append(i)
             elif ((len(name) == 10) and (int(taskid) > 190702000)
                   and ((quality == 'good') or (quality=='unknown')) ):
