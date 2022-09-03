@@ -108,5 +108,6 @@ def get_survey_ra_dec(survey_pointings):
     #read  in file
     fields = ascii.read(survey_pointings,format='fixed_width')
     #find only survey pointings
-    apertif_fields = fields[(fields['label'] == 'm') | (fields['label'] == 's') | (fields['label'] == 'l')]
+    apertif_fields = fields[(fields['label'] == 'm') | (fields['label'] == 's') |
+                            (fields['label'] == 'l')  | (fields['label'] == 'd')]
     return apertif_fields['ra'],apertif_fields['dec']

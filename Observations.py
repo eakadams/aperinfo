@@ -171,7 +171,7 @@ class DR1(Observations):
     def plot_dr1_obs(self,
                      surveypointings=os.path.join(
                          filedir,
-                         'all_pointings.v7.18jun20.txt')):
+                         'apertif_v12.21jan21.txt')):
         """ Plot observations based on wide/medium-deep """
         # get repeated medium-deep fields. Otherwise is wide
         ind_ames = [i for i, s in enumerate(self.dr1obs['name']) if 'M' in s]
@@ -203,15 +203,15 @@ class DR1(Observations):
 
         ralist = [ra_survey, ra_awes, ra_ames]
         declist = [dec_survey, dec_awes, dec_ames]
-        labellist = ["Observed Survey Fields", "DR1 wide", "DR1 repeated medium-deep"]
+        labellist = ["Observed Survey Fields", "Released wide", "Released repeated medium-deep"]
         alphalist = [1.0, 1.0, 1.0]
-        colorlist = ['#bbbbbb', '#4477aa', '#ee6677']
+        colorlist = ['#bbbbbb', '#4477aa', '#ccbb44']
         
         plot_sky_view(ralist, declist, labellist,
                       "dr1_surveys",
                       surveypointings=surveypointings,
                       alphalist=alphalist, colorlist=colorlist,
-                      show_mds=True)
+                      show_mds=True, mds_color='#aa3377')
 
     def print_dr1_obs(self):
         """ 
@@ -451,7 +451,7 @@ class Census(Observations):
     def plot_obs_census(self, view,
                         surveypointings = os.path.join(
                             filedir,
-                            'all_pointings.v7.18jun20.txt') ):
+                            'apertif_v12.21jan21.txt') ):
         """
         Plot views of observational census
 
