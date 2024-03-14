@@ -207,9 +207,9 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
             mds_color = mpcolors[len(ra_array_lists)]
         print(mds_color)
         annim.Marker(x=xm, y=ym,
-                     marker='o', mode='pixel', markersize=ms+1,
+                     marker='o', mode='pixel', markersize=ms+1.5,
                      color=mds_color, fillstyle='none',
-                     label='Medium-deep', markeredgewidth=2)
+                     label='Medium-deep') #, markeredgewidth=1)
 
     # add data
     # check for optional lists
@@ -244,8 +244,8 @@ def plot_sky_view(ra_array_lists, dec_array_lists,
         if mds_color is None:
             mds_color = mpcolors[len(ra_array_lists)]
         annim.Marker(x=xm, y=ym,
-                     marker='o', mode='pixel', markersize=ms+1,
-                     color=mds_color, fillstyle='none', markeredgewidth=2)
+                     marker='o', mode='pixel', markersize=ms+1.5,
+                     color=mds_color, fillstyle='none') #, markeredgewidth=2)
 
     # make figure
     annim.plot()

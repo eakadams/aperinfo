@@ -378,6 +378,8 @@ class Census(Observations):
         N_2_arr = np.empty(len(fields))
         check_2_D = np.empty(len(fields),dtype=object)
         early_obs = np.empty(len(fields))
+        num_processed = np.full(len(fields),0)
+        num_not_processed = np.full(len(fields),0)
 
         #iterate through each field
         for i,f in enumerate(fields):
@@ -413,6 +415,10 @@ class Census(Observations):
                 check_2_D[i] = "RT2"
             else:
                 check_2_D[i] = "None"
+            processed = np.where(self.censusinfo['processed'][f_inds] == 'True')[0]
+            num_processed[i] = len(processed)
+            not_processed = np.where(self.censusinfo['processed'][f_inds] == 'False')[0]
+            num_not_processed[i] = len(not_processed)
 
             #add a check for early obs, before 1 oct 2019
             early_obs[i] = len(np.where(self.censusinfo['taskID'][f_inds] < 191001000)[0])
@@ -433,8 +439,18 @@ class Census(Observations):
         self.field_census['N_D'] = N_D_arr
         self.field_census['N_2'] = N_2_arr
         self.field_census['early_obs'] = early_obs
+        self.field_census['num_processed'] = num_processed
+        self.field_census['num_not_processed'] = num_not_processed
 
-        #find missing fields and add with zero dishes
+        # check processed numbers
+        for i, f in enumerate(self.field_census['Field']):
+            ntot = num_processed[i] + num_not_processed[i]
+            if ntot != self.field_census['Nobs'][i]:
+                print((f"There are {self.field_census['Nobs'][i]} observations"
+                       f"with {num_processed[i]} processed and {num_not_processed[i]}"
+                       f" not processed"))
+
+        # find missing fields and add with zero dishes
         list_check = ['S2319+3130','S1439+5324','S1536+5058','S1553+5058',
                       'S1042+5324', 'S2048+3356',
                       'S0005+3622', 'S0019+3622', 'S0033+3622', 'S0046+3622',
@@ -446,7 +462,7 @@ class Census(Observations):
             ra = ( float(f[1:3]) + float(f[3:5]) / 60. )*15.
             dec = ( float(f[6:8]) + float(f[8:10])/60. )
             self.field_census.add_row([f, ra, dec, '', 0, np.nan, 0, None,
-                                       0, 0, 'None', np.nan, np.nan, 0] )
+                                       0, 0, 'None', np.nan, np.nan, 0, 0, 0] )
         
     def plot_obs_census(self, view,
                         surveypointings = os.path.join(
@@ -468,7 +484,7 @@ class Census(Observations):
         """
         if view not in ["Nobs", "avg_cd_obs", "avg_dishes",
                         "check_2_D", "N_CD", "Ndish", "Ndish_mds",
-                        "N_D", "N_2", "early_obs"]:
+                        "N_D", "N_2", "early_obs", "processing"]:
             print("View name not found.")
             print("Defaulting to number of observations")
             view = "Nobs"
@@ -589,25 +605,43 @@ class Census(Observations):
             ind_1 = np.where(self.field_census['Nobs'] == 1)[0]
             ind_2 = np.where(np.logical_and(
                 self.field_census['Nobs'] >= 2,
-                self.field_census['Nobs'] <= 6))[0]
-            ind_7 = np.where(self.field_census['Nobs'] == 7)[0]
-            ind_8 = np.where(self.field_census['Nobs'] == 8)[0]
-            ind_9 = np.where(self.field_census['Nobs'] >= 9)[0]
+                self.field_census['Nobs'] <= 3))[0]
+            ind_mds = np.where(self.field_census['Nobs'] >= 8)[0]
+            #ind_8 = np.where(self.field_census['Nobs'] == 8)[0]
+            #ind_9 = np.where(self.field_census['Nobs'] >= 9)[0]
             #ind_4_9 = np.where( np.logical_and(
             #    self.field_census['Nobs'] >= 4,
             #    self.field_census['Nobs'] <= 9) )[0]
             ralist = [self.field_census['RA'][ind_1],
                       self.field_census['RA'][ind_2],
-                      self.field_census['RA'][ind_7],
-                      self.field_census['RA'][ind_8],
-                      self.field_census['RA'][ind_9]]
+                      self.field_census['RA'][ind_mds]]#,
+                      #self.field_census['RA'][ind_8],
+                      #self.field_census['RA'][ind_9]]
             declist = [self.field_census['Dec'][ind_1],
                        self.field_census['Dec'][ind_2],
-                       self.field_census['Dec'][ind_7],
-                       self.field_census['Dec'][ind_8],
-                       self.field_census['Dec'][ind_9] ]
-            labellist = ["1 visit", "2-6 visits", "7 visits",
-                         "8 visits", "9 or more visits"]
+                       self.field_census['Dec'][ind_mds]]#,
+                       #self.field_census['Dec'][ind_8],
+                       #self.field_census['Dec'][ind_9] ]
+            labellist = ["1 visit", "2 visits", "8-12 visits"]#,
+                         #"8 visits", "9 or more visits"]
+        if view == "processing":
+            ind_full = np.where(np.logical_and(
+                self.field_census['num_not_processed'] == 0,
+                self.field_census['num_processed'] > 0))[0]
+            ind_not = np.where(np.logical_and(
+                self.field_census['num_processed'] ==0,
+                self.field_census['num_not_processed'] > 0 ))[0]
+            ind_partial = np.where(np.logical_and(
+                self.field_census['num_processed'] > 0,
+                self.field_census['num_not_processed'] > 0
+            ))[0]
+            ralist = [self.field_census['RA'][ind_full],
+                      self.field_census['RA'][ind_partial],
+                      self.field_census['RA'][ind_not]]
+            declist = [self.field_census['Dec'][ind_full],
+                       self.field_census['Dec'][ind_partial],
+                       self.field_census['Dec'][ind_not]]
+            labellist = ["Fully processed", "Partially processed", "Not processed"]  # ,
         if view == "avg_cd_obs":
             ind_0 = np.where(self.field_census['Avg_CD_obs'] == 0)[0]
             ind_half =  np.where( np.logical_and(
@@ -667,9 +701,9 @@ class Census(Observations):
         plot_sky_view(ralist, declist, labellist,
                       "census_{}".format(view),
                       surveypointings = surveypointings,
-                      show_mds = True,
-                      reobs_ra = ra_reobs,
-                      reobs_dec = dec_reobs)
+                      show_mds = True)#,
+                      #reobs_ra = ra_reobs,
+                      #reobs_dec = dec_reobs)
 
         
 
