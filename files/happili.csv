@@ -1,6 +1,4 @@
 taskid,fluxcal,fluxcal_firsttaskid,fluxcal_lasttaskid,polcal,polcal_firsttaskid,polcal_lasttaskid,apercal_version
-190701001,3C147,None,None,3C138,None,None,v2.3-433-ge504703
-190701042,None,None,None,None,None,None,v2.3-433-ge504703
 190711169,3C147,190712001,190712040,3C286,190711129,190711168,v2.7-5-g5bc6bdb
 190712041,3C147,190712007,190712040,3C286,190713008,190713041,v2.7-5-g5bc6bdb
 190713001,None,None,None,None,None,None,v2.3-475-g6a44b02
