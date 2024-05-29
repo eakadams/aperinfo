@@ -181,6 +181,15 @@ class Beams(object):
         # So get rid of them (from beam table) here:
         self.beaminfo.meta = None
 
+    def summary(self):
+        """ Print key info to screen """
+        print(f'There are {len(self.obsinfo)} observations')
+        print(f'That implies {40*len(self.obsinfo)} individual beams')
+        print(f'The length of the continuum validation table is {len(self.continfo)}')
+        print(f'The length of the polarizaiton validation table is {len(self.polinfo)}')
+        print(f'The length of the cube validation table is {len(self.hiinfo)}')
+        print(f'The length of the combined beam info table is {len(self.beaminfo)}')
+
     def find_radar(self, factor = 1.1):
         """ 
         Find taskids that are strongly impacted by military radar
@@ -577,4 +586,52 @@ def get_chan_vel(vel, d_freq):
     offset_vel = offset_freq.to(u.km/u.s, equivalencies = hi_opt_equiv)
     delta_vel = offset_vel-vsys
     return np.abs(delta_vel.value)
-    
+
+
+class DR2(Beams):
+    """
+    Child class focused on DR2
+
+    Attributes
+    ----------
+
+    Methods
+    -------
+
+    """
+
+    def __init__(self,
+                 obsfile=os.path.join(filedir, 'obsatdb.csv'),
+                 happilifile=os.path.join(filedir, 'happili.csv'),
+                 contfile=os.path.join(filedir, "cont_allbeams.csv"),
+                 hifile=os.path.join(filedir, "hi_allbeams.csv"),
+                 polfile=os.path.join(filedir, "pol_allbeams.csv")
+                 ):
+        Beams.__init__(self, obsfile, happilifile, contfile, hifile, polfile)
+        # All beams / observations are in DR2
+        # So just need full Beams initialization
+        # Obs and happili files already limit to survey observations only
+
+    def get_missing_cont(self):
+        """ Find and report about missing continuum validation """
+        ind_no_cont = np.argwhere(np.isnan(self.beaminfo['s_in_cont']))
+        print(f"There are {len(ind_no_cont)} beams missing continuum validation")
+        print(f" (as identified by missing s_in_cont value).")
+        print(f"The indices are contained in the missing_cont_beams attribute")
+        self.missing_cont_beams = ind_no_cont
+
+    def get_cont_csv(self):
+        """
+        Get csv file of DR1 released continuum beams
+        """
+        col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'Pass', 'sigma_in',
+                     'sigma_out', 'bmin', 'R', 'Ex-2', 'Neg10']
+        ascii.write(self.beaminfo['ObsID', 'Field', 'beam', 'RA', 'Dec', 'pass', 's_in_cont', 's_out_cont',
+                                  'bmin_cont', 'rat_cont', 'Ex-2_cont', 'rusc-'],
+                    os.path.join(tabledir, 'dr2_cont.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats={'RA': '10.6f', 'Dec': '9.6f'}#,
+                    #comment = '#'
+                    )
