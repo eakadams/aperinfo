@@ -604,7 +604,7 @@ class DR2(Beams):
                  obsfile=os.path.join(filedir, 'obsatdb.csv'),
                  happilifile=os.path.join(filedir, 'happili.csv'),
                  contfile=os.path.join(filedir, "cont_allbeams.csv"),
-                 hifile=os.path.join(filedir, "hi_allbeams.csv"),
+                 hifile=os.path.join(filedir, "line_allbeams.csv"),
                  polfile=os.path.join(filedir, "pol_allbeams.csv")
                  ):
         Beams.__init__(self, obsfile, happilifile, contfile, hifile, polfile)
@@ -615,14 +615,28 @@ class DR2(Beams):
     def get_missing_cont(self):
         """ Find and report about missing continuum validation """
         ind_no_cont = np.argwhere(np.isnan(self.beaminfo['s_in_cont']))
+        # should check jointly for nans and masked values
+        # but cont data has no mask
         print(f"There are {len(ind_no_cont)} beams missing continuum validation")
-        print(f" (as identified by missing s_in_cont value).")
+        print(f" (as identified by nan s_in_cont value).")
         print(f"The indices are contained in the missing_cont_beams attribute")
         self.missing_cont_beams = ind_no_cont
 
+    def get_missing_line(self):
+        """ Find and report about missing continuum validation """
+        ind_no_line = np.argwhere(np.isnan(self.beaminfo['rms_c2']))
+        if len(ind_no_line) == 0:
+            # check masked isnstead of na
+            print('Checking for masked values')
+            ind_no_line = np.where(self.beaminfo['rms_c2'].mask)[0]
+        print(f"There are {len(ind_no_line)} beams missing line validation")
+        print(f" (as identified by masked rms_c2 value).")
+        print(f"The indices are contained in the missing_line_beams attribute")
+        self.missing_line_beams = ind_no_line
+
     def get_cont_csv(self):
         """
-        Get csv file of DR1 released continuum beams
+        Get csv file of continuum beams
         """
         col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'Pass', 'sigma_in',
                      'sigma_out', 'bmin', 'R', 'Ex-2', 'Neg10']
@@ -635,3 +649,35 @@ class DR2(Beams):
                     formats={'RA': '10.6f', 'Dec': '9.6f'}#,
                     #comment = '#'
                     )
+
+    def get_line_csv(self):
+        """
+        Get csv file of line valid for DR2 beams
+        """
+        col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec',
+                    'cube2_qual', 'cube1_qual', 'cube0_qual', 'sigma_c2',
+                    'sigma_c1', 'sigma_c0',
+                    'f_ex_c2', 'f_ex_c1', 'f_ex_c0',
+                    'p_0.8_c2', 'p_0.8_c1', 'p_0.8_c0']
+
+        # put sigma into mJy, rather than Jy units before formatting
+        self.beaminfo['rms_c1_mJy'] = 1e3 * self.beaminfo['rms_c1']
+        self.beaminfo['rms_c2_mJy'] = 1e3 * self.beaminfo['rms_c2']
+        self.beaminfo['rms_c0_mJy'] = 1e3 * self.beaminfo['rms_c0']
+
+        ascii.write(self.beaminfo['taskid', 'Field', 'beam', 'ra', 'dec',
+                                     'c2', 'c1', 'c0', 'rms_c2_mJy',
+                                     'rms_c1_mJy', 'rms_c0_mJy', 'lgfrac_c2', 'lgfrac_c1',
+                                     'lgfrac_c0', 'prom_c2', 'prom_c1', 'prom_c0'],
+                        os.path.join(tabledir,'dr2_line.csv'),
+                        format='csv',
+                        overwrite=True,
+                        names=col_names,
+                        formats={'sigma_c2': '4.2f', 'sigma_c1': '4.2f',
+                                 'sigma_c0': '4.2f', 'f_ex_c2': '5.2f',
+                                 'f_ex_c1': '5.2f', 'f_ex_c0': '5.2f',
+                                 'p_0.8_c2': '4.2f', 'p_0.8_c1': '4.2f',
+                                 'p_0.8_c0': '4.2f',
+                                 'RA': '10.6f', 'Dec': '9.6f'}
+                        )
+
