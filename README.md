@@ -21,3 +21,10 @@ obs.plot_all_obs()
 ```
 
 
+## DR2 notes
+### Polarization
+- Collect all new polarization validation from `/home/adebahr/apercal/ipython-notebooks/commissioning/polarisation/Polarisation_QA/polarisation_all/` (See helpful rsync command in combine_pol doc)
+- Run `valid.combine_pol()`
+- Run `valid.do_pol_valid()` to ensure consistency with before
+  - Note that I need to check `do_pol_valid` for how taskids were manually set. This could be an appropriate place to manually set taskids that I know have bad pol data products
+  - 
