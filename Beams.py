@@ -622,6 +622,16 @@ class DR2(Beams):
         print(f"The indices are contained in the missing_cont_beams attribute")
         self.missing_cont_beams = ind_no_cont
 
+    def get_missing_pol(self):
+        """ Find and report about missing continuum validation """
+        ind_no_pol = np.argwhere(np.isnan(self.beaminfo['s_in_pol']))
+        # should check jointly for nans and masked values
+        # but cont data has no mask
+        print(f"There are {len(ind_no_pol)} beams missing polarization validation")
+        print(f" (as identified by nan s_in_pol value).")
+        print(f"The indices are contained in the missing_pol_beams attribute")
+        self.missing_pol_beams = ind_no_pol
+
     def get_missing_line(self):
         """ Find and report about missing continuum validation """
         ind_no_line = np.argwhere(np.isnan(self.beaminfo['rms_c2']))
@@ -680,4 +690,27 @@ class DR2(Beams):
                                  'p_0.8_c0': '4.2f',
                                  'RA': '10.6f', 'Dec': '9.6f'}
                         )
+
+    # make pol csv table
+    def get_pol_csv(self):
+        """
+        csv formatted table of polarization for data release
+        add ra,dec compared to paper version
+        """
+        col_names = ['ObsID', 'Name', 'Beam', 'RA', 'Dec', 'V valid', 'QU valid',
+                     'sigma_in', 'sigma_out', 'FT_max', 'peak_inner', 'bmin',
+                     'Q_beam_frac', 'U_beam_frac', 'Q_noise_frac', 'U_noise_frac']
+        # col_names = ['ObsID','Name','Beam','RA','Dec','V valid','QU valid',
+        #             'pol_s_in', 'pol_s_out',]
+        ascii.write(self.beaminfo['ObsID', 'Field', 'beam', 'RA', 'Dec',
+                                 'pass_V', 'pass_QU',
+                                 's_in_pol', 's_out_pol',
+                                 'ftmax', 'peak_in', 'bmin_pol', 'Q_bm_fg',
+                                 'U_bm_fg', 'Q_st_fg', 'U_st_fg'],
+                    os.path.join(tabledir, 'dr2_pol.csv'),
+                    format='csv',
+                    overwrite=True,
+                    names=col_names,
+                    formats={'RA': '10.6f', 'Dec': '9.6f'}
+                    )
 
