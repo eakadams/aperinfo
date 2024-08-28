@@ -27,4 +27,8 @@ obs.plot_all_obs()
 - Run `valid.combine_pol()`
 - Run `valid.do_pol_valid()` to ensure consistency with before
   - Note that I need to check `do_pol_valid` for how taskids were manually set. This could be an appropriate place to manually set taskids that I know have bad pol data products
-  - 
+
+### Line
+- Had to get cube status explicitly: wrote valid.update_line_valid for this:
+  ```from info import valid
+  valid.update_line_valid()```

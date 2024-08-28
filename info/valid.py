@@ -1213,4 +1213,53 @@ def find_radar_rfi(factor=1.0, nbeam=30):
     
     #return arrays so I can play with them further
     return hi_taskids, nbeam_c2_highrms, nbeam_c1_highrms
-    
+
+
+def update_line_valid():
+    """
+    The information in line_allbeams.csv doesn't have rating for each cube
+    but info about whether it is good/bad/okay in sep columns.
+    So I want to get the cube rating, which is what matters.
+
+    Had to delete notes at the end of file to make things work -
+    they were being read in as metadata and creating all sorts of issues
+    """
+    hifile = os.path.join(filedir, "line_allbeams.csv")
+
+    # Read the CSV file
+    hi = ascii.read(hifile)
+
+    # Add columns that I will fill, avoiding duplicates
+    try:
+        hi['c2'] = np.full(len(hi), 'B')
+        hi['c1'] = np.full(len(hi), 'B')
+        hi['c0'] = np.full(len(hi), 'B')
+    except KeyError:
+        print('Cube status columns already exist.')
+
+    # Fill the new columns based on logic
+    for hi_ind in range(len(hi)):
+        # Cube status requires logic; default is 'B'
+        if hi['c2_good'][hi_ind] == 1:
+            hi['c2'][hi_ind] = 'G'
+        elif hi['c2_ok'][hi_ind] == 1:
+            hi['c2'][hi_ind] = 'O'
+
+        if hi['c1_good'][hi_ind] == 1:
+            hi['c1'][hi_ind] = 'G'
+        elif hi['c1_ok'][hi_ind] == 1:
+            hi['c1'][hi_ind] = 'O'
+
+        if hi['c0_good'][hi_ind] == 1:
+            hi['c0'][hi_ind] = 'G'
+        elif hi['c0_ok'][hi_ind] == 1:
+            hi['c0'][hi_ind] = 'O'
+
+    # Write the table back to the CSV file
+    try:
+        ascii.write(hi, hifile, overwrite=True, format='csv')
+    except Exception as e:
+        print(f"Error writing file: {e}")
+
+
+

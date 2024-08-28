@@ -675,7 +675,7 @@ class DR2(Beams):
         self.beaminfo['rms_c2_mJy'] = 1e3 * self.beaminfo['rms_c2']
         self.beaminfo['rms_c0_mJy'] = 1e3 * self.beaminfo['rms_c0']
 
-        ascii.write(self.beaminfo['taskid', 'Field', 'beam', 'ra', 'dec',
+        ascii.write(self.beaminfo['ObsID', 'Field', 'beam', 'RA', 'Dec',
                                      'c2', 'c1', 'c0', 'rms_c2_mJy',
                                      'rms_c1_mJy', 'rms_c0_mJy', 'lgfrac_c2', 'lgfrac_c1',
                                      'lgfrac_c0', 'prom_c2', 'prom_c1', 'prom_c0'],
