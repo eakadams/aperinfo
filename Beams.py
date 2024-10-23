@@ -122,7 +122,7 @@ class Beams(object):
         self.beaminfo = Table()
         self.beaminfo['ObsID'] = np.empty(beam_table_length, dtype = int)
         self.beaminfo['beam'] = np.empty(beam_table_length, dtype = int)
-        self.beaminfo['Field'] = np.empty(beam_table_length, dtype = "S10")
+        self.beaminfo['Field'] = np.empty(beam_table_length, dtype = "S14")
         self.beaminfo['Field_RA'] = np.empty(beam_table_length)
         self.beaminfo['Field_Dec'] = np.empty(beam_table_length)
         for n,(tid,f,ra,dec) in \
