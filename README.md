@@ -32,3 +32,10 @@ obs.plot_all_obs()
 - Had to get cube status explicitly: wrote valid.update_line_valid for this:
   ```from info import valid
   valid.update_line_valid()```
+  
+### Adding SVC
+- Manually added to happili.csv and obsatdb.csv
+- Check missing beams: missing some for continuum. But it's not all beams, so QA generally exists
+- The QA is missing for line. So we can release without that, or see if Geart is available for a bit of time
+- QA is also missing for pol (despite check) - don't see directories on happili anymore, so don't think Björn can run this. So maybe SVC only gets continuum QA?
+- 
