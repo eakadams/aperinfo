@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 from astropy.io import ascii
 import numpy as np
 from astropy.table import Table, join
+import datetime as dt
+import matplotlib.dates as mdates
 from functions.plots import plot_sky_view
 from functions.plots import plot_hist
 import tol_colors as tc
@@ -611,6 +613,16 @@ class DR2(Beams):
         # All beams / observations are in DR2
         # So just need full Beams initialization
         # Obs and happili files already limit to survey observations only
+        # Want to add/specify Phase1/2 here because that will generally be useful
+        # Think the last phase 1 obs is 210117026 but I need to verify this!!!!
+        splitid = 210117026
+        self.beaminfo['Phase'] = [1 if obsid <= splitid else 2 for
+                                  obsid in self.beaminfo['ObsID']]
+        # add YYMM column for time-based views
+        self.beaminfo['YYMM'] = [int(str(x)[:4]) for x in self.beaminfo['ObsID']]
+        #self.beaminfo['YYMMDD'] = [int(str(x)[:6]) for x in self.beaminfo['ObsID']]
+        self.beaminfo['date'] = [dt.date(2000+int(str(x)[:2]), int(str(x)[2:4]), int(str(x)[4:6]))
+                                 for x in self.beaminfo['ObsID']]
 
     def get_missing_cont(self):
         """ Find and report about missing continuum validation """
@@ -713,4 +725,91 @@ class DR2(Beams):
                     names=col_names,
                     formats={'RA': '10.6f', 'Dec': '9.6f'}
                     )
+
+    def get_cont_valid(self):
+        """
+        Get the info and figures I want about cont valid for DR2
+        """
+        # First, want to get median noise values for both phases, both all and valid only
+        ind1 = np.where(self.beaminfo['Phase'] == 1)[0]
+        ind2 = np.where(self.beaminfo['Phase'] == 2)[0]
+        beam1 = self.beaminfo[ind1]
+        beam2 = self.beaminfo[ind2]
+        valid1 = np.where(beam1['pass'] == 'True')[0]
+        valid2 = np.where(beam2['pass'] == 'True')[0]
+        beam1_valid = beam1[valid1]
+        beam2_valid = beam2[valid2]
+        inner1 = np.nanmedian(beam1['s_in_cont'])
+        inner1_valid = np.nanmedian(beam1_valid['s_in_cont'])
+        outer1 = np.nanmedian(beam1['s_out_cont'])
+        outer1_valid = np.nanmedian(beam1_valid['s_out_cont'])
+        inner2 = np.nanmedian(beam2['s_in_cont'])
+        inner2_valid = np.nanmedian(beam2_valid['s_in_cont'])
+        outer2 = np.nanmedian(beam2['s_out_cont'])
+        outer2_valid = np.nanmedian(beam2_valid['s_out_cont'])
+        print(f"Median inner noise for Phase 1 valid"
+              f" (alL) cont is {inner1_valid:4.1f} ({inner1:4.1f})")
+        print(f"Median outer noise for Phase 1 valid"
+              f" (alL) cont is {outer1_valid:4.1f} ({outer1:4.1f})")
+        print(f"Median inner noise for Phase 2 valid"
+              f" (alL) cont is {inner2_valid:4.1f} ({inner2:4.1f})")
+        print(f"Median outer noise for Phase 2 valid"
+              f" (alL) cont is {outer2_valid:4.1f} ({outer2:4.1f})")
+        # Also print an overview of the number of beams
+        print(f"There are {len(beam1)} possible beams in Phase 1, {len(beam1_valid)} of which pass validation")
+        print(f"There are {len(beam2)} possible beams in Phase 2, {len(beam2_valid)} of which pass validation")
+        # But here I need to account for the fact that not all beams exist (i.e., processing failed)
+        nodata1 = np.argwhere(np.isnan(beam1['s_in_cont']))
+        nodata2 = np.argwhere(np.isnan(beam2['s_in_cont']))
+        print(f"There are {len(beam1)-len(nodata1)} released beams in Phase 1, {len(beam1_valid)} of which pass validation")
+        print(f"There are {len(beam2) - len(nodata2)} released beams in Phase 2, {len(beam2_valid)} of which pass validation")
+        # Plot histograms of the inner noise
+        fig, ax = plot_hist(beam1['s_in_cont'], beam2['s_in_cont'],
+                            beam1_valid['s_in_cont'], beam2_valid['s_in_cont'],
+                            colors=['#AA3377', '#4477AA','#AA3377', '#4477AA'],
+                            alpha = [0.5, 0.5, 1, 1],
+                            labels=['Phase 1 all', 'Phase 2 all','Phase 1 valid','Phase 2 valid'],
+                            #alpha=[1.0, 0.85],
+                            binmin=20, binmax=100.1, binstep=0.5)
+        ax.legend()
+        ax.set_xlabel("Noise [mJy beam$^{-1}$]")
+        ax.set_ylabel("Count")
+        ax.set_title("Inner continuum noise", size=24)
+        pathname = os.path.join(figdir, 'dr2_cont_inner_noise.pdf')
+        plt.savefig(pathname)
+        plt.close('all')
+        # Plot histograms of the outer noise
+        fig, ax = plot_hist(beam1['s_out_cont'], beam2['s_out_cont'],
+                            beam1_valid['s_out_cont'], beam2_valid['s_out_cont'],
+                            colors=['#AA3377', '#4477AA','#AA3377', '#4477AA'],
+                            alpha = [0.5, 0.5, 1, 1],
+                            labels=['Phase 1 all', 'Phase 2 all','Phase 1 valid','Phase 2 valid'],
+                            #alpha=[1.0, 0.85],
+                            binmin=20, binmax=100.1, binstep=0.5)
+        ax.legend()
+        ax.set_xlabel("Noise [mJy beam$^{-1}$]")
+        ax.set_ylabel("Count")
+        ax.set_title("Outer continuum noise", size=24)
+        pathname = os.path.join(figdir, 'dr2_cont_outer_noise.pdf')
+        plt.savefig(pathname)
+        plt.close('all')
+        # get time-based views of what is happening
+        # want to sort things based on YYMM column
+        yymm_array = np.unique(self.beaminfo['YYMM'])
+        s_in_cont_yymm_median = [np.nanmedian(self.beaminfo['s_in_cont'][self.beaminfo['YYMM']==t]) for t in yymm_array]
+        yymm_date_array = [dt.date(2000+int(str(t)[0:2]), int(str(t)[2:4]), 15) for t in yymm_array]
+
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_axes((0.11, 0.1, 0.85, 0.85))
+        ax.scatter(self.beaminfo['date'],self.beaminfo['s_in_cont'], marker='.', color='gray')
+        ax.scatter(yymm_date_array, s_in_cont_yymm_median, s=50, marker='s', color='red')
+        # Major ticks every half year, minor ticks every month,
+        ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1, 7)))
+        ax.xaxis.set_minor_locator(mdates.MonthLocator())
+        ax.set_xlabel('Date')
+        ax.set_ylabel('Inner noise [mJy beam$^{-1}$]')
+        ax.set_ylim(15,250)
+        pathname=os.path.join(figdir, 'dr2_cont_inner_noise_time.pdf')
+        plt.savefig(pathname)
+        plt.close('all')
 
